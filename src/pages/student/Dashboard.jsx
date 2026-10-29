@@ -230,7 +230,7 @@ const StudentDashboard = () => {
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 p-6">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
-              <p className="text-green-600">Rs</p>
+              <p className="text-green-600" />
               <h3 className="font-semibold text-gray-800 dark:text-white">
                 Fee Status
               </h3>

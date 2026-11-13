@@ -4,11 +4,17 @@ import {
   FiCalendar,
   FiUser,
   FiRefreshCw,
+  FiCheckCircle,
+  FiXCircle,
+  FiClock,
+  FiCheck,
 } from 'react-icons/fi';
-import DashboardHeader from '../../components/dashboard/DashboardHeader';
+import PageHeader from '../../components/common/PageHeader';
 import Select from '../../components/forms/Select';
 import Button from '../../components/forms/Button';
 import Loader from '../../components/common/Loader';
+import EmptyState from '../../components/common/EmptyState';
+import StatusBadge from '../../components/common/StatusBadge';
 import api from '../../utils/api';
 
 const Attendance = () => {
@@ -38,8 +44,8 @@ const Attendance = () => {
     try {
       const response = await api.get('/api/classes');
       setClasses(response.data.classes || []);
-    } catch (error) {
-      console.error('Error fetching classes:', error);
+    } catch (err) {
+      console.error('Error fetching classes:', err);
       setError('Failed to fetch classes');
     } finally {
       setLoading(false);
@@ -52,9 +58,9 @@ const Attendance = () => {
       const response = await api.get(`/api/classes/${selectedClass}/students`);
       setStudents(response.data.students || []);
       setError('');
-    } catch (error) {
-      console.error('Error fetching students:', error);
-      setError('Failed to fetch students');
+    } catch (err) {
+      console.error('Error fetching students:', err);
+      setError('Failed to fetch students for selected class');
     }
   };
 
@@ -81,9 +87,9 @@ const Attendance = () => {
       }
       setAttendance(attendanceData);
       setError('');
-    } catch (error) {
-      console.error('❌ Error fetching attendance:', error);
-      setError(error.response?.data?.message || 'Failed to fetch attendance');
+    } catch (err) {
+      console.error('Error fetching attendance:', err);
+      setError(err.response?.data?.message || 'Failed to fetch attendance');
     }
   };
 
@@ -97,175 +103,198 @@ const Attendance = () => {
         semester: '2026-2027',
       });
 
-      setAttendance({ ...attendance, [studentId]: status });
-      setSuccess(
-        `Attendance marked as ${status} for ${
-          students.find((s) => s._id === studentId)?.user?.name || 'student'
-        }`
-      );
-      setTimeout(() => setSuccess(''), 3000);
-    } catch (error) {
-      console.error('Error marking attendance:', error);
-      setError(error.response?.data?.message || 'Failed to mark attendance');
+      setAttendance((prev) => ({ ...prev, [studentId]: status }));
+      const studentName = students.find((s) => s._id === studentId)?.user?.name || 'Student';
+      setSuccess(`Marked ${status.toUpperCase()} for ${studentName}`);
+      setTimeout(() => setSuccess(''), 2500);
+    } catch (err) {
+      console.error('Error marking attendance:', err);
+      setError(err.response?.data?.message || 'Failed to mark attendance');
     }
   };
 
-  const getStatusBadgeClass = (status) => {
-    if (!status) return 'badge-secondary';
+  const getStatusVariant = (status) => {
     switch (status) {
-      case 'present':
-        return 'badge-success';
-      case 'absent':
-        return 'badge-danger';
-      case 'late':
-        return 'badge-warning';
-      case 'excused':
-        return 'badge-info';
-      default:
-        return 'badge-secondary';
+      case 'present': return 'success';
+      case 'absent': return 'danger';
+      case 'late': return 'warning';
+      case 'excused': return 'info';
+      default: return 'neutral';
     }
   };
 
-  const getStatusLabel = (status) => {
-    if (!status) return 'Not Marked';
-    return status.charAt(0).toUpperCase() + status.slice(1);
-  };
+  const presentCount = Object.values(attendance).filter((s) => s === 'present').length;
+  const absentCount = Object.values(attendance).filter((s) => s === 'absent').length;
+  const lateCount = Object.values(attendance).filter((s) => s === 'late').length;
 
   if (loading) return <Loader />;
 
   return (
-    <div>
-      <DashboardHeader
-        title="Attendance Management"
-        subtitle="Mark and manage daily attendance"
+    <div className="space-y-6">
+      <PageHeader
+        title="Institutional Attendance"
+        subtitle="Log and verify daily student presence, tardiness, and absences"
+        breadcrumbs={[
+          { label: 'Dashboard', path: '/admin/dashboard' },
+          { label: 'Attendance' },
+        ]}
       />
 
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-card p-6 border border-gray-200 dark:border-gray-700">
+      <div className="card p-5 sm:p-6 space-y-5">
         {success && (
-          <div className="mb-4 p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg text-green-600 dark:text-green-400">
+          <div className="p-3.5 bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 rounded-xl text-emerald-700 dark:text-emerald-400 text-xs font-medium flex items-center gap-2">
+            <FiCheck className="text-sm" />
             {success}
           </div>
         )}
 
         {error && (
-          <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg text-red-600 dark:text-red-400">
+          <div className="p-3.5 bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-800 rounded-xl text-rose-700 dark:text-rose-400 text-xs font-medium">
             {error}
           </div>
         )}
 
-        <div className="flex flex-wrap gap-4 mb-6">
-          <Select
-            label="Select Class"
-            name="class"
-            value={selectedClass}
-            onChange={(e) => setSelectedClass(e.target.value)}
-            options={[
-              { value: '', label: 'Select Class' },
-              ...classes.map((c) => ({ value: c._id, label: c.name })),
-            ]}
-            className="w-64"
-            icon={FiUser}
-          />
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Date
-            </label>
+        {/* Filter Controls Bar */}
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-end gap-3 pb-5 border-b border-slate-100 dark:border-slate-800">
+          <div className="w-full sm:w-64">
+            <label className="label">Class Cohort</label>
+            <select
+              value={selectedClass}
+              onChange={(e) => setSelectedClass(e.target.value)}
+              className="select-field text-xs py-2.5 w-full"
+            >
+              <option value="">Select a class cohort...</option>
+              {classes.map((c) => (
+                <option key={c._id} value={c._id}>
+                  {c.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="w-full sm:w-52">
+            <label className="label">Attendance Date</label>
             <div className="relative">
-              <FiCalendar className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+              <FiCalendar className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
               <input
                 type="date"
                 value={selectedDate}
                 onChange={(e) => setSelectedDate(e.target.value)}
-                className="input-field pl-10"
+                className="input-field text-xs pl-9 py-2 w-full"
               />
             </div>
           </div>
-          <div className="self-end">
-            <Button variant="secondary" icon={FiRefreshCw} onClick={fetchAttendance}>
-              Refresh
+
+          <div className="sm:ml-auto">
+            <Button
+              variant="secondary"
+              icon={FiRefreshCw}
+              onClick={fetchAttendance}
+              disabled={!selectedClass}
+            >
+              Reload Roster
             </Button>
           </div>
         </div>
 
+        {/* Live Attendance Summary KPIs */}
         {selectedClass && students.length > 0 && (
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50 dark:bg-gray-700/50">
-                <tr>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
-                    Student
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
-                    Roll No
-                  </th>
-                  <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
-                    Status
-                  </th>
-                  <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
-                    Action
-                  </th>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800">
+              <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Total Enrolled</span>
+              <p className="text-xl font-bold text-slate-900 dark:text-white mt-1">{students.length}</p>
+            </div>
+            <div className="p-3.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-100 dark:border-emerald-900/40">
+              <span className="text-[10px] font-semibold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">Present</span>
+              <p className="text-xl font-bold text-emerald-700 dark:text-emerald-300 mt-1">{presentCount}</p>
+            </div>
+            <div className="p-3.5 rounded-xl bg-rose-50 dark:bg-rose-950/20 border border-rose-100 dark:border-rose-900/40">
+              <span className="text-[10px] font-semibold uppercase tracking-wider text-rose-600 dark:text-rose-400">Absent</span>
+              <p className="text-xl font-bold text-rose-700 dark:text-rose-300 mt-1">{absentCount}</p>
+            </div>
+            <div className="p-3.5 rounded-xl bg-amber-50 dark:bg-amber-950/20 border border-amber-100 dark:border-amber-900/40">
+              <span className="text-[10px] font-semibold uppercase tracking-wider text-amber-600 dark:text-amber-400">Late</span>
+              <p className="text-xl font-bold text-amber-700 dark:text-amber-300 mt-1">{lateCount}</p>
+            </div>
+          </div>
+        )}
+
+        {/* Student Roster Table */}
+        {selectedClass && students.length > 0 ? (
+          <div className="overflow-x-auto border border-slate-200 dark:border-slate-800 rounded-xl">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-800/50 text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
+                  <th className="px-5 py-3">Student Name</th>
+                  <th className="px-4 py-3">Roll No.</th>
+                  <th className="px-4 py-3 text-center">Recorded State</th>
+                  <th className="px-5 py-3 text-right">Log Status</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 text-xs">
                 {students.map((student) => {
                   const status = attendance[student._id];
+                  const initial = student.user?.name?.charAt(0) || 'S';
                   return (
                     <tr
                       key={student._id}
-                      className="hover:bg-gray-50 dark:hover:bg-gray-700/50"
+                      className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors"
                     >
-                      <td className="px-4 py-3">
-                        <div className="flex items-center">
-                          <div className="w-8 h-8 rounded-full bg-primary-100 dark:bg-primary-900/20 flex items-center justify-center text-primary-600 font-medium text-sm">
-                            {student.user?.name?.charAt(0) || 'S'}
+                      <td className="px-5 py-3.5 whitespace-nowrap">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-full bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 border border-indigo-200/50 flex items-center justify-center font-bold text-xs shadow-sm">
+                            {initial}
                           </div>
-                          <span className="ml-3 text-sm text-gray-700 dark:text-gray-300">
-                            {student.user?.name || 'Unknown'}
-                          </span>
+                          <div>
+                            <p className="font-semibold text-slate-900 dark:text-white">
+                              {student.user?.name || 'Unknown'}
+                            </p>
+                            <p className="text-[10px] text-slate-400">
+                              {student.studentId || ''}
+                            </p>
+                          </div>
                         </div>
                       </td>
-                      <td className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">
-                        {student.rollNumber || 'N/A'}
+                      <td className="px-4 py-3.5 whitespace-nowrap text-slate-700 dark:text-slate-300 font-mono">
+                        {student.rollNumber || '—'}
                       </td>
-                      <td className="px-4 py-3 text-center">
-                        <span
-                          className={`badge ${getStatusBadgeClass(status)}`}
+                      <td className="px-4 py-3.5 whitespace-nowrap text-center">
+                        <StatusBadge
+                          variant={getStatusVariant(status)}
+                          dot
                         >
-                          {getStatusLabel(status)}
-                        </span>
+                          {status ? status.toUpperCase() : 'NOT LOGGED'}
+                        </StatusBadge>
                       </td>
-                      <td className="px-4 py-3">
-                        <div className="flex justify-center gap-2 flex-wrap">
+                      <td className="px-5 py-3.5 whitespace-nowrap text-right">
+                        <div className="inline-flex items-center gap-1 bg-slate-100 dark:bg-slate-800/80 p-1 rounded-xl border border-slate-200 dark:border-slate-700/60">
                           <button
                             onClick={() => markAttendance(student._id, 'present')}
-                            className={`px-3 py-1 text-xs rounded-lg transition-colors ${
+                            className={`px-2.5 py-1 text-xs font-semibold rounded-lg transition-all ${
                               status === 'present'
-                                ? 'bg-green-600 text-white cursor-default'
-                                : 'bg-green-100 dark:bg-green-900/20 text-green-700 dark:text-green-300 hover:bg-green-200'
+                                ? 'bg-emerald-600 text-white shadow-sm'
+                                : 'text-slate-600 dark:text-slate-400 hover:text-emerald-600'
                             }`}
-                            disabled={status === 'present'}
                           >
                             Present
                           </button>
                           <button
                             onClick={() => markAttendance(student._id, 'absent')}
-                            className={`px-3 py-1 text-xs rounded-lg transition-colors ${
+                            className={`px-2.5 py-1 text-xs font-semibold rounded-lg transition-all ${
                               status === 'absent'
-                                ? 'bg-red-600 text-white cursor-default'
-                                : 'bg-red-100 dark:bg-red-900/20 text-red-700 dark:text-red-300 hover:bg-red-200'
+                                ? 'bg-rose-600 text-white shadow-sm'
+                                : 'text-slate-600 dark:text-slate-400 hover:text-rose-600'
                             }`}
-                            disabled={status === 'absent'}
                           >
                             Absent
                           </button>
                           <button
                             onClick={() => markAttendance(student._id, 'late')}
-                            className={`px-3 py-1 text-xs rounded-lg transition-colors ${
+                            className={`px-2.5 py-1 text-xs font-semibold rounded-lg transition-all ${
                               status === 'late'
-                                ? 'bg-yellow-600 text-white cursor-default'
-                                : 'bg-yellow-100 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-300 hover:bg-yellow-200'
+                                ? 'bg-amber-600 text-white shadow-sm'
+                                : 'text-slate-600 dark:text-slate-400 hover:text-amber-600'
                             }`}
-                            disabled={status === 'late'}
                           >
                             Late
                           </button>
@@ -277,22 +306,18 @@ const Attendance = () => {
               </tbody>
             </table>
           </div>
-        )}
-
-        {selectedClass && students.length === 0 && (
-          <div className="text-center py-12">
-            <p className="text-gray-500 dark:text-gray-400">
-              No students found in this class
-            </p>
-          </div>
-        )}
-
-        {!selectedClass && (
-          <div className="text-center py-12">
-            <p className="text-gray-500 dark:text-gray-400">
-              Please select a class to mark attendance
-            </p>
-          </div>
+        ) : selectedClass && students.length === 0 ? (
+          <EmptyState
+            icon={FiUser}
+            title="Empty Class Roster"
+            description="No active students are currently enrolled in this academic class."
+          />
+        ) : (
+          <EmptyState
+            icon={FiCalendar}
+            title="Select Class Cohort"
+            description="Choose a class and target date from the header controls above to load the student attendance roster."
+          />
         )}
       </div>
     </div>

@@ -1,16 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { FiUserPlus, FiEdit2, FiTrash2, FiEye } from 'react-icons/fi';
+import { FiUserPlus, FiEdit2, FiTrash2, FiEye, FiUsers, FiFilter } from 'react-icons/fi';
 import { toast } from 'react-toastify';
-import DashboardHeader from '../../components/dashboard/DashboardHeader';
+import PageHeader from '../../components/common/PageHeader';
 import Button from '../../components/forms/Button';
 import SearchBar from '../../components/common/SearchBar';
 import Pagination from '../../components/common/Pagination';
 import Loader from '../../components/common/Loader';
+import EmptyState from '../../components/common/EmptyState';
+import ConfirmDialog from '../../components/common/ConfirmDialog';
+import StatusBadge from '../../components/common/StatusBadge';
 import Modal from '../../components/modals/Modal';
 import StudentForm from '../../components/forms/StudentForm';
 import api from '../../utils/api';
-import { getStatusColor, getStatusLabel } from '../../utils/helpers';
+import { getStatusLabel } from '../../utils/helpers';
 import { STUDENT_STATUS, GENDER_OPTIONS } from '../../utils/constants';
 
 const Students = () => {
@@ -28,6 +30,8 @@ const Students = () => {
   });
   const [showModal, setShowModal] = useState(false);
   const [editingStudent, setEditingStudent] = useState(null);
+  const [deleteTargetId, setDeleteTargetId] = useState(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -63,11 +67,11 @@ const Students = () => {
         ...filters,
       };
       const response = await api.get('/api/students', { params });
-      setStudents(response.data.students);
+      setStudents(response.data.students || []);
       setPagination({
         ...pagination,
-        total: response.data.total,
-        totalPages: response.data.pagination.totalPages,
+        total: response.data.total || 0,
+        totalPages: response.data.pagination?.totalPages || 1,
       });
     } catch (error) {
       console.error('Error fetching students:', error);
@@ -80,10 +84,10 @@ const Students = () => {
   const fetchClasses = async () => {
     try {
       const response = await api.get('/api/classes');
-      const validClasses = response.data.classes.filter(
+      const validClasses = (response.data.classes || []).filter(
         (c) => c._id && c._id.length === 24
       );
-      setClasses(validClasses || []);
+      setClasses(validClasses);
     } catch (error) {
       console.error('Error fetching classes:', error);
     }
@@ -177,69 +181,81 @@ const Students = () => {
     }
   };
 
-  const handleDelete = async (id) => {
-    if (window.confirm('Are you sure you want to delete this student?')) {
-      try {
-        await api.delete(`/api/students/${id}`);
-        toast.success('Student deleted successfully');
-        fetchStudents();
-      } catch (error) {
-        console.error('Error deleting student:', error);
-        toast.error('Failed to delete student');
-      }
+  const handleDeleteConfirm = async () => {
+    if (!deleteTargetId) return;
+    setDeleteLoading(true);
+    try {
+      await api.delete(`/api/students/${deleteTargetId}`);
+      toast.success('Student deleted successfully');
+      setDeleteTargetId(null);
+      fetchStudents();
+    } catch (error) {
+      console.error('Error deleting student:', error);
+      toast.error('Failed to delete student');
+    } finally {
+      setDeleteLoading(false);
     }
   };
 
-  const getStatusBadge = (status) => {
-    const color = getStatusColor(status);
-    const label = getStatusLabel(status);
-    return <span className={`badge badge-${color}`}>{label}</span>;
+  const mapStatusVariant = (status) => {
+    switch (status) {
+      case 'active': return 'success';
+      case 'graduated': return 'info';
+      case 'inactive': return 'neutral';
+      case 'suspended': return 'danger';
+      case 'transferred': return 'warning';
+      default: return 'neutral';
+    }
   };
 
-  if (loading && students.length === 0) return <Loader />;
-
   return (
-    <div>
-      <DashboardHeader
-        title="Students Management"
-        subtitle="Manage all students in your school"
+    <div className="space-y-6">
+      <PageHeader
+        title="Student Directory"
+        subtitle="Manage and monitor enrolled students across all institutional cohorts"
+        breadcrumbs={[
+          { label: 'Dashboard', path: '/admin/dashboard' },
+          { label: 'Students' },
+        ]}
         actions={
           <Button variant="primary" icon={FiUserPlus} onClick={handleAddStudent}>
-            Add Student
+            Enroll Student
           </Button>
         }
       />
 
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-card border border-gray-200 dark:border-gray-700 overflow-hidden">
-        <div className="p-4 border-b border-gray-200 dark:border-gray-700">
-          <div className="flex flex-col md:flex-row gap-4">
+      <div className="card overflow-hidden">
+        {/* Filters and Search Bar */}
+        <div className="p-4 sm:p-5 border-b border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30">
+          <div className="flex flex-col md:flex-row gap-3">
             <div className="flex-1">
               <SearchBar
                 onSearch={handleSearch}
-                placeholder="Search by name, ID, or roll number..."
+                placeholder="Search by student name, roll number, or email..."
               />
             </div>
-            <div className="flex gap-3">
+            <div className="flex items-center gap-3">
               <select
                 name="status"
                 value={filters.status}
                 onChange={(e) => handleFilterChange('status', e.target.value)}
-                className="input-field w-40"
+                className="select-field text-xs py-2 w-36"
               >
-                <option value="">All Status</option>
+                <option value="">All Statuses</option>
                 {STUDENT_STATUS.map((s) => (
                   <option key={s} value={s}>
                     {getStatusLabel(s)}
                   </option>
                 ))}
               </select>
+
               <select
                 name="gender"
                 value={filters.gender}
                 onChange={(e) => handleFilterChange('gender', e.target.value)}
-                className="input-field w-40"
+                className="select-field text-xs py-2 w-36"
               >
-                <option value="">All Gender</option>
+                <option value="">All Genders</option>
                 {GENDER_OPTIONS.map((g) => (
                   <option key={g.value} value={g.value}>
                     {g.label}
@@ -250,135 +266,125 @@ const Students = () => {
           </div>
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-50 dark:bg-gray-700/50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Student
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  ID / Roll
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Class
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Father Name
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Status
-                </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-              {students.length === 0 ? (
-                <tr>
-                  <td
-                    colSpan="6"
-                    className="px-6 py-12 text-center text-gray-500 dark:text-gray-400"
-                  >
-                    No students found
-                  </td>
+        {/* Table Content */}
+        {loading && students.length === 0 ? (
+          <div className="p-12 flex justify-center">
+            <Loader />
+          </div>
+        ) : students.length === 0 ? (
+          <div className="p-8">
+            <EmptyState
+              icon={FiUsers}
+              title="No students located"
+              description="No student records match your query or have been enrolled yet."
+              actionLabel="Add First Student"
+              onAction={handleAddStudent}
+            />
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-800/50 text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
+                  <th className="px-5 py-3">Student Name</th>
+                  <th className="px-4 py-3">ID / Roll No.</th>
+                  <th className="px-4 py-3">Class & Section</th>
+                  <th className="px-4 py-3">Guardian</th>
+                  <th className="px-4 py-3">Status</th>
+                  <th className="px-5 py-3 text-right">Actions</th>
                 </tr>
-              ) : (
-                students.map((student) => (
-                  <motion.tr
-                    key={student._id}
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
-                  >
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center">
-                        <div className="w-8 h-8 rounded-full bg-primary-100 dark:bg-primary-900/20 flex items-center justify-center text-primary-600 font-medium">
-                          {student.user?.name?.charAt(0) || 'S'}
+              </thead>
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 text-xs">
+                {students.map((student) => {
+                  const initial = student.user?.name?.charAt(0) || 'S';
+                  return (
+                    <tr
+                      key={student._id}
+                      className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors"
+                    >
+                      <td className="px-5 py-3.5 whitespace-nowrap">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-full bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 border border-indigo-200/50 dark:border-indigo-800/50 flex items-center justify-center font-bold text-xs shadow-sm">
+                            {initial}
+                          </div>
+                          <div>
+                            <p className="font-semibold text-slate-900 dark:text-white">
+                              {student.user?.name}
+                            </p>
+                            <p className="text-[11px] text-slate-400">
+                              {student.user?.email}
+                            </p>
+                          </div>
                         </div>
-                        <div className="ml-3">
-                          <p className="text-sm font-medium text-gray-800 dark:text-white">
-                            {student.user?.name}
-                          </p>
-                          <p className="text-xs text-gray-500 dark:text-gray-400">
-                            {student.user?.email}
-                          </p>
+                      </td>
+                      <td className="px-4 py-3.5 whitespace-nowrap text-slate-700 dark:text-slate-300">
+                        <div className="font-mono">{student.studentId || '—'}</div>
+                        <div className="text-[11px] text-slate-400">Roll: {student.rollNumber || '—'}</div>
+                      </td>
+                      <td className="px-4 py-3.5 whitespace-nowrap text-slate-700 dark:text-slate-300">
+                        <span className="font-medium">{student.class?.name || 'Unassigned'}</span>
+                        {student.section && (
+                          <span className="text-[11px] text-slate-400 block">Sec {student.section}</span>
+                        )}
+                      </td>
+                      <td className="px-4 py-3.5 whitespace-nowrap text-slate-700 dark:text-slate-300">
+                        <div>{student.fatherName || '—'}</div>
+                        <div className="text-[11px] text-slate-400">{student.fatherPhone || ''}</div>
+                      </td>
+                      <td className="px-4 py-3.5 whitespace-nowrap">
+                        <StatusBadge
+                          variant={mapStatusVariant(student.status)}
+                          dot
+                        >
+                          {getStatusLabel(student.status)}
+                        </StatusBadge>
+                      </td>
+                      <td className="px-5 py-3.5 whitespace-nowrap text-right">
+                        <div className="flex items-center justify-end gap-1.5">
+                          <button
+                            onClick={() => handleEditStudent(student)}
+                            className="p-1.5 rounded-lg text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-slate-800 transition-colors"
+                            title="Edit Student"
+                          >
+                            <FiEdit2 className="text-sm" />
+                          </button>
+                          <button
+                            onClick={() => setDeleteTargetId(student._id)}
+                            className="p-1.5 rounded-lg text-slate-500 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-slate-800 transition-colors"
+                            title="Delete Student"
+                          >
+                            <FiTrash2 className="text-sm" />
+                          </button>
                         </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-700 dark:text-gray-300">
-                        {student.studentId}
-                      </div>
-                      <div className="text-xs text-gray-500 dark:text-gray-400">
-                        Roll: {student.rollNumber}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className="text-sm text-gray-700 dark:text-gray-300">
-                        {student.class?.name || 'N/A'}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-700 dark:text-gray-300">
-                        {student.fatherName || 'N/A'}
-                      </div>
-                      <div className="text-xs text-gray-500 dark:text-gray-400">
-                        {student.fatherPhone || ''}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      {getStatusBadge(student.status)}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        <button
-                          onClick={() => handleEditStudent(student)}
-                          className="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors text-blue-600"
-                          title="View"
-                        >
-                          <FiEye className="text-sm" />
-                        </button>
-                        <button
-                          onClick={() => handleEditStudent(student)}
-                          className="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors text-yellow-600"
-                          title="Edit"
-                        >
-                          <FiEdit2 className="text-sm" />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(student._id)}
-                          className="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors text-red-600"
-                          title="Delete"
-                        >
-                          <FiTrash2 className="text-sm" />
-                        </button>
-                      </div>
-                    </td>
-                  </motion.tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
 
-        <Pagination
-          currentPage={pagination.page}
-          totalPages={pagination.totalPages}
-          onPageChange={handlePageChange}
-          itemsPerPage={pagination.limit}
-          totalItems={pagination.total}
-          onItemsPerPageChange={(limit) => {
-            setPagination({ ...pagination, limit, page: 1 });
-          }}
-        />
+        {/* Pagination */}
+        <div className="p-4 border-t border-slate-200 dark:border-slate-800">
+          <Pagination
+            currentPage={pagination.page}
+            totalPages={pagination.totalPages}
+            onPageChange={handlePageChange}
+            itemsPerPage={pagination.limit}
+            totalItems={pagination.total}
+            onItemsPerPageChange={(limit) => {
+              setPagination({ ...pagination, limit, page: 1 });
+            }}
+          />
+        </div>
       </div>
 
+      {/* Edit / Add Modal */}
       <Modal
         isOpen={showModal}
         onClose={() => setShowModal(false)}
-        title={editingStudent ? 'Edit Student' : 'Add Student'}
+        title={editingStudent ? 'Update Student Details' : 'Enroll New Student'}
         size="lg"
       >
         <StudentForm
@@ -389,6 +395,18 @@ const Students = () => {
           classes={classes}
         />
       </Modal>
+
+      {/* Confirm Deletion Dialog */}
+      <ConfirmDialog
+        isOpen={Boolean(deleteTargetId)}
+        onClose={() => setDeleteTargetId(null)}
+        onConfirm={handleDeleteConfirm}
+        title="Delete Student Record"
+        message="Are you sure you wish to delete this student record? This action will remove academic history and cannot be undone."
+        confirmText="Delete Record"
+        confirmVariant="danger"
+        loading={deleteLoading}
+      />
     </div>
   );
 };

@@ -5,8 +5,9 @@ import {
   FiPhone,
   FiMapPin,
   FiBriefcase,
+  FiSave,
 } from 'react-icons/fi';
-import DashboardHeader from '../../components/dashboard/DashboardHeader';
+import PageHeader from '../../components/common/PageHeader';
 import Input from '../../components/forms/Input';
 import Button from '../../components/forms/Button';
 import { useAuth } from '../../context/AuthContext';
@@ -35,92 +36,106 @@ const TeacherProfile = () => {
     setLoading(false);
   };
 
+  const initial = user?.name?.charAt(0) || 'T';
+
   return (
-    <div>
-      <DashboardHeader
-        title="My Profile"
-        subtitle="Manage your personal information"
+    <div className="space-y-6">
+      <PageHeader
+        title="Faculty Dossier & Profile"
+        subtitle="Manage your credentials, departmental affiliation, and contact details"
+        breadcrumbs={[
+          { label: 'Dashboard', path: '/teacher/dashboard' },
+          { label: 'Profile' },
+        ]}
       />
 
-      <div className="max-w-3xl mx-auto">
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-card p-6 border border-gray-200 dark:border-gray-700">
-          <div className="flex items-center space-x-4 mb-6">
-            <div className="w-20 h-20 rounded-full bg-gradient-to-r from-primary-500 to-secondary-500 flex items-center justify-center text-white text-2xl font-bold">
-              {user?.name?.charAt(0) || 'T'}
-            </div>
-            <div>
-              <h3 className="text-lg font-semibold text-gray-800 dark:text-white">
-                {user?.name}
-              </h3>
-              <p className="text-sm text-gray-500 dark:text-gray-400">
-                {user?.role?.toUpperCase()} •{' '}
-                {formData.department || 'No Department'}
-              </p>
-            </div>
+      <div className="card max-w-2xl p-6 sm:p-8 space-y-6">
+        <div className="flex items-center gap-4 pb-5 border-b border-slate-100 dark:border-slate-800">
+          <div className="w-16 h-16 rounded-2xl bg-indigo-600 text-white flex items-center justify-center text-2xl font-bold shadow-md shadow-indigo-600/20">
+            {initial}
           </div>
+          <div>
+            <h3 className="text-lg font-bold text-slate-900 dark:text-white">
+              {user?.name || 'Faculty Member'}
+            </h3>
+            <p className="text-xs text-slate-400 font-medium">
+              FACULTY • {formData.department || 'General Department'}
+            </p>
+          </div>
+        </div>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <Input
+            label="Full Legal Name"
+            name="name"
+            value={formData.name}
+            onChange={handleChange}
+            icon={FiUser}
+            required
+          />
+          <Input
+            label="Institutional Email Address"
+            name="email"
+            type="email"
+            value={formData.email}
+            onChange={handleChange}
+            icon={FiMail}
+            disabled
+          />
+          <Input
+            label="Direct Contact Number"
+            name="phone"
+            type="tel"
+            value={formData.phone}
+            onChange={handleChange}
+            icon={FiPhone}
+          />
+          <Input
+            label="Residential / Office Address"
+            name="address"
+            value={formData.address}
+            onChange={handleChange}
+            icon={FiMapPin}
+          />
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Input
-              label="Full Name"
-              name="name"
-              value={formData.name}
-              onChange={handleChange}
-              icon={FiUser}
-              required
-            />
-            <Input
-              label="Email Address"
-              name="email"
-              type="email"
-              value={formData.email}
-              onChange={handleChange}
-              icon={FiMail}
-              disabled
-            />
-            <Input
-              label="Phone Number"
-              name="phone"
-              type="tel"
-              value={formData.phone}
-              onChange={handleChange}
-              icon={FiPhone}
-            />
-            <Input
-              label="Address"
-              name="address"
-              value={formData.address}
-              onChange={handleChange}
-              icon={FiMapPin}
-            />
-            <Input
-              label="Qualification"
+              label="Academic Qualification"
               name="qualification"
               value={formData.qualification}
               onChange={handleChange}
+              placeholder="e.g. M.Sc. Mathematics"
               icon={FiBriefcase}
             />
             <Input
-              label="Specialization"
+              label="Subject Specialization"
               name="specialization"
               value={formData.specialization}
               onChange={handleChange}
+              placeholder="e.g. Applied Statistics"
               icon={FiBriefcase}
             />
-            <Input
-              label="Department"
-              name="department"
-              value={formData.department}
-              onChange={handleChange}
-              icon={FiBriefcase}
-            />
+          </div>
 
-            <div className="flex justify-end pt-4">
-              <Button type="submit" variant="primary" loading={loading}>
-                Save Changes
-              </Button>
-            </div>
-          </form>
-        </div>
+          <Input
+            label="Assigned Department"
+            name="department"
+            value={formData.department}
+            onChange={handleChange}
+            icon={FiBriefcase}
+          />
+
+          <div className="flex justify-end pt-4 border-t border-slate-100 dark:border-slate-800">
+            <Button
+              type="submit"
+              variant="primary"
+              icon={FiSave}
+              loading={loading}
+            >
+              Save Profile Changes
+            </Button>
+          </div>
+        </form>
       </div>
     </div>
   );

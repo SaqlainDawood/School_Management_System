@@ -5,15 +5,16 @@ import { debounce } from '../../utils/helpers';
 
 const SearchBar = ({
   onSearch,
-  placeholder = 'Search...',
+  placeholder = 'Search records...',
   className = '',
+  size = 'md',
 }) => {
   const [query, setQuery] = useState('');
   const [isFocused, setIsFocused] = useState(false);
 
   const debouncedSearch = debounce((value) => {
-    onSearch(value);
-  }, 300);
+    if (onSearch) onSearch(value);
+  }, 250);
 
   const handleChange = (e) => {
     const value = e.target.value;
@@ -23,20 +24,33 @@ const SearchBar = ({
 
   const clearSearch = () => {
     setQuery('');
-    onSearch('');
+    if (onSearch) onSearch('');
+  };
+
+  const sizeClasses = {
+    sm: 'py-1.5 px-3 text-xs',
+    md: 'py-2 px-3.5 text-sm',
+    lg: 'py-2.5 px-4 text-base',
   };
 
   return (
     <div className={`relative ${className}`}>
       <div
-        className={`flex items-center bg-gray-50 dark:bg-gray-700 rounded-lg px-4 py-2 transition-all duration-200 ${
-          isFocused ? 'ring-2 ring-primary-500 shadow-sm' : ''
+        className={`flex items-center bg-white dark:bg-[#1E293B] border rounded-lg transition-all duration-150 ${
+          sizeClasses[size] || sizeClasses.md
+        } ${
+          isFocused
+            ? 'border-indigo-600 ring-2 ring-indigo-600/20 shadow-sm'
+            : 'border-slate-300 dark:border-slate-700 hover:border-slate-400'
         }`}
       >
         <FiSearch
-          className={`text-gray-400 transition-colors ${
-            isFocused ? 'text-primary-500' : ''
+          className={`mr-2.5 flex-shrink-0 transition-colors ${
+            isFocused
+              ? 'text-indigo-600 dark:text-indigo-400'
+              : 'text-slate-400 dark:text-slate-500'
           }`}
+          aria-hidden="true"
         />
         <input
           type="text"
@@ -45,18 +59,21 @@ const SearchBar = ({
           onFocus={() => setIsFocused(true)}
           onBlur={() => setIsFocused(false)}
           placeholder={placeholder}
-          className="bg-transparent border-none focus:outline-none px-3 py-1 text-gray-700 dark:text-gray-200 w-full"
+          aria-label={placeholder}
+          className="bg-transparent border-none focus:outline-none text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 w-full p-0 leading-normal"
         />
         <AnimatePresence>
           {query && (
             <motion.button
+              type="button"
               initial={{ opacity: 0, scale: 0.8 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.8 }}
               onClick={clearSearch}
-              className="p-1 rounded-full hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+              className="p-0.5 rounded-full text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors ml-1.5"
+              aria-label="Clear search input"
             >
-              <FiX className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300" />
+              <FiX className="text-sm" />
             </motion.button>
           )}
         </AnimatePresence>

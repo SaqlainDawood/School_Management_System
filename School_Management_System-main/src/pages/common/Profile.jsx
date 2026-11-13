@@ -1,14 +1,19 @@
 import React, { useState } from 'react';
-import { useAuth } from '../../context/AuthContext';
-import DashboardHeader from '../../components/dashboard/DashboardHeader';
-import Input from '../../components/forms/Input';
-import Button from '../../components/forms/Button';
 import {
   FiUser,
   FiMail,
   FiPhone,
   FiMapPin,
+  FiSave,
+  FiShield,
 } from 'react-icons/fi';
+import { toast } from 'react-toastify';
+import { useAuth } from '../../context/AuthContext';
+import PageHeader from '../../components/common/PageHeader';
+import SectionCard from '../../components/common/SectionCard';
+import StatusBadge from '../../components/common/StatusBadge';
+import Input from '../../components/forms/Input';
+import Button from '../../components/forms/Button';
 
 const Profile = () => {
   const { user, updateProfile } = useAuth();
@@ -17,39 +22,54 @@ const Profile = () => {
     name: user?.name || '',
     email: user?.email || '',
     phone: user?.phone || '',
-    address: user?.address || '',
+    address: typeof user?.address === 'string'
+      ? user?.address
+      : user?.address?.street || '',
   });
 
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    await updateProfile(formData);
-    setLoading(false);
+    try {
+      if (updateProfile) {
+        await updateProfile(formData);
+        toast.success('Profile updated successfully');
+      }
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      toast.error('Failed to update profile');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <div>
-      <DashboardHeader
-        title="Profile Settings"
-        subtitle="Manage your personal information"
+    <div className="space-y-6">
+      <PageHeader
+        title="User Profile Settings"
+        subtitle="Manage your identity credentials and contact information"
+        breadcrumbs={[{ label: 'Account' }, { label: 'Profile' }]}
       />
 
-      <div className="max-w-3xl mx-auto">
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-card p-6 border border-gray-200 dark:border-gray-700">
-          <div className="flex items-center space-x-4 mb-6">
-            <div className="w-20 h-20 rounded-full bg-gradient-to-r from-primary-500 to-secondary-500 flex items-center justify-center text-white text-2xl font-bold">
+      <div className="max-w-3xl">
+        <div className="card p-6 md:p-8 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm space-y-6">
+          <div className="flex flex-col sm:flex-row items-center gap-5 pb-6 border-b border-slate-100 dark:border-slate-800">
+            <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-primary-600 to-indigo-700 flex items-center justify-center text-white text-3xl font-bold shadow-md">
               {user?.name?.charAt(0) || 'U'}
             </div>
-            <div>
-              <h3 className="text-lg font-semibold text-gray-800 dark:text-white">
-                {user?.name}
-              </h3>
-              <p className="text-sm text-gray-500 dark:text-gray-400">
-                {user?.role?.toUpperCase()}
+            <div className="text-center sm:text-left">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100">
+                  {user?.name || 'Authorized User'}
+                </h3>
+                <StatusBadge status="active" label={user?.role?.toUpperCase() || 'USER'} />
+              </div>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                Account ID: <strong className="text-slate-700 dark:text-slate-300">{user?._id || user?.id || '—'}</strong>
               </p>
             </div>
           </div>
@@ -84,20 +104,21 @@ const Profile = () => {
             />
 
             <Input
-              label="Address"
+              label="Physical Residential Address"
               name="address"
               value={formData.address}
               onChange={handleChange}
               icon={FiMapPin}
             />
 
-            <div className="flex justify-end pt-4">
+            <div className="flex justify-end pt-4 border-t border-slate-100 dark:border-slate-800">
               <Button
                 type="submit"
                 variant="primary"
+                icon={FiSave}
                 loading={loading}
               >
-                Save Changes
+                Save Profile Changes
               </Button>
             </div>
           </form>

@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
 import {
   FiUser,
   FiMail,
@@ -10,11 +9,9 @@ import {
   FiAward,
   FiEdit2,
   FiSave,
-  FiActivity,
   FiX,
   FiCheckCircle,
   FiAlertCircle,
-  FiBarChart2,
   FiUsers,
   FiHash,
 } from 'react-icons/fi';
@@ -22,8 +19,11 @@ import { toast } from 'react-toastify';
 import Button from '../../components/forms/Button';
 import Input from '../../components/forms/Input';
 import Loader from '../../components/common/Loader';
+import PageHeader from '../../components/common/PageHeader';
+import SectionCard from '../../components/common/SectionCard';
+import StatusBadge from '../../components/common/StatusBadge';
 import api from '../../utils/api';
-import { formatDate, formatDateTime } from '../../utils/helpers';
+import { formatDate } from '../../utils/helpers';
 import { useAuth } from '../../context/AuthContext';
 
 const StudentProfile = () => {
@@ -45,89 +45,52 @@ const StudentProfile = () => {
     motherPhone: '',
   });
   const [errors, setErrors] = useState({});
-  const [profileCompletion, setProfileCompletion] = useState(0);
-  const [missingFields, setMissingFields] = useState([]);
-
-  const recentActivities = [
-    { id: 1, icon: FiUser, action: 'Logged In', time: '2 hours ago', color: 'text-blue-500' },
-    { id: 2, icon: FiEdit2, action: 'Profile Updated', time: '1 day ago', color: 'text-green-500' },
-  ];
 
   useEffect(() => {
     fetchProfile();
   }, []);
 
-  useEffect(() => {
-    if (student) calculateProfileCompletion();
-  }, [student]);
-
   const fetchProfile = async () => {
     try {
+      setLoading(true);
       const response = await api.get('/api/students/profile');
-      const studentData = response.data.student;
-      setStudent(studentData);
-      setFormData({
-        name: studentData.user?.name || '',
-        email: studentData.user?.email || '',
-        phone: studentData.user?.phone || '',
-        address: studentData.user?.address || '',
-        dateOfBirth: studentData.dateOfBirth
-          ? studentData.dateOfBirth.split('T')[0]
-          : '',
-        fatherName: studentData.fatherName || '',
-        fatherPhone: studentData.fatherPhone || '',
-        fatherOccupation: studentData.fatherOccupation || '',
-        motherName: studentData.motherName || '',
-        motherPhone: studentData.motherPhone || '',
-      });
+      const studentData = response.data?.student;
+      if (studentData) {
+        setStudent(studentData);
+        setFormData({
+          name: studentData.user?.name || '',
+          email: studentData.user?.email || '',
+          phone: studentData.user?.phone || '',
+          address: typeof studentData.user?.address === 'string'
+            ? studentData.user?.address
+            : studentData.user?.address?.street || '',
+          dateOfBirth: studentData.dateOfBirth
+            ? studentData.dateOfBirth.split('T')[0]
+            : '',
+          fatherName: studentData.fatherName || '',
+          fatherPhone: studentData.fatherPhone || '',
+          fatherOccupation: studentData.fatherOccupation || '',
+          motherName: studentData.motherName || '',
+          motherPhone: studentData.motherPhone || '',
+        });
+      }
     } catch (error) {
       console.error('Error fetching profile:', error);
-      toast.error('Failed to load profile');
+      toast.error('Failed to load profile details');
     } finally {
       setLoading(false);
     }
   };
 
-  const calculateProfileCompletion = () => {
-    if (!student) return;
-
-    const fields = {
-      name: student.user?.name,
-      email: student.user?.email,
-      phone: student.user?.phone,
-      dateOfBirth: student.dateOfBirth,
-      gender: student.gender,
-      studentId: student.studentId,
-      rollNumber: student.rollNumber,
-      class: student.class?.name,
-      fatherName: student.fatherName,
-      fatherPhone: student.fatherPhone,
-      motherName: student.motherName,
-    };
-
-    const totalFields = Object.keys(fields).length;
-    const filledFields = Object.values(fields).filter(
-      (v) => v && v !== '' && v !== null && v !== undefined
-    ).length;
-    setProfileCompletion(Math.round((filledFields / totalFields) * 100));
-
-    const missing = Object.entries(fields)
-      .filter(
-        ([_, value]) => !value || value === '' || value === null || value === undefined
-      )
-      .map(([key]) => key);
-    setMissingFields(missing);
-  };
-
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
-    setErrors({ ...errors, [name]: '' });
+    setFormData((prev) => ({ ...prev, [name]: value }));
+    setErrors((prev) => ({ ...prev, [name]: '' }));
   };
 
   const validateForm = () => {
     const newErrors = {};
-    if (!formData.phone) newErrors.phone = 'Phone number is required';
+    if (!formData.phone?.trim()) newErrors.phone = 'Phone number is required';
     if (!formData.dateOfBirth) newErrors.dateOfBirth = 'Date of birth is required';
     return newErrors;
   };
@@ -136,26 +99,30 @@ const StudentProfile = () => {
     const validationErrors = validateForm();
     if (Object.keys(validationErrors).length > 0) {
       setErrors(validationErrors);
-      toast.error('Please fix the errors before saving');
+      toast.error('Please complete required fields before saving');
       return;
     }
 
     setSaving(true);
     try {
-      await updateProfile({
-        name: formData.name,
-        phone: formData.phone,
-        address: formData.address,
-      });
+      if (updateProfile) {
+        await updateProfile({
+          name: formData.name,
+          phone: formData.phone,
+          address: formData.address,
+        });
+      }
 
-      await api.put(`/api/students/${student._id}`, {
-        dateOfBirth: formData.dateOfBirth,
-        fatherName: formData.fatherName,
-        fatherPhone: formData.fatherPhone,
-        fatherOccupation: formData.fatherOccupation,
-        motherName: formData.motherName,
-        motherPhone: formData.motherPhone,
-      });
+      if (student?._id) {
+        await api.put(`/api/students/${student._id}`, {
+          dateOfBirth: formData.dateOfBirth,
+          fatherName: formData.fatherName,
+          fatherPhone: formData.fatherPhone,
+          fatherOccupation: formData.fatherOccupation,
+          motherName: formData.motherName,
+          motherPhone: formData.motherPhone,
+        });
+      }
 
       toast.success('Profile updated successfully');
       setEditMode(false);
@@ -170,155 +137,113 @@ const StudentProfile = () => {
 
   const handleCancel = () => {
     setEditMode(false);
-    setFormData({
-      name: student.user?.name || '',
-      email: student.user?.email || '',
-      phone: student.user?.phone || '',
-      address: student.user?.address || '',
-      dateOfBirth: student.dateOfBirth ? student.dateOfBirth.split('T')[0] : '',
-      fatherName: student.fatherName || '',
-      fatherPhone: student.fatherPhone || '',
-      fatherOccupation: student.fatherOccupation || '',
-      motherName: student.motherName || '',
-      motherPhone: student.motherPhone || '',
-    });
+    if (student) {
+      setFormData({
+        name: student.user?.name || '',
+        email: student.user?.email || '',
+        phone: student.user?.phone || '',
+        address: typeof student.user?.address === 'string'
+          ? student.user?.address
+          : student.user?.address?.street || '',
+        dateOfBirth: student.dateOfBirth ? student.dateOfBirth.split('T')[0] : '',
+        fatherName: student.fatherName || '',
+        fatherPhone: student.fatherPhone || '',
+        fatherOccupation: student.fatherOccupation || '',
+        motherName: student.motherName || '',
+        motherPhone: student.motherPhone || '',
+      });
+    }
     setErrors({});
   };
 
   if (loading) return <Loader />;
 
   return (
-    <div>
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-800 dark:text-white">
-            Student Profile
-          </h1>
-          <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400 mt-1">
-            <span>Dashboard</span>
-            <span>/</span>
-            <span>Student</span>
-            <span>/</span>
-            <span className="text-primary-600 dark:text-primary-400">Profile</span>
-          </div>
-        </div>
-        <div className="flex items-center gap-3 mt-4 md:mt-0">
-          <span className="px-3 py-1.5 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded-full text-sm font-medium flex items-center gap-1.5">
-            <FiCheckCircle className="text-xs" /> Active
-          </span>
-          <span className="text-sm text-gray-500 dark:text-gray-400">
-            Last Updated: {formatDateTime(new Date())}
-          </span>
-        </div>
-      </div>
+    <div className="space-y-6">
+      <PageHeader
+        title="Student Profile"
+        subtitle="View and manage your academic and guardian details"
+        breadcrumbs={[
+          { label: 'Student', href: '/student/dashboard' },
+          { label: 'Profile' },
+        ]}
+        actions={
+          <Button
+            variant={editMode ? 'secondary' : 'primary'}
+            icon={editMode ? FiX : FiEdit2}
+            onClick={() => {
+              if (editMode) handleCancel();
+              else setEditMode(true);
+            }}
+          >
+            {editMode ? 'Cancel Edit' : 'Edit Information'}
+          </Button>
+        }
+      />
 
-      {/* Profile Hero */}
-      <div className="relative mb-8">
-        <div className="absolute inset-0 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 dark:from-blue-800 dark:via-indigo-800 dark:to-purple-800 rounded-2xl opacity-90"></div>
-        <div className="relative p-6 md:p-8 text-white flex flex-col md:flex-row items-center md:items-start gap-6">
-          <div className="relative flex-shrink-0">
-            <div className="w-32 h-32 rounded-full border-4 border-white/30 shadow-xl overflow-hidden bg-gradient-to-br from-blue-400 to-purple-400 flex items-center justify-center text-6xl font-bold">
-              {student?.user?.name?.charAt(0) || 'S'}
-            </div>
+      {/* Hero Header Card */}
+      <div className="card p-6 md:p-8 bg-gradient-to-r from-navy-950 via-navy-900 to-indigo-950 text-white rounded-2xl border border-navy-800 shadow-xl">
+        <div className="flex flex-col md:flex-row items-center md:items-start gap-6">
+          <div className="w-24 h-24 rounded-2xl bg-primary-600/30 border-2 border-primary-500/40 flex items-center justify-center text-4xl font-bold text-primary-300 shadow-inner">
+            {student?.user?.name?.charAt(0) || 'S'}
           </div>
 
           <div className="flex-1 text-center md:text-left">
-            <h2 className="text-2xl md:text-3xl font-bold">
-              {student?.user?.name}
-            </h2>
-            <div className="flex flex-wrap items-center justify-center md:justify-start gap-2 mt-2">
-              <span className="px-3 py-1 bg-white/20 backdrop-blur-sm rounded-full text-sm flex items-center gap-1.5">
-                <FiHash className="text-xs" /> {student?.studentId}
-              </span>
-              <span className="px-3 py-1 bg-white/20 backdrop-blur-sm rounded-full text-sm flex items-center gap-1.5">
-                <FiBook className="text-xs" /> {student?.class?.name || 'No Class'}
-              </span>
-              <span className="px-3 py-1 bg-white/20 backdrop-blur-sm rounded-full text-sm">
-                Section {student?.section || 'A'}
-              </span>
+            <div className="flex flex-col md:flex-row md:items-center gap-2">
+              <h2 className="text-2xl md:text-3xl font-bold tracking-tight">
+                {student?.user?.name || user?.name}
+              </h2>
+              <StatusBadge status="active" label="Enrolled Student" className="self-center md:self-auto" />
             </div>
-            <div className="flex flex-wrap items-center justify-center md:justify-start gap-4 mt-3 text-sm text-white/80">
-              <span>Roll: {student?.rollNumber}</span>
-              <span>GPA: 3.8</span>
-              <span>Session: 2026-2027</span>
-            </div>
-          </div>
 
-          <div className="flex flex-col gap-2 flex-shrink-0">
-            <button
-              onClick={() => setEditMode(!editMode)}
-              className="px-4 py-2 bg-white/20 backdrop-blur-sm hover:bg-white/30 rounded-lg text-white flex items-center gap-2 transition-all"
-            >
-              <FiEdit2 /> {editMode ? 'Cancel Edit' : 'Edit Profile'}
-            </button>
+            <div className="flex flex-wrap items-center justify-center md:justify-start gap-3 mt-3 text-sm text-slate-300">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-white/10">
+                <FiHash className="text-xs text-primary-400" />
+                <span>ID: {student?.studentId || '—'}</span>
+              </span>
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-white/10">
+                <FiBook className="text-xs text-primary-400" />
+                <span>Class: {student?.class?.name || 'Assigned'}</span>
+              </span>
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-white/10">
+                <span>Roll: {student?.rollNumber || '—'}</span>
+              </span>
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-white/10">
+                <span>Section: {student?.section || 'A'}</span>
+              </span>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Quick Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 mb-8">
-        <div className="bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl p-4 text-white shadow-lg">
-          <p className="text-2xl font-bold">92%</p>
-          <p className="text-xs opacity-80">Attendance</p>
-        </div>
-        <div className="bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl p-4 text-white shadow-lg">
-          <p className="text-2xl font-bold">3.8</p>
-          <p className="text-xs opacity-80">GPA</p>
-        </div>
-        <div className="bg-gradient-to-br from-purple-500 to-pink-600 rounded-xl p-4 text-white shadow-lg">
-          <p className="text-2xl font-bold">8</p>
-          <p className="text-xs opacity-80">Subjects</p>
-        </div>
-        <div className="bg-gradient-to-br from-yellow-500 to-orange-600 rounded-xl p-4 text-white shadow-lg">
-          <p className="text-2xl font-bold">✓</p>
-          <p className="text-xs opacity-80">Fee Status</p>
-        </div>
-        <div className="bg-gradient-to-br from-red-500 to-rose-600 rounded-xl p-4 text-white shadow-lg">
-          <p className="text-2xl font-bold">3</p>
-          <p className="text-xs opacity-80">Assignments</p>
-        </div>
-        <div className="bg-gradient-to-br from-cyan-500 to-blue-600 rounded-xl p-4 text-white shadow-lg">
-          <p className="text-2xl font-bold">5</p>
-          <p className="text-xs opacity-80">Notifications</p>
-        </div>
-      </div>
-
-      {/* Main Grid */}
+      {/* Main Content Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Left Column: Personal & Academic Data */}
         <div className="lg:col-span-2 space-y-6">
-          {/* Personal Information */}
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
-            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 px-6 py-3 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <FiUser className="text-blue-600" />
-                <h3 className="font-semibold text-gray-800 dark:text-white">
-                  Personal Information
-                </h3>
-              </div>
-              {editMode && (
-                <span className="text-xs text-blue-600">Editing enabled</span>
-              )}
-            </div>
-            <div className="p-6">
-              {editMode ? (
-                <div className="space-y-4">
-                  <Input
-                    label="Full Name"
-                    name="name"
-                    value={formData.name}
-                    onChange={handleChange}
-                    icon={FiUser}
-                    disabled
-                  />
-                  <Input
-                    label="Email"
-                    name="email"
-                    type="email"
-                    value={formData.email}
-                    onChange={handleChange}
-                    icon={FiMail}
-                    disabled
-                  />
+          <SectionCard
+            title="Personal Information"
+            subtitle="Contact and basic demographic details"
+          >
+            {editMode ? (
+              <div className="space-y-4">
+                <Input
+                  label="Full Name"
+                  name="name"
+                  value={formData.name}
+                  onChange={handleChange}
+                  icon={FiUser}
+                  disabled
+                />
+                <Input
+                  label="Email Address"
+                  name="email"
+                  type="email"
+                  value={formData.email}
+                  onChange={handleChange}
+                  icon={FiMail}
+                  disabled
+                />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <Input
                     label="Phone Number"
                     name="phone"
@@ -339,365 +264,176 @@ const StudentProfile = () => {
                     error={errors.dateOfBirth}
                     required
                   />
-                  <Input
-                    label="Address"
-                    name="address"
-                    value={formData.address}
-                    onChange={handleChange}
-                    icon={FiMapPin}
-                  />
-
-                  {/* Parent Fields */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-gray-200 dark:border-gray-700">
-                    <div className="col-span-2">
-                      <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                        Parent Information
-                      </h4>
-                    </div>
-                    <Input
-                      label="Father Name"
-                      name="fatherName"
-                      value={formData.fatherName}
-                      onChange={handleChange}
-                      placeholder="Enter father's name"
-                    />
-                    <Input
-                      label="Father Phone"
-                      name="fatherPhone"
-                      value={formData.fatherPhone}
-                      onChange={handleChange}
-                      icon={FiPhone}
-                      placeholder="Enter father's phone"
-                    />
-                    <Input
-                      label="Father Occupation"
-                      name="fatherOccupation"
-                      value={formData.fatherOccupation}
-                      onChange={handleChange}
-                      placeholder="Enter occupation"
-                    />
-                    <Input
-                      label="Mother Name"
-                      name="motherName"
-                      value={formData.motherName}
-                      onChange={handleChange}
-                      placeholder="Enter mother's name"
-                    />
-                    <Input
-                      label="Mother Phone"
-                      name="motherPhone"
-                      value={formData.motherPhone}
-                      onChange={handleChange}
-                      icon={FiPhone}
-                      placeholder="Enter mother's phone"
-                    />
-                  </div>
-
-                  <div className="flex justify-end gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
-                    <Button variant="secondary" onClick={handleCancel}>
-                      Cancel
-                    </Button>
-                    <Button
-                      variant="primary"
-                      onClick={handleSave}
-                      loading={saving}
-                      icon={FiSave}
-                    >
-                      Save Changes
-                    </Button>
-                  </div>
                 </div>
-              ) : (
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                  <div>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">
-                      Full Name
-                    </p>
-                    <p className="font-medium text-gray-800 dark:text-white">
-                      {student?.user?.name || 'N/A'}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">
-                      Father Name
-                    </p>
-                    <p className="font-medium text-gray-800 dark:text-white">
-                      {student?.fatherName || 'N/A'}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">
-                      Mother Name
-                    </p>
-                    <p className="font-medium text-gray-800 dark:text-white">
-                      {student?.motherName || 'N/A'}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">
-                      Gender
-                    </p>
-                    <p className="font-medium text-gray-800 dark:text-white capitalize">
-                      {student?.gender || 'N/A'}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">
-                      Date of Birth
-                    </p>
-                    <p className="font-medium text-gray-800 dark:text-white">
-                      {formatDate(student?.dateOfBirth)}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">
-                      Phone
-                    </p>
-                    <p className="font-medium text-gray-800 dark:text-white">
-                      {student?.user?.phone || 'N/A'}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">
-                      Email
-                    </p>
-                    <p className="font-medium text-gray-800 dark:text-white">
-                      {student?.user?.email || 'N/A'}
-                    </p>
-                  </div>
-                  <div className="col-span-2">
-                    <p className="text-xs text-gray-500 dark:text-gray-400">
-                      Address
-                    </p>
-                    <p className="font-medium text-gray-800 dark:text-white">
-                      {student?.user?.address
-                        ? typeof student.user.address === 'string'
-                          ? student.user.address
-                          : `${student.user.address.street || ''} ${
-                              student.user.address.city || ''
-                            } ${student.user.address.state || ''}`.trim()
-                        : 'N/A'}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">
-                      Father Phone
-                    </p>
-                    <p className="font-medium text-gray-800 dark:text-white">
-                      {student?.fatherPhone || 'N/A'}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">
-                      Father Occupation
-                    </p>
-                    <p className="font-medium text-gray-800 dark:text-white">
-                      {student?.fatherOccupation || 'N/A'}
-                    </p>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Academic Information */}
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
-            <div className="bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 px-6 py-3 border-b border-gray-200 dark:border-gray-700 flex items-center gap-2">
-              <FiBook className="text-purple-600" />
-              <h3 className="font-semibold text-gray-800 dark:text-white">
-                Academic Information
-              </h3>
-            </div>
-            <div className="p-6">
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                <div>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">
-                    Student ID
-                  </p>
-                  <p className="font-medium text-gray-800 dark:text-white">
-                    {student?.studentId || 'N/A'}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">
-                    Roll Number
-                  </p>
-                  <p className="font-medium text-gray-800 dark:text-white">
-                    {student?.rollNumber || 'N/A'}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">
-                    Class
-                  </p>
-                  <p className="font-medium text-gray-800 dark:text-white">
-                    {student?.class?.name || 'N/A'}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">
-                    Section
-                  </p>
-                  <p className="font-medium text-gray-800 dark:text-white">
-                    {student?.section || 'A'}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">
-                    Admission Date
-                  </p>
-                  <p className="font-medium text-gray-800 dark:text-white">
-                    {formatDate(student?.enrollmentDate)}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">
-                    Academic Session
-                  </p>
-                  <p className="font-medium text-gray-800 dark:text-white">
-                    2026-2027
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Recent Activity */}
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
-            <div className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 px-6 py-3 border-b border-gray-200 dark:border-gray-700 flex items-center gap-2">
-              <FiActivity className="text-green-600" />
-              <h3 className="font-semibold text-gray-800 dark:text-white">
-                Recent Activity
-              </h3>
-            </div>
-            <div className="p-6">
-              <div className="space-y-4">
-                {recentActivities.map((activity, index) => (
-                  <motion.div
-                    key={activity.id}
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: index * 0.1 }}
-                    className="flex items-center gap-4 p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50"
-                  >
-                    <div
-                      className={`p-2 rounded-lg bg-gray-100 dark:bg-gray-700 ${activity.color}`}
-                    >
-                      <activity.icon className="text-lg" />
-                    </div>
-                    <div className="flex-1">
-                      <p className="font-medium text-gray-800 dark:text-white">
-                        {activity.action}
-                      </p>
-                      <p className="text-sm text-gray-500 dark:text-gray-400">
-                        {activity.time}
-                      </p>
-                    </div>
-                  </motion.div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Right Column */}
-        <div className="space-y-6">
-          {/* Profile Completion */}
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
-            <div className="bg-gradient-to-r from-cyan-50 to-blue-50 dark:from-cyan-900/20 dark:to-blue-900/20 px-6 py-3 border-b border-gray-200 dark:border-gray-700 flex items-center gap-2">
-              <FiBarChart2 className="text-cyan-600" />
-              <h3 className="font-semibold text-gray-800 dark:text-white">
-                Profile Completion
-              </h3>
-            </div>
-            <div className="p-6">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-2xl font-bold text-gray-800 dark:text-white">
-                  {profileCompletion}%
-                </span>
-              </div>
-              <div className="w-full h-3 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
-                <motion.div
-                  initial={{ width: 0 }}
-                  animate={{ width: `${profileCompletion}%` }}
-                  transition={{ duration: 1 }}
-                  className="h-full rounded-full bg-gradient-to-r from-blue-500 to-indigo-500"
+                <Input
+                  label="Residential Address"
+                  name="address"
+                  value={formData.address}
+                  onChange={handleChange}
+                  icon={FiMapPin}
                 />
               </div>
-              {missingFields.length > 0 && (
-                <div className="mt-4 p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800">
-                  <p className="text-sm font-medium text-yellow-800 dark:text-yellow-400 flex items-center gap-2">
-                    <FiAlertCircle /> Missing Information
-                  </p>
-                  <ul className="mt-2 space-y-1">
-                    {missingFields.slice(0, 3).map((field, index) => (
-                      <li
-                        key={index}
-                        className="text-sm text-yellow-700 dark:text-yellow-400 flex items-center gap-2"
-                      >
-                        <FiX className="text-xs" />{' '}
-                        {field.replace(/([A-Z])/g, ' $1').trim()}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Parent Information */}
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
-            <div className="bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20 px-6 py-3 border-b border-gray-200 dark:border-gray-700 flex items-center gap-2">
-              <FiUsers className="text-amber-600" />
-              <h3 className="font-semibold text-gray-800 dark:text-white">
-                Parent Information
-              </h3>
-            </div>
-            <div className="p-6">
-              <div className="space-y-3">
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5 text-sm">
                 <div>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">
-                    Father Name
-                  </p>
-                  <p className="font-medium text-gray-800 dark:text-white">
-                    {student?.fatherName || 'N/A'}
+                  <span className="text-xs font-semibold text-slate-500 uppercase">Full Name</span>
+                  <p className="font-medium text-slate-900 dark:text-slate-100 mt-1">
+                    {student?.user?.name || '—'}
                   </p>
                 </div>
                 <div>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">
-                    Father Occupation
-                  </p>
-                  <p className="font-medium text-gray-800 dark:text-white">
-                    {student?.fatherOccupation || 'N/A'}
+                  <span className="text-xs font-semibold text-slate-500 uppercase">Email</span>
+                  <p className="font-medium text-slate-900 dark:text-slate-100 mt-1">
+                    {student?.user?.email || '—'}
                   </p>
                 </div>
                 <div>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">
-                    Father Phone
-                  </p>
-                  <p className="font-medium text-gray-800 dark:text-white">
-                    {student?.fatherPhone || 'N/A'}
-                  </p>
-                </div>
-                <div className="pt-3 border-t border-gray-200 dark:border-gray-700">
-                  <p className="text-xs text-gray-500 dark:text-gray-400">
-                    Mother Name
-                  </p>
-                  <p className="font-medium text-gray-800 dark:text-white">
-                    {student?.motherName || 'N/A'}
+                  <span className="text-xs font-semibold text-slate-500 uppercase">Phone</span>
+                  <p className="font-medium text-slate-900 dark:text-slate-100 mt-1">
+                    {student?.user?.phone || '—'}
                   </p>
                 </div>
                 <div>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">
-                    Mother Phone
+                  <span className="text-xs font-semibold text-slate-500 uppercase">Date of Birth</span>
+                  <p className="font-medium text-slate-900 dark:text-slate-100 mt-1">
+                    {student?.dateOfBirth ? formatDate(student.dateOfBirth) : '—'}
                   </p>
-                  <p className="font-medium text-gray-800 dark:text-white">
-                    {student?.motherPhone || 'N/A'}
+                </div>
+                <div className="md:col-span-2">
+                  <span className="text-xs font-semibold text-slate-500 uppercase">Address</span>
+                  <p className="font-medium text-slate-900 dark:text-slate-100 mt-1">
+                    {typeof student?.user?.address === 'string'
+                      ? student?.user?.address
+                      : student?.user?.address?.street || 'Not specified'}
                   </p>
                 </div>
               </div>
+            )}
+          </SectionCard>
+
+          <SectionCard
+            title="Guardian / Parent Information"
+            subtitle="Emergency contact and family details"
+          >
+            {editMode ? (
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <Input
+                    label="Father's Name"
+                    name="fatherName"
+                    value={formData.fatherName}
+                    onChange={handleChange}
+                  />
+                  <Input
+                    label="Father's Phone"
+                    name="fatherPhone"
+                    type="tel"
+                    value={formData.fatherPhone}
+                    onChange={handleChange}
+                  />
+                  <Input
+                    label="Occupation"
+                    name="fatherOccupation"
+                    value={formData.fatherOccupation}
+                    onChange={handleChange}
+                  />
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <Input
+                    label="Mother's Name"
+                    name="motherName"
+                    value={formData.motherName}
+                    onChange={handleChange}
+                  />
+                  <Input
+                    label="Mother's Phone"
+                    name="motherPhone"
+                    type="tel"
+                    value={formData.motherPhone}
+                    onChange={handleChange}
+                  />
+                </div>
+                <div className="flex justify-end gap-3 pt-4 border-t border-slate-200 dark:border-slate-800">
+                  <Button variant="secondary" onClick={handleCancel}>
+                    Cancel
+                  </Button>
+                  <Button
+                    variant="primary"
+                    icon={FiSave}
+                    loading={saving}
+                    onClick={handleSave}
+                  >
+                    Save Changes
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5 text-sm">
+                <div>
+                  <span className="text-xs font-semibold text-slate-500 uppercase">Father's Name</span>
+                  <p className="font-medium text-slate-900 dark:text-slate-100 mt-1">
+                    {student?.fatherName || '—'}
+                  </p>
+                </div>
+                <div>
+                  <span className="text-xs font-semibold text-slate-500 uppercase">Father's Phone</span>
+                  <p className="font-medium text-slate-900 dark:text-slate-100 mt-1">
+                    {student?.fatherPhone || '—'}
+                  </p>
+                </div>
+                <div>
+                  <span className="text-xs font-semibold text-slate-500 uppercase">Occupation</span>
+                  <p className="font-medium text-slate-900 dark:text-slate-100 mt-1">
+                    {student?.fatherOccupation || '—'}
+                  </p>
+                </div>
+                <div>
+                  <span className="text-xs font-semibold text-slate-500 uppercase">Mother's Name</span>
+                  <p className="font-medium text-slate-900 dark:text-slate-100 mt-1">
+                    {student?.motherName || '—'}
+                  </p>
+                </div>
+              </div>
+            )}
+          </SectionCard>
+        </div>
+
+        {/* Right Column: Academic Summary */}
+        <div className="space-y-6">
+          <SectionCard title="Academic Summary" subtitle="Registration details">
+            <div className="space-y-4 text-sm">
+              <div className="flex justify-between items-center py-2 border-b border-slate-100 dark:border-slate-800">
+                <span className="text-slate-500">Student ID</span>
+                <span className="font-semibold text-slate-900 dark:text-slate-100">
+                  {student?.studentId || '—'}
+                </span>
+              </div>
+              <div className="flex justify-between items-center py-2 border-b border-slate-100 dark:border-slate-800">
+                <span className="text-slate-500">Class</span>
+                <span className="font-semibold text-slate-900 dark:text-slate-100">
+                  {student?.class?.name || '—'}
+                </span>
+              </div>
+              <div className="flex justify-between items-center py-2 border-b border-slate-100 dark:border-slate-800">
+                <span className="text-slate-500">Roll Number</span>
+                <span className="font-semibold text-slate-900 dark:text-slate-100">
+                  {student?.rollNumber || '—'}
+                </span>
+              </div>
+              <div className="flex justify-between items-center py-2 border-b border-slate-100 dark:border-slate-800">
+                <span className="text-slate-500">Section</span>
+                <span className="font-semibold text-slate-900 dark:text-slate-100">
+                  {student?.section || 'A'}
+                </span>
+              </div>
+              <div className="flex justify-between items-center py-2">
+                <span className="text-slate-500">Enrollment Date</span>
+                <span className="font-semibold text-slate-900 dark:text-slate-100">
+                  {student?.enrollmentDate ? formatDate(student.enrollmentDate) : '—'}
+                </span>
+              </div>
             </div>
-          </div>
+          </SectionCard>
         </div>
       </div>
     </div>

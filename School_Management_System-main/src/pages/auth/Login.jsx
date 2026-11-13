@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { FiMail, FiLock } from 'react-icons/fi';
+import { FiMail, FiLock, FiShield } from 'react-icons/fi';
+import { motion } from 'framer-motion';
 import Input from '../../components/forms/Input';
 import Button from '../../components/forms/Button';
 import { ROLES } from '../../utils/constants';
@@ -13,6 +14,7 @@ const Login = () => {
   });
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
+  const [rememberMe, setRememberMe] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
 
@@ -62,28 +64,48 @@ const Login = () => {
   };
 
   return (
-    <div>
-      <h2 className="text-2xl font-bold text-gray-800 dark:text-white text-center mb-6">
-        Welcome Back
-      </h2>
-      <p className="text-gray-500 dark:text-gray-400 text-center mb-8">
-        Sign in to your account to continue
-      </p>
-
-      {errors.general && (
-        <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg text-red-600 dark:text-red-400 text-sm">
-          {errors.general}
+    <motion.div
+      initial={{ opacity: 0, y: 16 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4, ease: 'easeOut' }}
+      className="w-full"
+    >
+      {/* Header */}
+      <div className="mb-8">
+        <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-indigo-600 mb-4">
+          <FiShield className="text-white text-xl" />
         </div>
+        <h2 className="text-2xl font-bold text-slate-900 dark:text-white">
+          Welcome back
+        </h2>
+        <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+          Sign in to your account to continue
+        </p>
+      </div>
+
+      {/* General Error */}
+      {errors.general && (
+        <motion.div
+          initial={{ opacity: 0, y: -8 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-5 p-3.5 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl text-red-700 dark:text-red-400 text-sm flex items-start gap-2"
+        >
+          <svg className="w-4 h-4 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+            <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+          </svg>
+          {errors.general}
+        </motion.div>
       )}
 
-      <form onSubmit={handleSubmit} className="space-y-4">
+      {/* Form */}
+      <form onSubmit={handleSubmit} className="space-y-5">
         <Input
           label="Email Address"
           name="email"
           type="email"
           value={formData.email}
           onChange={handleChange}
-          placeholder="Enter your email"
+          placeholder="you@school.edu"
           required
           icon={FiMail}
           error={errors.email}
@@ -101,19 +123,20 @@ const Login = () => {
           error={errors.password}
         />
 
-        <div className="flex items-center justify-between">
-          <label className="flex items-center">
+        {/* Remember me + Forgot password */}
+        <div className="flex items-center justify-between pt-1">
+          <label className="flex items-center gap-2 cursor-pointer select-none">
             <input
               type="checkbox"
-              className="rounded border-gray-300 text-primary-600 shadow-sm focus:border-primary-300 focus:ring focus:ring-primary-200 focus:ring-opacity-50"
+              checked={rememberMe}
+              onChange={(e) => setRememberMe(e.target.checked)}
+              className="w-4 h-4 rounded border-slate-300 dark:border-slate-600 text-indigo-600 focus:ring-indigo-500 focus:ring-offset-0 bg-white dark:bg-slate-800"
             />
-            <span className="ml-2 text-sm text-gray-600 dark:text-gray-400">
-              Remember me
-            </span>
+            <span className="text-sm text-slate-600 dark:text-slate-400">Remember me</span>
           </label>
           <Link
             to="/forgot-password"
-            className="text-sm text-primary-600 hover:text-primary-700 dark:text-primary-400"
+            className="text-sm font-medium text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300 transition-colors"
           >
             Forgot password?
           </Link>
@@ -125,21 +148,23 @@ const Login = () => {
           size="lg"
           loading={loading}
           fullWidth
+          className="mt-2"
         >
-          Sign In
+          {loading ? 'Signing in…' : 'Sign In'}
         </Button>
       </form>
 
-      <p className="mt-6 text-center text-sm text-gray-600 dark:text-gray-400">
+      {/* Footer link */}
+      <p className="mt-6 text-center text-sm text-slate-500 dark:text-slate-400">
         Don't have an account?{' '}
         <Link
           to="/register"
-          className="text-primary-600 hover:text-primary-700 dark:text-primary-400 font-medium"
+          className="font-semibold text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300 transition-colors"
         >
-          Sign up
+          Create one
         </Link>
       </p>
-    </div>
+    </motion.div>
   );
 };
 

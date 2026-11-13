@@ -1,6 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { FiTrendingUp, FiTrendingDown } from 'react-icons/fi';
+import { FiTrendingUp, FiTrendingDown, FiMinus } from 'react-icons/fi';
+import { Skeleton } from '../common/Skeleton';
 
 const StatsCard = ({
   title,
@@ -8,67 +9,100 @@ const StatsCard = ({
   icon: Icon,
   trend,
   trendDirection,
+  trendLabel = 'from last period',
   color = 'primary',
   subtitle,
+  loading = false,
+  className = '',
+  onClick,
 }) => {
-  const colorClasses = {
-    primary:
-      'bg-primary-100 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400',
-    secondary:
-      'bg-secondary-100 dark:bg-secondary-900/20 text-secondary-600 dark:text-secondary-400',
-    success:
-      'bg-green-100 dark:bg-green-900/20 text-green-600 dark:text-green-400',
-    warning:
-      'bg-yellow-100 dark:bg-yellow-900/20 text-yellow-600 dark:text-yellow-400',
-    danger: 'bg-red-100 dark:bg-red-900/20 text-red-600 dark:text-red-400',
-    info: 'bg-blue-100 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400',
+  const colorVariants = {
+    primary: {
+      bg: 'bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 border-indigo-100 dark:border-indigo-900/50',
+    },
+    secondary: {
+      bg: 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700',
+    },
+    success: {
+      bg: 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border-emerald-100 dark:border-emerald-900/50',
+    },
+    warning: {
+      bg: 'bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 border-amber-100 dark:border-amber-900/50',
+    },
+    danger: {
+      bg: 'bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 border-rose-100 dark:border-rose-900/50',
+    },
+    info: {
+      bg: 'bg-sky-50 dark:bg-sky-950/40 text-sky-600 dark:text-sky-400 border-sky-100 dark:border-sky-900/50',
+    },
   };
+
+  const scheme = colorVariants[color] || colorVariants.primary;
+
+  if (loading) {
+    return (
+      <div className={`card p-5 ${className}`}>
+        <div className="flex items-start justify-between">
+          <div className="space-y-2 flex-1">
+            <Skeleton className="h-3.5 w-24" />
+            <Skeleton className="h-7 w-28" />
+          </div>
+          <Skeleton variant="circular" className="w-10 h-10" />
+        </div>
+        <div className="mt-3 pt-3 border-t border-slate-100 dark:border-slate-800">
+          <Skeleton className="h-3 w-32" />
+        </div>
+      </div>
+    );
+  }
+
+  const displayValue = value !== undefined && value !== null && value !== '' ? value : '—';
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3 }}
-      whileHover={{ y: -4 }}
-      className="bg-white dark:bg-gray-800 rounded-xl shadow-card hover:shadow-card-hover transition-all duration-200 p-6 border border-gray-100 dark:border-gray-700"
+      whileHover={onClick ? { y: -2 } : undefined}
+      onClick={onClick}
+      className={`card p-5 ${onClick ? 'cursor-pointer hover:border-indigo-300 dark:hover:border-indigo-700' : ''} ${className}`}
     >
-      <div className="flex items-start justify-between">
+      <div className="flex items-start justify-between gap-3">
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-medium text-gray-500 dark:text-gray-400 truncate">
+          <p className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 truncate">
             {title}
           </p>
-          <h3 className="text-2xl md:text-3xl font-bold text-gray-800 dark:text-white mt-1">
-            {value}
-          </h3>
+          <div className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-slate-100 mt-1 truncate">
+            {displayValue}
+          </div>
           {subtitle && (
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 truncate">
               {subtitle}
             </p>
           )}
         </div>
         {Icon && (
-          <div className={`p-3 rounded-lg flex-shrink-0 ${colorClasses[color]}`}>
-            <Icon className="text-xl" />
+          <div className={`p-2.5 rounded-xl border flex-shrink-0 ${scheme.bg}`}>
+            <Icon className="text-xl" aria-hidden="true" />
           </div>
         )}
       </div>
 
       {trend !== undefined && trend !== null && (
-        <div className="flex items-center mt-4">
+        <div className="flex items-center gap-1.5 mt-3 pt-3 border-t border-slate-100 dark:border-slate-800/80 text-xs">
           <span
-            className={`text-sm font-medium flex items-center ${
-              trendDirection === 'up' ? 'text-green-600' : 'text-red-600'
+            className={`font-semibold inline-flex items-center ${
+              trendDirection === 'up'
+                ? 'text-emerald-600 dark:text-emerald-400'
+                : trendDirection === 'down'
+                ? 'text-rose-600 dark:text-rose-400'
+                : 'text-slate-500 dark:text-slate-400'
             }`}
           >
-            {trendDirection === 'up' ? (
-              <FiTrendingUp className="mr-1" />
-            ) : (
-              <FiTrendingDown className="mr-1" />
-            )}
-            {trend}%
+            {trendDirection === 'up' && <FiTrendingUp className="mr-0.5" />}
+            {trendDirection === 'down' && <FiTrendingDown className="mr-0.5" />}
+            {trendDirection === 'neutral' && <FiMinus className="mr-0.5" />}
+            {Math.abs(trend)}%
           </span>
-          <span className="text-sm text-gray-500 dark:text-gray-400 ml-2">
-            from last month
+          <span className="text-slate-400 dark:text-slate-500 truncate">
+            {trendLabel}
           </span>
         </div>
       )}

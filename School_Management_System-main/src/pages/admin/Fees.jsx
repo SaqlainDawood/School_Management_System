@@ -1,16 +1,18 @@
 // frontend/src/pages/admin/Fees.jsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   FiPlus,
-  FiEdit2,
   FiTrash2,
   FiDollarSign,
   FiClock,
   FiEye,
   FiDownload,
+  FiTrendingUp,
+  FiAlertCircle,
+  FiCheckCircle,
 } from 'react-icons/fi';
 import { toast } from 'react-toastify';
-import DashboardHeader from '../../components/dashboard/DashboardHeader';
+import PageHeader from '../../components/common/PageHeader';
 import Button from '../../components/forms/Button';
 import Input from '../../components/forms/Input';
 import Select from '../../components/forms/Select';
@@ -18,11 +20,13 @@ import Modal from '../../components/modals/Modal';
 import VoucherModal from '../../components/modals/VoucherModal';
 import AddFeeModal from '../../components/modals/AddFeeModal';
 import Loader from '../../components/common/Loader';
+import EmptyState from '../../components/common/EmptyState';
+import StatusBadge from '../../components/common/StatusBadge';
+import ConfirmDialog from '../../components/common/ConfirmDialog';
 import api from '../../utils/api';
 import {
   formatDate,
   formatCurrency,
-  getStatusColor,
   getStatusLabel,
 } from '../../utils/helpers';
 
@@ -34,10 +38,12 @@ const Fees = () => {
   const [showVoucherModal, setShowVoucherModal] = useState(false);
   const [showPayModal, setShowPayModal] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
-  const [editingFee, setEditingFee] = useState(null);
   const [selectedFee, setSelectedFee] = useState(null);
   const [selectedVoucherFee, setSelectedVoucherFee] = useState(null);
   const [filters, setFilters] = useState({ status: '', feeType: '' });
+  const [deleteTargetId, setDeleteTargetId] = useState(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+
   const [paymentData, setPaymentData] = useState({
     amount: '',
     paymentMethod: 'cash',
@@ -55,8 +61,8 @@ const Fees = () => {
     try {
       const response = await api.get('/api/fees', { params: filters });
       setFees(response.data.fees || []);
-    } catch (error) {
-      console.error('Error fetching fees:', error);
+    } catch (err) {
+      console.error('Error fetching fees:', err);
       toast.error('Failed to fetch fees');
     } finally {
       setLoading(false);
@@ -69,13 +75,12 @@ const Fees = () => {
         params: { limit: 100 },
       });
       setStudents(response.data.students || []);
-    } catch (error) {
-      console.error('Error fetching students:', error);
+    } catch (err) {
+      console.error('Error fetching students:', err);
     }
   };
 
   const handleAddFee = () => {
-    setEditingFee(null);
     setShowAddModal(true);
   };
 
@@ -96,9 +101,9 @@ const Fees = () => {
       document.body.appendChild(link);
       link.click();
       link.remove();
-      toast.success('PDF downloaded successfully');
-    } catch (error) {
-      console.error('Error downloading PDF:', error);
+      toast.success('Fee voucher PDF downloaded');
+    } catch (err) {
+      console.error('Error downloading PDF:', err);
       toast.error('Failed to download PDF');
     }
   };
@@ -122,18 +127,18 @@ const Fees = () => {
     setFormLoading(true);
     try {
       await api.post('/api/fees', data);
-      toast.success('Fee created successfully');
+      toast.success('Fee voucher issued successfully');
       setShowAddModal(false);
       fetchFees();
-    } catch (error) {
-      console.error('❌ Error saving fee:', error);
-      if (error.response?.data?.errors) {
-        const errorMessages = error.response.data.errors
+    } catch (err) {
+      console.error('Error saving fee:', err);
+      if (err.response?.data?.errors) {
+        const errorMessages = err.response.data.errors
           .map((e) => e.message)
           .join(', ');
         toast.error(`Validation failed: ${errorMessages}`);
       } else {
-        toast.error(error.response?.data?.message || 'Failed to save fee');
+        toast.error(err.response?.data?.message || 'Failed to save fee');
       }
     } finally {
       setFormLoading(false);
@@ -158,199 +163,293 @@ const Fees = () => {
       toast.success('Payment recorded successfully');
       setShowPayModal(false);
       fetchFees();
-    } catch (error) {
-      console.error('Error processing payment:', error);
-      toast.error(error.response?.data?.message || 'Failed to process payment');
+    } catch (err) {
+      console.error('Error processing payment:', err);
+      toast.error(err.response?.data?.message || 'Failed to process payment');
     } finally {
       setFormLoading(false);
     }
   };
 
-  const handleDelete = async (id) => {
-    if (window.confirm('Are you sure you want to delete this fee record?')) {
-      try {
-        await api.delete(`/api/fees/${id}`);
-        toast.success('Fee record deleted successfully');
-        fetchFees();
-      } catch (error) {
-        console.error('Error deleting fee:', error);
-        toast.error('Failed to delete fee');
-      }
+  const handleDeleteConfirm = async () => {
+    if (!deleteTargetId) return;
+    setDeleteLoading(true);
+    try {
+      await api.delete(`/api/fees/${deleteTargetId}`);
+      toast.success('Fee record deleted');
+      setDeleteTargetId(null);
+      fetchFees();
+    } catch (err) {
+      console.error('Error deleting fee:', err);
+      toast.error('Failed to delete fee');
+    } finally {
+      setDeleteLoading(false);
     }
   };
 
-  const getStatusBadge = (status) => {
-    const color = getStatusColor(status);
-    const label = getStatusLabel(status);
-    return <span className={`badge badge-${color}`}>{label}</span>;
+  // Derive genuine KPIs strictly from live fees state
+  const metrics = useMemo(() => {
+    let totalInvoiced = 0;
+    let totalCollected = 0;
+    let totalPending = 0;
+
+    fees.forEach((f) => {
+      const amt = Number(f.amount) || 0;
+      const rem = Number(f.remainingAmount) || 0;
+      totalInvoiced += amt;
+      if (f.status === 'paid') {
+        totalCollected += amt;
+      } else if (f.status === 'partial') {
+        totalCollected += (amt - rem);
+        totalPending += rem;
+      } else {
+        totalPending += amt;
+      }
+    });
+
+    return { totalInvoiced, totalCollected, totalPending };
+  }, [fees]);
+
+  const getStatusVariant = (status) => {
+    switch (status) {
+      case 'paid': return 'success';
+      case 'partial': return 'info';
+      case 'pending': return 'warning';
+      case 'overdue': return 'danger';
+      default: return 'neutral';
+    }
   };
 
   if (loading && fees.length === 0) return <Loader />;
 
   return (
-    <div>
-      <DashboardHeader
-        title="Fee Management"
-        subtitle="Manage student fees"
+    <div className="space-y-6">
+      <PageHeader
+        title="Fee & Financial Operations"
+        subtitle="Manage student fee structures, invoice generation, voucher receipts, and collections"
+        breadcrumbs={[
+          { label: 'Dashboard', path: '/admin/dashboard' },
+          { label: 'Fees' },
+        ]}
         actions={
           <Button variant="primary" icon={FiPlus} onClick={handleAddFee}>
-            Add Fee
+            Issue Fee Voucher
           </Button>
         }
       />
 
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-card border border-gray-200 dark:border-gray-700 overflow-hidden">
-        <div className="p-4 border-b border-gray-200 dark:border-gray-700">
-          <div className="flex flex-wrap gap-4">
-            <Select
-              name="status"
-              value={filters.status}
-              onChange={(e) =>
-                setFilters({ ...filters, status: e.target.value })
-              }
-              options={[
-                { value: '', label: 'All Status' },
-                { value: 'paid', label: 'Paid' },
-                { value: 'pending', label: 'Pending' },
-                { value: 'overdue', label: 'Overdue' },
-                { value: 'partial', label: 'Partial' },
-              ]}
-              className="w-48"
-              label="Filter by Status"
-            />
-            <Select
-              name="feeType"
-              value={filters.feeType}
-              onChange={(e) =>
-                setFilters({ ...filters, feeType: e.target.value })
-              }
-              options={[
-                { value: '', label: 'All Types' },
-                { value: 'tuition', label: 'Tuition' },
-                { value: 'transport', label: 'Transport' },
-                { value: 'library', label: 'Library' },
-                { value: 'lab', label: 'Lab' },
-                { value: 'exam', label: 'Exam' },
-                { value: 'admission', label: 'Admission' },
-                { value: 'other', label: 'Other' },
-              ]}
-              className="w-48"
-              label="Filter by Type"
-            />
+      {/* Financial Overview Metrics */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+        <div className="card p-5">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 flex items-center justify-center">
+              <FiDollarSign className="text-xl" />
+            </div>
+            <div>
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">
+                Total Invoiced
+              </span>
+              <p className="text-xl font-extrabold text-slate-900 dark:text-white mt-0.5">
+                {formatCurrency(metrics.totalInvoiced)}
+              </p>
+            </div>
           </div>
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-50 dark:bg-gray-700/50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
-                  Student
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
-                  Fee Type
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
-                  Amount
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
-                  Due Date
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
-                  Status
-                </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-              {fees.length === 0 ? (
-                <tr>
-                  <td
-                    colSpan="6"
-                    className="px-6 py-12 text-center text-gray-500 dark:text-gray-400"
-                  >
-                    <FiDollarSign className="text-4xl text-gray-300 mx-auto mb-3" />
-                    No fees found
-                  </td>
-                </tr>
-              ) : (
-                fees.map((fee) => (
-                  <tr
-                    key={fee._id}
-                    className="hover:bg-gray-50 dark:hover:bg-gray-700/50"
-                  >
-                    <td className="px-6 py-4">
-                      <p className="font-medium text-gray-800 dark:text-white">
-                        {fee.student?.user?.name || 'Unknown'}
-                      </p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">
-                        {fee.student?.rollNumber || 'N/A'}
-                      </p>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className="capitalize text-sm text-gray-700 dark:text-gray-300">
-                        {fee.feeType}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                        {formatCurrency(fee.amount)}
-                      </div>
-                      {fee.remainingAmount > 0 && (
-                        <div className="text-xs text-gray-500 dark:text-gray-400">
-                          Remaining: {formatCurrency(fee.remainingAmount)}
-                        </div>
-                      )}
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-1 text-sm text-gray-700 dark:text-gray-300">
-                        <FiClock className="text-gray-400" />
-                        {formatDate(fee.dueDate)}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">{getStatusBadge(fee.status)}</td>
-                    <td className="px-6 py-4 text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        <button
-                          onClick={() => handleViewVoucher(fee)}
-                          className="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors text-blue-600"
-                          title="View Voucher"
-                        >
-                          <FiEye className="text-sm" />
-                        </button>
-                        <button
-                          onClick={() => handleDownloadPDF(fee)}
-                          className="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors text-indigo-600"
-                          title="Download PDF"
-                        >
-                          <FiDownload className="text-sm" />
-                        </button>
-                        {fee.status !== 'paid' && (
-                          <button
-                            onClick={() => handlePayFee(fee)}
-                            className="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors text-green-600"
-                            title="Pay Fee"
-                          >
-                            <FiDollarSign className="text-sm" />
-                          </button>
-                        )}
-                        <button
-                          onClick={() => handleDelete(fee._id)}
-                          className="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors text-red-600"
-                          title="Delete"
-                        >
-                          <FiTrash2 className="text-sm" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+        <div className="card p-5">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
+              <FiCheckCircle className="text-xl" />
+            </div>
+            <div>
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
+                Total Realized
+              </span>
+              <p className="text-xl font-extrabold text-emerald-700 dark:text-emerald-300 mt-0.5">
+                {formatCurrency(metrics.totalCollected)}
+              </p>
+            </div>
+          </div>
         </div>
+
+        <div className="card p-5">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 flex items-center justify-center">
+              <FiAlertCircle className="text-xl" />
+            </div>
+            <div>
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-amber-600 dark:text-amber-400">
+                Outstanding Balance
+              </span>
+              <p className="text-xl font-extrabold text-amber-700 dark:text-amber-300 mt-0.5">
+                {formatCurrency(metrics.totalPending)}
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="card overflow-hidden">
+        {/* Filter Controls */}
+        <div className="p-4 sm:p-5 border-b border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30 flex flex-wrap gap-3">
+          <div className="w-48">
+            <select
+              value={filters.status}
+              onChange={(e) => setFilters({ ...filters, status: e.target.value })}
+              className="select-field text-xs py-2 w-full"
+            >
+              <option value="">All Payment Statuses</option>
+              <option value="paid">Paid</option>
+              <option value="pending">Pending</option>
+              <option value="overdue">Overdue</option>
+              <option value="partial">Partial</option>
+            </select>
+          </div>
+
+          <div className="w-48">
+            <select
+              value={filters.feeType}
+              onChange={(e) => setFilters({ ...filters, feeType: e.target.value })}
+              className="select-field text-xs py-2 w-full"
+            >
+              <option value="">All Fee Types</option>
+              <option value="tuition">Tuition Fee</option>
+              <option value="transport">Transport Fee</option>
+              <option value="library">Library Fee</option>
+              <option value="lab">Laboratory Fee</option>
+              <option value="exam">Examination Fee</option>
+              <option value="admission">Admission Fee</option>
+              <option value="other">Miscellaneous</option>
+            </select>
+          </div>
+
+          {(filters.status || filters.feeType) && (
+            <button
+              onClick={() => setFilters({ status: '', feeType: '' })}
+              className="text-xs text-indigo-600 dark:text-indigo-400 hover:underline self-center font-medium"
+            >
+              Clear filters
+            </button>
+          )}
+        </div>
+
+        {/* Fees Ledger Table */}
+        {fees.length === 0 ? (
+          <div className="p-8">
+            <EmptyState
+              icon={FiDollarSign}
+              title="No fee records located"
+              description="No fee vouchers match your filter criteria or have been issued yet."
+              actionLabel="Issue Fee Voucher"
+              onAction={handleAddFee}
+            />
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-800/50 text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
+                  <th className="px-5 py-3">Student Name</th>
+                  <th className="px-4 py-3">Fee Type</th>
+                  <th className="px-4 py-3">Amount Invoiced</th>
+                  <th className="px-4 py-3">Payment Due</th>
+                  <th className="px-4 py-3">Status</th>
+                  <th className="px-5 py-3 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 text-xs">
+                {fees.map((fee) => {
+                  const initial = fee.student?.user?.name?.charAt(0) || 'S';
+                  return (
+                    <tr
+                      key={fee._id}
+                      className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors"
+                    >
+                      <td className="px-5 py-3.5 whitespace-nowrap">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-full bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 border border-indigo-200/50 flex items-center justify-center font-bold text-xs shadow-sm">
+                            {initial}
+                          </div>
+                          <div>
+                            <p className="font-bold text-slate-900 dark:text-white">
+                              {fee.student?.user?.name || 'Unknown Student'}
+                            </p>
+                            <p className="text-[11px] text-slate-400">
+                              Roll: {fee.student?.rollNumber || '—'}
+                            </p>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3.5 whitespace-nowrap">
+                        <span className="capitalize font-medium text-slate-700 dark:text-slate-300">
+                          {fee.feeType}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3.5 whitespace-nowrap font-mono">
+                        <div className="font-bold text-slate-900 dark:text-white">
+                          {formatCurrency(fee.amount)}
+                        </div>
+                        {fee.remainingAmount > 0 && (
+                          <div className="text-[11px] text-rose-500 font-medium">
+                            Bal: {formatCurrency(fee.remainingAmount)}
+                          </div>
+                        )}
+                      </td>
+                      <td className="px-4 py-3.5 whitespace-nowrap text-slate-600 dark:text-slate-400">
+                        <div className="flex items-center gap-1.5 font-medium">
+                          <FiClock className="text-slate-400 text-xs" />
+                          {formatDate(fee.dueDate)}
+                        </div>
+                      </td>
+                      <td className="px-4 py-3.5 whitespace-nowrap">
+                        <StatusBadge
+                          variant={getStatusVariant(fee.status)}
+                          dot
+                        >
+                          {getStatusLabel(fee.status)}
+                        </StatusBadge>
+                      </td>
+                      <td className="px-5 py-3.5 whitespace-nowrap text-right">
+                        <div className="flex items-center justify-end gap-1.5">
+                          <button
+                            onClick={() => handleViewVoucher(fee)}
+                            className="p-1.5 rounded-lg text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-slate-800 transition-colors"
+                            title="Inspect Voucher"
+                          >
+                            <FiEye className="text-sm" />
+                          </button>
+                          <button
+                            onClick={() => handleDownloadPDF(fee)}
+                            className="p-1.5 rounded-lg text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-slate-800 transition-colors"
+                            title="Download Official PDF"
+                          >
+                            <FiDownload className="text-sm" />
+                          </button>
+                          {fee.status !== 'paid' && (
+                            <button
+                              onClick={() => handlePayFee(fee)}
+                              className="p-1.5 rounded-lg text-emerald-600 hover:bg-emerald-50 dark:hover:bg-slate-800 transition-colors font-semibold flex items-center gap-1"
+                              title="Record Payment"
+                            >
+                              <FiDollarSign className="text-sm" />
+                            </button>
+                          )}
+                          <button
+                            onClick={() => setDeleteTargetId(fee._id)}
+                            className="p-1.5 rounded-lg text-slate-500 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-slate-800 transition-colors"
+                            title="Delete Fee Record"
+                          >
+                            <FiTrash2 className="text-sm" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
 
       {/* Add Fee Modal */}
@@ -375,77 +474,90 @@ const Fees = () => {
       <Modal
         isOpen={showPayModal}
         onClose={() => setShowPayModal(false)}
-        title="Record Payment"
+        title="Record Fee Payment Receipt"
         size="md"
       >
         <form onSubmit={handlePaymentSubmit} className="space-y-4">
-          <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 mb-4">
-            <p className="text-sm text-gray-600 dark:text-gray-300">
-              <strong>Student:</strong>{' '}
+          <div className="bg-slate-50 dark:bg-slate-800/60 rounded-xl p-4 border border-slate-100 dark:border-slate-800 space-y-1.5 text-xs">
+            <p className="text-slate-600 dark:text-slate-400">
+              <span className="font-semibold text-slate-900 dark:text-white">Student:</span>{' '}
               {selectedFee?.student?.user?.name || 'Unknown'}
             </p>
-            <p className="text-sm text-gray-600 dark:text-gray-300">
-              <strong>Total Amount:</strong> {formatCurrency(selectedFee?.amount)}
+            <p className="text-slate-600 dark:text-slate-400">
+              <span className="font-semibold text-slate-900 dark:text-white">Total Amount:</span>{' '}
+              {formatCurrency(selectedFee?.amount)}
             </p>
-            <p className="text-sm text-gray-600 dark:text-gray-300">
-              <strong>Remaining:</strong>{' '}
-              {formatCurrency(selectedFee?.remainingAmount)}
+            <p className="text-slate-600 dark:text-slate-400">
+              <span className="font-semibold text-slate-900 dark:text-white">Outstanding Balance:</span>{' '}
+              <span className="text-rose-600 dark:text-rose-400 font-bold font-mono">
+                {formatCurrency(selectedFee?.remainingAmount)}
+              </span>
             </p>
           </div>
 
           <Input
-            label="Payment Amount"
+            label="Payment Amount Received"
             name="amount"
             type="number"
             value={paymentData.amount}
             onChange={handlePaymentChange}
-            placeholder="Enter payment amount"
+            placeholder="e.g. 5000"
             required
             icon={FiDollarSign}
           />
 
           <Select
-            label="Payment Method"
+            label="Payment Channel"
             name="paymentMethod"
             value={paymentData.paymentMethod}
             onChange={handlePaymentChange}
             options={[
-              { value: 'cash', label: 'Cash' },
-              { value: 'bank_transfer', label: 'Bank Transfer' },
-              { value: 'online', label: 'Online' },
-              { value: 'cheque', label: 'Cheque' },
-              { value: 'card', label: 'Card' },
+              { value: 'cash', label: 'Cash Receipt' },
+              { value: 'bank_transfer', label: 'Direct Bank Wire / Deposit' },
+              { value: 'online', label: 'Online Payment Gateway' },
+              { value: 'cheque', label: 'Institutional Cheque' },
+              { value: 'card', label: 'Credit / Debit Card Terminal' },
             ]}
           />
 
           <Input
-            label="Transaction ID (Optional)"
+            label="Transaction Identifier / Slip No. (Optional)"
             name="transactionId"
             value={paymentData.transactionId}
             onChange={handlePaymentChange}
-            placeholder="Enter transaction ID"
+            placeholder="e.g. TXN-892348"
           />
 
-          <div className="flex flex-col-reverse sm:flex-row justify-end gap-3 pt-6 border-t border-gray-200 dark:border-gray-700">
+          <div className="flex justify-end gap-2 pt-4 border-t border-slate-200 dark:border-slate-800">
             <Button
               type="button"
               variant="secondary"
               onClick={() => setShowPayModal(false)}
-              className="w-full sm:w-auto"
             >
               Cancel
             </Button>
             <Button
               type="submit"
-              variant="success"
+              variant="primary"
               loading={formLoading}
-              className="w-full sm:w-auto"
             >
-              Record Payment
+              Confirm Payment Receipt
             </Button>
           </div>
         </form>
       </Modal>
+
+      {/* Confirm Deletion */}
+      <ConfirmDialog
+        isOpen={Boolean(deleteTargetId)}
+        onClose={() => setDeleteTargetId(null)}
+        onConfirm={handleDeleteConfirm}
+        title="Delete Fee Invoice"
+        message="Are you sure you want to delete this fee voucher? Financial ledger records and receipts associated with this voucher will be affected."
+        confirmText="Delete Invoice"
+        confirmVariant="danger"
+        loading={deleteLoading}
+      />
     </div>
   );
 };

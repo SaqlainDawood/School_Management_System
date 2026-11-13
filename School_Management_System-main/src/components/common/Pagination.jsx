@@ -5,14 +5,13 @@ import {
   FiChevronsLeft,
   FiChevronsRight,
 } from 'react-icons/fi';
-import { motion } from 'framer-motion';
 
 const Pagination = ({
-  currentPage,
-  totalPages,
+  currentPage = 1,
+  totalPages = 1,
   onPageChange,
-  itemsPerPage,
-  totalItems,
+  itemsPerPage = 10,
+  totalItems = 0,
   onItemsPerPageChange,
   itemsPerPageOptions = [5, 10, 25, 50, 100],
 }) => {
@@ -43,21 +42,27 @@ const Pagination = ({
     return pages;
   };
 
-  if (totalPages <= 1) return null;
+  if (totalPages <= 1 && totalItems <= itemsPerPage && !onItemsPerPageChange) {
+    return null;
+  }
+
+  const startItem = totalItems === 0 ? 0 : (currentPage - 1) * itemsPerPage + 1;
+  const endItem = Math.min(currentPage * itemsPerPage, totalItems);
 
   return (
-    <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-4 py-3 border-t border-gray-200 dark:border-gray-700">
-      <div className="flex items-center gap-2">
-        <span className="text-sm text-gray-700 dark:text-gray-300">
-          Showing {(currentPage - 1) * itemsPerPage + 1} to{' '}
-          {Math.min(currentPage * itemsPerPage, totalItems)} of {totalItems}{' '}
-          entries
+    <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-4 py-3 border-t border-slate-100 dark:border-slate-800 bg-white dark:bg-[#162033] text-xs sm:text-sm">
+      <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400">
+        <span>
+          Showing <strong className="font-semibold text-slate-700 dark:text-slate-200">{startItem}</strong> to{' '}
+          <strong className="font-semibold text-slate-700 dark:text-slate-200">{endItem}</strong> of{' '}
+          <strong className="font-semibold text-slate-700 dark:text-slate-200">{totalItems}</strong> entries
         </span>
         {onItemsPerPageChange && (
           <select
             value={itemsPerPage}
             onChange={(e) => onItemsPerPageChange(Number(e.target.value))}
-            className="ml-2 px-2 py-1 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-sm"
+            aria-label="Items per page"
+            className="ml-2 px-2 py-1 border border-slate-300 dark:border-slate-700 rounded-md bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs focus:ring-1 focus:ring-indigo-500"
           >
             {itemsPerPageOptions.map((option) => (
               <option key={option} value={option}>
@@ -69,62 +74,64 @@ const Pagination = ({
       </div>
 
       <div className="flex items-center gap-1">
-        <motion.button
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
+        <button
           onClick={() => onPageChange(1)}
           disabled={currentPage === 1}
-          className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          className="p-1.5 rounded-md hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+          aria-label="First page"
+          title="First page"
         >
-          <FiChevronsLeft className="text-gray-600 dark:text-gray-300" />
-        </motion.button>
+          <FiChevronsLeft className="text-sm" />
+        </button>
 
-        <motion.button
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
+        <button
           onClick={() => onPageChange(currentPage - 1)}
           disabled={currentPage === 1}
-          className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          className="p-1.5 rounded-md hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+          aria-label="Previous page"
+          title="Previous page"
         >
-          <FiChevronLeft className="text-gray-600 dark:text-gray-300" />
-        </motion.button>
+          <FiChevronLeft className="text-sm" />
+        </button>
 
-        {getPageNumbers().map((page, index) => (
-          <button
-            key={index}
-            onClick={() => typeof page === 'number' && onPageChange(page)}
-            className={`px-3 py-1 rounded-lg text-sm font-medium transition-colors ${
-              page === currentPage
-                ? 'bg-primary-600 text-white'
-                : page === '...'
-                ? 'cursor-default'
-                : 'hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300'
-            }`}
-            disabled={page === '...'}
-          >
-            {page}
-          </button>
-        ))}
+        <div className="flex items-center gap-1 mx-1">
+          {getPageNumbers().map((page, index) => (
+            <button
+              key={index}
+              onClick={() => typeof page === 'number' && onPageChange(page)}
+              disabled={page === '...'}
+              className={`min-w-[28px] h-7 px-1.5 rounded-md text-xs font-medium transition-colors ${
+                page === currentPage
+                  ? 'bg-indigo-600 text-white font-semibold shadow-sm'
+                  : page === '...'
+                  ? 'text-slate-400 dark:text-slate-500 cursor-default'
+                  : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
+              }`}
+            >
+              {page}
+            </button>
+          ))}
+        </div>
 
-        <motion.button
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
+        <button
           onClick={() => onPageChange(currentPage + 1)}
           disabled={currentPage === totalPages}
-          className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          className="p-1.5 rounded-md hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+          aria-label="Next page"
+          title="Next page"
         >
-          <FiChevronRight className="text-gray-600 dark:text-gray-300" />
-        </motion.button>
+          <FiChevronRight className="text-sm" />
+        </button>
 
-        <motion.button
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
+        <button
           onClick={() => onPageChange(totalPages)}
           disabled={currentPage === totalPages}
-          className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          className="p-1.5 rounded-md hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+          aria-label="Last page"
+          title="Last page"
         >
-          <FiChevronsRight className="text-gray-600 dark:text-gray-300" />
-        </motion.button>
+          <FiChevronsRight className="text-sm" />
+        </button>
       </div>
     </div>
   );

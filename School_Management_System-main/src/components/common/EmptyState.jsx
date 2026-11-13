@@ -1,29 +1,33 @@
 import React from 'react';
 import { motion } from 'framer-motion';
+import { FiInbox } from 'react-icons/fi';
 
 const EmptyState = ({
-  icon: Icon,
-  title = 'No data found',
-  description = '',
+  icon: Icon = FiInbox,
+  title = 'No records found',
+  description = 'There is currently no data available to display here.',
   action,
   className = '',
 }) => {
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
+      initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      className={`text-center py-16 bg-white dark:bg-gray-800 rounded-xl shadow-card border border-gray-200 dark:border-gray-700 ${className}`}
+      transition={{ duration: 0.2 }}
+      className={`card text-center py-12 px-6 flex flex-col items-center justify-center ${className}`}
     >
-      {Icon && (
-        <Icon className="text-5xl text-gray-300 dark:text-gray-600 mx-auto mb-4" />
-      )}
-      <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-300 mb-2">
+      <div className="w-12 h-12 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 flex items-center justify-center mb-3.5">
+        <Icon className="text-2xl" aria-hidden="true" />
+      </div>
+      <h3 className="text-sm sm:text-base font-semibold text-slate-800 dark:text-slate-200 mb-1">
         {title}
       </h3>
       {description && (
-        <p className="text-gray-500 dark:text-gray-400 mb-6">{description}</p>
+        <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 max-w-sm mb-5">
+          {description}
+        </p>
       )}
-      {action && <div className="flex justify-center">{action}</div>}
+      {action && <div>{action}</div>}
     </motion.div>
   );
 };

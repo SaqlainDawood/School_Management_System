@@ -9,12 +9,15 @@ import {
   FiCheckCircle,
 } from 'react-icons/fi';
 import { toast } from 'react-toastify';
-import DashboardHeader from '../../components/dashboard/DashboardHeader';
+import PageHeader from '../../components/common/PageHeader';
 import Button from '../../components/forms/Button';
 import Input from '../../components/forms/Input';
 import Select from '../../components/forms/Select';
 import Modal from '../../components/modals/Modal';
 import Loader from '../../components/common/Loader';
+import EmptyState from '../../components/common/EmptyState';
+import StatusBadge from '../../components/common/StatusBadge';
+import ConfirmDialog from '../../components/common/ConfirmDialog';
 import api from '../../utils/api';
 import { calculateGrade, calculateGPA } from '../../utils/helpers';
 
@@ -31,6 +34,9 @@ const Results = () => {
   const [selectedExam, setSelectedExam] = useState('');
   const [selectedClass, setSelectedClass] = useState('');
   const [filters, setFilters] = useState({ classId: '', examId: '' });
+  const [deleteTargetId, setDeleteTargetId] = useState(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+
   const [formData, setFormData] = useState({
     student: '',
     exam: '',
@@ -54,8 +60,8 @@ const Results = () => {
     try {
       const response = await api.get('/api/results', { params: filters });
       setResults(response.data.results || []);
-    } catch (error) {
-      console.error('Error fetching results:', error);
+    } catch (err) {
+      console.error('Error fetching results:', err);
       toast.error('Failed to fetch results');
     } finally {
       setLoading(false);
@@ -66,8 +72,8 @@ const Results = () => {
     try {
       const response = await api.get('/api/classes');
       setClasses(response.data.classes || []);
-    } catch (error) {
-      console.error('Error fetching classes:', error);
+    } catch (err) {
+      console.error('Error fetching classes:', err);
     }
   };
 
@@ -75,8 +81,8 @@ const Results = () => {
     try {
       const response = await api.get('/api/exams');
       setExams(response.data.exams || []);
-    } catch (error) {
-      console.error('Error fetching exams:', error);
+    } catch (err) {
+      console.error('Error fetching exams:', err);
     }
   };
 
@@ -84,8 +90,8 @@ const Results = () => {
     try {
       const response = await api.get('/api/subjects');
       setSubjects(response.data.subjects || []);
-    } catch (error) {
-      console.error('Error fetching subjects:', error);
+    } catch (err) {
+      console.error('Error fetching subjects:', err);
     }
   };
 
@@ -93,8 +99,8 @@ const Results = () => {
     try {
       const response = await api.get(`/api/classes/${classId}/students`);
       setStudents(response.data.students || []);
-    } catch (error) {
-      console.error('Error fetching students:', error);
+    } catch (err) {
+      console.error('Error fetching students:', err);
     }
   };
 
@@ -223,204 +229,223 @@ const Results = () => {
 
       if (editingResult) {
         await api.put(`/api/results/${editingResult._id}`, submitData);
-        toast.success('Result updated successfully');
+        toast.success('Result ledger updated successfully');
       } else {
         await api.post('/api/results', submitData);
-        toast.success('Result added successfully');
+        toast.success('Gradebook result recorded successfully');
       }
       setShowModal(false);
       fetchResults();
-    } catch (error) {
-      console.error('Error saving result:', error);
-      toast.error(error.response?.data?.message || 'Failed to save result');
+    } catch (err) {
+      console.error('Error saving result:', err);
+      toast.error(err.response?.data?.message || 'Failed to save result');
     } finally {
       setFormLoading(false);
     }
   };
 
-  const handleDelete = async (id) => {
-    if (window.confirm('Are you sure you want to delete this result?')) {
-      try {
-        await api.delete(`/api/results/${id}`);
-        toast.success('Result deleted successfully');
-        fetchResults();
-      } catch (error) {
-        console.error('Error deleting result:', error);
-        toast.error('Failed to delete result');
-      }
+  const handleDeleteConfirm = async () => {
+    if (!deleteTargetId) return;
+    setDeleteLoading(true);
+    try {
+      await api.delete(`/api/results/${deleteTargetId}`);
+      toast.success('Grade entry removed');
+      setDeleteTargetId(null);
+      fetchResults();
+    } catch (err) {
+      console.error('Error deleting result:', err);
+      toast.error('Failed to delete result');
+    } finally {
+      setDeleteLoading(false);
     }
   };
 
-  const getGradeBadge = (grade) => {
-    const colors = {
-      'A+': 'badge-success',
-      A: 'badge-success',
-      'B+': 'badge-info',
-      B: 'badge-info',
-      'C+': 'badge-warning',
-      C: 'badge-warning',
-      D: 'badge-danger',
-      F: 'badge-danger',
-    };
-    return (
-      <span className={`badge ${colors[grade] || 'badge-info'}`}>{grade}</span>
-    );
+  const getGradeVariant = (grade) => {
+    if (!grade) return 'neutral';
+    if (grade.startsWith('A')) return 'success';
+    if (grade.startsWith('B')) return 'info';
+    if (grade.startsWith('C')) return 'warning';
+    return 'danger';
   };
 
   if (loading && results.length === 0) return <Loader />;
 
   return (
-    <div>
-      <DashboardHeader
-        title="Results Management"
-        subtitle="Manage student results"
+    <div className="space-y-6">
+      <PageHeader
+        title="Gradebook & Results"
+        subtitle="Manage academic transcripts, term grades, and student marks registers"
+        breadcrumbs={[
+          { label: 'Dashboard', path: '/admin/dashboard' },
+          { label: 'Results' },
+        ]}
         actions={
           <Button variant="primary" icon={FiPlus} onClick={handleAddResult}>
-            Add Result
+            Enter Marks
           </Button>
         }
       />
 
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-card border border-gray-200 dark:border-gray-700 overflow-hidden">
-        <div className="p-4 border-b border-gray-200 dark:border-gray-700">
-          <div className="flex flex-wrap gap-4">
-            <Select
-              name="class"
+      <div className="card overflow-hidden">
+        {/* Filters */}
+        <div className="p-4 sm:p-5 border-b border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30 flex flex-wrap gap-3">
+          <div className="w-52">
+            <select
               value={filters.classId}
               onChange={(e) => handleFilterChange('classId', e.target.value)}
-              options={[
-                { value: '', label: 'All Classes' },
-                ...classes.map((c) => ({ value: c._id, label: c.name })),
-              ]}
-              className="w-48"
-              label="Filter by Class"
-            />
-            <Select
-              name="exam"
+              className="select-field text-xs py-2 w-full"
+            >
+              <option value="">All Academic Classes</option>
+              {classes.map((c) => (
+                <option key={c._id} value={c._id}>
+                  {c.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="w-56">
+            <select
               value={filters.examId}
               onChange={(e) => handleFilterChange('examId', e.target.value)}
-              options={[
-                { value: '', label: 'All Exams' },
-                ...exams.map((e) => ({ value: e._id, label: e.name })),
-              ]}
-              className="w-48"
-              label="Filter by Exam"
+              className="select-field text-xs py-2 w-full"
+            >
+              <option value="">All Assessments & Exams</option>
+              {exams.map((e) => (
+                <option key={e._id} value={e._id}>
+                  {e.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {(filters.classId || filters.examId) && (
+            <button
+              onClick={() => setFilters({ classId: '', examId: '' })}
+              className="text-xs text-indigo-600 dark:text-indigo-400 hover:underline self-center font-medium"
+            >
+              Clear filters
+            </button>
+          )}
+        </div>
+
+        {/* Results Table */}
+        {results.length === 0 ? (
+          <div className="p-8">
+            <EmptyState
+              icon={FiAward}
+              title="No grades on ledger"
+              description="No marks recorded for the selected assessment and class parameters."
+              actionLabel="Enter Gradebook Record"
+              onAction={handleAddResult}
             />
           </div>
-        </div>
-
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-50 dark:bg-gray-700/50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
-                  Student
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
-                  Exam
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
-                  Marks
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
-                  Grade
-                </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-              {results.length === 0 ? (
-                <tr>
-                  <td
-                    colSpan="5"
-                    className="px-6 py-12 text-center text-gray-500 dark:text-gray-400"
-                  >
-                    <FiAward className="text-4xl text-gray-300 mx-auto mb-3" />
-                    No results found
-                  </td>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-800/50 text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
+                  <th className="px-5 py-3">Student</th>
+                  <th className="px-4 py-3">Assessment</th>
+                  <th className="px-4 py-3">Marks Earned</th>
+                  <th className="px-4 py-3 text-center">Final Grade</th>
+                  <th className="px-5 py-3 text-right">Actions</th>
                 </tr>
-              ) : (
-                results.map((result) => (
-                  <tr
-                    key={result._id}
-                    className="hover:bg-gray-50 dark:hover:bg-gray-700/50"
-                  >
-                    <td className="px-6 py-4">
-                      <p className="font-medium text-gray-800 dark:text-white">
-                        {result.student?.name || 'Unknown'}
-                      </p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">
-                        {result.student?.rollNumber}
-                      </p>
-                    </td>
-                    <td className="px-6 py-4 text-sm text-gray-700 dark:text-gray-300">
-                      {result.exam?.name}
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="text-sm text-gray-700 dark:text-gray-300">
-                        {result.obtainedMarks} / {result.totalMarks}
-                      </div>
-                      <div className="text-xs text-gray-500 dark:text-gray-400">
-                        {result.percentage?.toFixed(2)}%
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      {getGradeBadge(result.grade)}
-                    </td>
-                    <td className="px-6 py-4 text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        <button
-                          onClick={() => handleEditResult(result)}
-                          className="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors text-yellow-600"
-                          title="Edit"
+              </thead>
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 text-xs">
+                {results.map((result) => {
+                  const initial = result.student?.name?.charAt(0) || 'S';
+                  return (
+                    <tr
+                      key={result._id}
+                      className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors"
+                    >
+                      <td className="px-5 py-3.5 whitespace-nowrap">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-full bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 border border-indigo-200/50 flex items-center justify-center font-bold text-xs shadow-sm">
+                            {initial}
+                          </div>
+                          <div>
+                            <p className="font-bold text-slate-900 dark:text-white">
+                              {result.student?.name || 'Unknown Student'}
+                            </p>
+                            <p className="text-[11px] text-slate-400">
+                              Roll: {result.student?.rollNumber || '—'}
+                            </p>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3.5 whitespace-nowrap text-slate-700 dark:text-slate-300 font-medium">
+                        {result.exam?.name || 'Term Exam'}
+                      </td>
+                      <td className="px-4 py-3.5 whitespace-nowrap text-slate-700 dark:text-slate-300">
+                        <div className="font-mono font-semibold">
+                          {result.obtainedMarks} / {result.totalMarks}
+                        </div>
+                        <div className="text-[11px] text-slate-400 font-medium">
+                          {result.percentage != null ? `${result.percentage.toFixed(1)}%` : '—'}
+                        </div>
+                      </td>
+                      <td className="px-4 py-3.5 whitespace-nowrap text-center">
+                        <StatusBadge
+                          variant={getGradeVariant(result.grade)}
                         >
-                          <FiEdit2 className="text-sm" />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(result._id)}
-                          className="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors text-red-600"
-                          title="Delete"
-                        >
-                          <FiTrash2 className="text-sm" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+                          Grade {result.grade || '—'}
+                        </StatusBadge>
+                      </td>
+                      <td className="px-5 py-3.5 whitespace-nowrap text-right">
+                        <div className="flex items-center justify-end gap-1.5">
+                          <button
+                            onClick={() => handleEditResult(result)}
+                            className="p-1.5 rounded-lg text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-slate-800 transition-colors"
+                            title="Edit Marks"
+                          >
+                            <FiEdit2 className="text-sm" />
+                          </button>
+                          <button
+                            onClick={() => setDeleteTargetId(result._id)}
+                            className="p-1.5 rounded-lg text-slate-500 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-slate-800 transition-colors"
+                            title="Delete Record"
+                          >
+                            <FiTrash2 className="text-sm" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
 
-      {/* Add/Edit Result Modal */}
+      {/* Add / Edit Result Modal */}
       <Modal
         isOpen={showModal}
         onClose={() => setShowModal(false)}
-        title={editingResult ? 'Edit Result' : 'Add Result'}
+        title={editingResult ? 'Update Assessment Result' : 'Enter Student Exam Marks'}
         size="xl"
       >
         <form
           onSubmit={handleSubmit}
-          className="space-y-4 max-h-[70vh] overflow-y-auto pr-2"
+          className="space-y-4 max-h-[70vh] overflow-y-auto pr-1"
         >
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Select
-              label="Class"
+              label="Class Cohort"
               name="class"
               value={selectedClass}
               onChange={(e) => handleClassChange(e.target.value)}
               options={[
-                { value: '', label: 'Select Class' },
+                { value: '', label: 'Select Cohort' },
                 ...classes.map((c) => ({ value: c._id, label: c.name })),
               ]}
               required
               error={errors.class}
             />
             <Select
-              label="Exam"
+              label="Assessment / Exam"
               name="exam"
               value={selectedExam}
               onChange={(e) => handleExamChange(e.target.value)}
@@ -434,7 +459,7 @@ const Results = () => {
           </div>
 
           <Select
-            label="Student"
+            label="Candidate Student"
             name="student"
             value={formData.student}
             onChange={(e) =>
@@ -444,7 +469,7 @@ const Results = () => {
               { value: '', label: 'Select Student' },
               ...students.map((s) => ({
                 value: s._id,
-                label: `${s.user?.name || s.name} (${s.rollNumber})`,
+                label: `${s.user?.name || s.name} (Roll: ${s.rollNumber})`,
               })),
             ]}
             required
@@ -453,25 +478,25 @@ const Results = () => {
           />
 
           {selectedExam && marksData.length > 0 && (
-            <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
-              <h4 className="font-semibold text-gray-800 dark:text-white mb-3">
-                Marks Entry
+            <div className="border-t border-slate-200 dark:border-slate-800 pt-4">
+              <h4 className="font-bold text-xs uppercase tracking-wider text-slate-500 mb-3">
+                Subject Marks Ledger
               </h4>
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead className="bg-gray-50 dark:bg-gray-700/50">
+              <div className="overflow-x-auto border border-slate-200 dark:border-slate-800 rounded-xl">
+                <table className="w-full text-xs">
+                  <thead className="bg-slate-50 dark:bg-slate-800/60 border-b border-slate-200 dark:border-slate-800 text-[11px] font-semibold text-slate-500">
                     <tr>
-                      <th className="px-3 py-2 text-left">Subject</th>
-                      <th className="px-3 py-2 text-left">Total Marks</th>
-                      <th className="px-3 py-2 text-left">Obtained</th>
-                      <th className="px-3 py-2 text-left">Grade</th>
+                      <th className="px-3 py-2.5 text-left">Subject</th>
+                      <th className="px-3 py-2.5 text-left">Total Points</th>
+                      <th className="px-3 py-2.5 text-left">Marks Scored</th>
+                      <th className="px-3 py-2.5 text-center">Calculated Grade</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                     {marksData.map((mark, index) => (
                       <tr key={index}>
-                        <td className="px-3 py-2 font-medium">
-                          {mark.subjectName || 'Unknown'}
+                        <td className="px-3 py-2 font-medium text-slate-900 dark:text-white">
+                          {mark.subjectName || 'Unknown Subject'}
                         </td>
                         <td className="px-3 py-2">
                           <input
@@ -484,7 +509,7 @@ const Results = () => {
                                 e.target.value
                               )
                             }
-                            className="input-field w-20 text-sm"
+                            className="input-field text-xs w-24 py-1"
                             min="1"
                             required
                           />
@@ -500,14 +525,18 @@ const Results = () => {
                                 e.target.value
                               )
                             }
-                            className="input-field w-20 text-sm"
+                            className="input-field text-xs w-24 py-1 font-bold text-indigo-600 dark:text-indigo-400"
                             min="0"
                             max={mark.totalMarks}
                             required
                           />
                         </td>
-                        <td className="px-3 py-2">
-                          {getGradeBadge(mark.grade || 'N/A')}
+                        <td className="px-3 py-2 text-center">
+                          <StatusBadge
+                            variant={getGradeVariant(mark.grade)}
+                          >
+                            {mark.grade || '—'}
+                          </StatusBadge>
                         </td>
                       </tr>
                     ))}
@@ -517,12 +546,11 @@ const Results = () => {
             </div>
           )}
 
-          <div className="flex flex-col-reverse sm:flex-row justify-end gap-3 pt-6 border-t border-gray-200 dark:border-gray-700">
+          <div className="flex justify-end gap-2 pt-4 border-t border-slate-200 dark:border-slate-800">
             <Button
               type="button"
               variant="secondary"
               onClick={() => setShowModal(false)}
-              className="w-full sm:w-auto"
             >
               Cancel
             </Button>
@@ -530,13 +558,24 @@ const Results = () => {
               type="submit"
               variant="primary"
               loading={formLoading}
-              className="w-full sm:w-auto"
             >
-              {editingResult ? 'Update Result' : 'Add Result'}
+              {editingResult ? 'Update Ledger' : 'Commit Grades'}
             </Button>
           </div>
         </form>
       </Modal>
+
+      {/* Confirm Deletion */}
+      <ConfirmDialog
+        isOpen={Boolean(deleteTargetId)}
+        onClose={() => setDeleteTargetId(null)}
+        onConfirm={handleDeleteConfirm}
+        title="Revoke Result Ledger Record"
+        message="Are you sure you want to delete this result entry? Academic GPA recalculations may occur."
+        confirmText="Delete Result"
+        confirmVariant="danger"
+        loading={deleteLoading}
+      />
     </div>
   );
 };

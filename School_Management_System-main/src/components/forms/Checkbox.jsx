@@ -10,54 +10,61 @@ const Checkbox = ({
   error,
   disabled,
   className = '',
+  description,
+  ...props
 }) => {
   return (
-    <div className={`mb-4 ${className}`}>
+    <div className={`mb-3 ${className}`}>
       <label
         htmlFor={name}
-        className={`flex items-center space-x-3 ${
-          disabled ? 'cursor-not-allowed' : 'cursor-pointer'
+        className={`flex items-start gap-3 select-none ${
+          disabled ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'
         }`}
       >
-        <div className="relative">
+        <div className="relative flex items-center mt-0.5">
           <input
             id={name}
             type="checkbox"
             name={name}
-            checked={checked}
+            checked={!!checked}
             onChange={onChange}
             disabled={disabled}
             className="sr-only"
+            {...props}
           />
           <div
-            className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all duration-200
+            className={`w-4 h-4 rounded-md border flex items-center justify-center transition-all duration-150
               ${
                 checked
-                  ? 'bg-primary-600 border-primary-600'
-                  : 'bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600'
+                  ? 'bg-indigo-600 border-indigo-600 shadow-sm'
+                  : 'bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-700 hover:border-slate-400'
               }
-              ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
-              ${error ? 'border-red-500' : ''}
+              ${error ? 'border-rose-500' : ''}
             `}
           >
-            {checked && <FiCheck className="text-white text-sm" />}
+            {checked && <FiCheck className="text-white text-xs stroke-[3]" />}
           </div>
         </div>
-        {label && (
-          <span
-            className={`text-sm ${
-              disabled ? 'text-gray-400' : 'text-gray-700 dark:text-gray-300'
-            }`}
-          >
-            {label}
-          </span>
+        {(label || description) && (
+          <div className="flex flex-col">
+            {label && (
+              <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                {label}
+              </span>
+            )}
+            {description && (
+              <span className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                {description}
+              </span>
+            )}
+          </div>
         )}
       </label>
       {error && (
         <motion.p
-          initial={{ opacity: 0, y: -10 }}
+          initial={{ opacity: 0, y: -4 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mt-1 text-sm text-red-500"
+          className="mt-1 text-xs font-medium text-rose-600 dark:text-rose-400"
         >
           {error}
         </motion.p>

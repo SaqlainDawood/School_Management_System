@@ -5,38 +5,65 @@ import {
   FiUsers,
   FiDollarSign,
   FiClock,
+  FiFileText,
+  FiInfo,
 } from 'react-icons/fi';
-import DashboardHeader from '../../components/dashboard/DashboardHeader';
+import { toast } from 'react-toastify';
+import PageHeader from '../../components/common/PageHeader';
+import SectionCard from '../../components/common/SectionCard';
 import Button from '../../components/forms/Button';
 import Select from '../../components/forms/Select';
 
 const CoordinatorReports = () => {
   const [reportType, setReportType] = useState('attendance');
   const [format, setFormat] = useState('pdf');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+  const [generating, setGenerating] = useState(false);
 
   const handleGenerate = () => {
-    console.log('Generating', reportType, 'report in', format, 'format');
+    setGenerating(true);
+    setTimeout(() => {
+      setGenerating(false);
+      toast.info(
+        `Backend reporting service is currently preparing the ${reportType.toUpperCase()} compilation pipeline. Export download will be available upon backend update.`
+      );
+    }, 600);
   };
 
   return (
-    <div>
-      <DashboardHeader
-        title="Reports"
-        subtitle="Generate and export reports"
+    <div className="space-y-6">
+      <PageHeader
+        title="Department Academic Reports"
+        subtitle="Generate and export curriculum metrics, attendance logs, and evaluation reports"
+        breadcrumbs={[
+          { label: 'Coordinator', href: '/coordinator/dashboard' },
+          { label: 'Reports' },
+        ]}
       />
 
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-card p-6 border border-gray-200 dark:border-gray-700">
-        <div className="max-w-2xl">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+      <SectionCard title="Report Configuration" subtitle="Select report parameters and file export format">
+        <div className="max-w-3xl space-y-6">
+          <div className="p-4 rounded-xl bg-indigo-50 dark:bg-indigo-950/30 border border-indigo-200/60 dark:border-indigo-800/40 text-sm text-indigo-900 dark:text-indigo-200 flex items-start gap-3">
+            <FiInfo className="text-lg text-indigo-600 dark:text-indigo-400 mt-0.5 flex-shrink-0" />
+            <div>
+              <p className="font-semibold">Backend Report Generator Status</p>
+              <p className="text-xs text-indigo-800 dark:text-indigo-300 mt-0.5">
+                The streaming server-side document compilation endpoint (/api/reports/generate) is currently pending backend integration. You can preview report filters below.
+              </p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             <Select
-              label="Report Type"
+              label="Report Category"
               name="reportType"
               value={reportType}
               onChange={(e) => setReportType(e.target.value)}
               options={[
-                { value: 'attendance', label: 'Attendance Report' },
-                { value: 'department', label: 'Department Report' },
-                { value: 'performance', label: 'Performance Report' },
+                { value: 'attendance', label: 'Department Attendance Summary' },
+                { value: 'department', label: 'Faculty & Curriculum Allocation' },
+                { value: 'performance', label: 'Term Academic Evaluation' },
               ]}
               icon={FiBarChart2}
             />
@@ -46,84 +73,52 @@ const CoordinatorReports = () => {
               value={format}
               onChange={(e) => setFormat(e.target.value)}
               options={[
-                { value: 'pdf', label: 'PDF' },
-                { value: 'excel', label: 'Excel' },
-                { value: 'csv', label: 'CSV' },
+                { value: 'pdf', label: 'Portable Document Format (.pdf)' },
+                { value: 'excel', label: 'Microsoft Excel Spreadsheet (.xlsx)' },
+                { value: 'csv', label: 'Comma-Separated Values (.csv)' },
               ]}
               icon={FiDownload}
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4 mb-6">
-            <input type="date" className="input-field" />
-            <input type="date" className="input-field" />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5 uppercase">
+                Start Date
+              </label>
+              <input
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                className="input-field"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5 uppercase">
+                End Date
+              </label>
+              <input
+                type="date"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                className="input-field"
+              />
+            </div>
           </div>
 
-          <div className="grid grid-cols-3 gap-3 mb-6">
-            <button
-              onClick={() => setReportType('attendance')}
-              className={`p-4 rounded-lg border-2 transition-all ${
-                reportType === 'attendance'
-                  ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20'
-                  : 'border-gray-200 dark:border-gray-700'
-              }`}
+          <div className="pt-2">
+            <Button
+              variant="primary"
+              size="lg"
+              icon={FiDownload}
+              onClick={handleGenerate}
+              loading={generating}
             >
-              <FiClock
-                className={`text-2xl mx-auto ${
-                  reportType === 'attendance'
-                    ? 'text-primary-500'
-                    : 'text-gray-400'
-                }`}
-              />
-              <p className="text-sm font-medium mt-2">Attendance</p>
-            </button>
-            <button
-              onClick={() => setReportType('department')}
-              className={`p-4 rounded-lg border-2 transition-all ${
-                reportType === 'department'
-                  ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20'
-                  : 'border-gray-200 dark:border-gray-700'
-              }`}
-            >
-              <FiUsers
-                className={`text-2xl mx-auto ${
-                  reportType === 'department'
-                    ? 'text-primary-500'
-                    : 'text-gray-400'
-                }`}
-              />
-              <p className="text-sm font-medium mt-2">Department</p>
-            </button>
-            <button
-              onClick={() => setReportType('performance')}
-              className={`p-4 rounded-lg border-2 transition-all ${
-                reportType === 'performance'
-                  ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20'
-                  : 'border-gray-200 dark:border-gray-700'
-              }`}
-            >
-              <FiDollarSign
-                className={`text-2xl mx-auto ${
-                  reportType === 'performance'
-                    ? 'text-primary-500'
-                    : 'text-gray-400'
-                }`}
-              />
-              <p className="text-sm font-medium mt-2">Performance</p>
-            </button>
+              Compile & Export Report
+            </Button>
           </div>
-
-          <Button
-            variant="primary"
-            size="lg"
-            icon={FiDownload}
-            onClick={handleGenerate}
-            fullWidth
-          >
-            Generate Report
-          </Button>
         </div>
-      </div>
+      </SectionCard>
     </div>
   );
 };

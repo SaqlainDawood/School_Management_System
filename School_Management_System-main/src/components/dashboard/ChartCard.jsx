@@ -1,5 +1,4 @@
 import React from 'react';
-import { motion } from 'framer-motion';
 
 const ChartCard = ({
   title,
@@ -8,37 +7,38 @@ const ChartCard = ({
   subtitle,
   action,
   className = '',
-  height = 'h-[300px]',
+  height = 'min-h-[280px]',
 }) => {
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4 }}
-      className={`bg-white dark:bg-gray-800 rounded-xl shadow-card hover:shadow-card-hover transition-all duration-200 p-6 border border-gray-100 dark:border-gray-700 ${className}`}
+    <div
+      className={`card p-5 sm:p-6 flex flex-col ${className}`}
     >
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center space-x-2 min-w-0">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 pb-3 border-b border-slate-100 dark:border-slate-800">
+        <div className="flex items-center space-x-2.5 min-w-0">
           {Icon && (
-            <Icon className="text-gray-400 dark:text-gray-500 flex-shrink-0" />
+            <div className="p-1.5 rounded-lg bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 flex-shrink-0">
+              <Icon className="text-base" aria-hidden="true" />
+            </div>
           )}
-          <h3 className="text-lg font-semibold text-gray-800 dark:text-white truncate">
-            {title}
-          </h3>
-        </div>
-        {(subtitle || action) && (
-          <div className="flex items-center gap-2 flex-shrink-0">
+          <div className="min-w-0">
+            <h3 className="text-sm sm:text-base font-bold text-slate-900 dark:text-slate-100 truncate">
+              {title}
+            </h3>
             {subtitle && (
-              <span className="text-sm text-gray-500 dark:text-gray-400">
+              <p className="text-xs text-slate-500 dark:text-slate-400 truncate mt-0.5">
                 {subtitle}
-              </span>
+              </p>
             )}
+          </div>
+        </div>
+        {action && (
+          <div className="flex items-center gap-2 flex-shrink-0">
             {action}
           </div>
         )}
       </div>
-      <div className={`w-full ${height}`}>{children}</div>
-    </motion.div>
+      <div className={`w-full flex-1 ${height}`}>{children}</div>
+    </div>
   );
 };
 

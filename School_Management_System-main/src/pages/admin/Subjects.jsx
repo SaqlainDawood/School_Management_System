@@ -14,12 +14,15 @@ import {
   FiChevronDown,
 } from 'react-icons/fi';
 import { toast } from 'react-toastify';
-import DashboardHeader from '../../components/dashboard/DashboardHeader';
+import PageHeader from '../../components/common/PageHeader';
 import Button from '../../components/forms/Button';
 import Input from '../../components/forms/Input';
 import Select from '../../components/forms/Select';
 import Modal from '../../components/modals/Modal';
 import Loader from '../../components/common/Loader';
+import EmptyState from '../../components/common/EmptyState';
+import StatusBadge from '../../components/common/StatusBadge';
+import ConfirmDialog from '../../components/common/ConfirmDialog';
 import api from '../../utils/api';
 
 const Subjects = () => {
@@ -30,6 +33,8 @@ const Subjects = () => {
   const [formLoading, setFormLoading] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [editingSubject, setEditingSubject] = useState(null);
+  const [deleteTargetId, setDeleteTargetId] = useState(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   const [selectedClass, setSelectedClass] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
@@ -56,8 +61,8 @@ const Subjects = () => {
     try {
       const response = await api.get('/api/subjects');
       setSubjects(response.data.subjects || []);
-    } catch (error) {
-      console.error('Error fetching subjects:', error);
+    } catch (err) {
+      console.error('Error fetching subjects:', err);
       toast.error('Failed to fetch subjects');
     } finally {
       setLoading(false);
@@ -68,8 +73,8 @@ const Subjects = () => {
     try {
       const response = await api.get('/api/classes');
       setClasses(response.data.classes || []);
-    } catch (error) {
-      console.error('Error fetching classes:', error);
+    } catch (err) {
+      console.error('Error fetching classes:', err);
     }
   };
 
@@ -79,8 +84,8 @@ const Subjects = () => {
         params: { limit: 100 },
       });
       setTeachers(response.data.teachers || []);
-    } catch (error) {
-      console.error('Error fetching teachers:', error);
+    } catch (err) {
+      console.error('Error fetching teachers:', err);
     }
   };
 
@@ -225,123 +230,124 @@ const Subjects = () => {
       }
       setShowModal(false);
       fetchSubjects();
-    } catch (error) {
-      console.error('Error saving subject:', error);
-      toast.error(error.response?.data?.message || 'Failed to save subject');
+    } catch (err) {
+      console.error('Error saving subject:', err);
+      toast.error(err.response?.data?.message || 'Failed to save subject');
     } finally {
       setFormLoading(false);
     }
   };
 
-  const handleDelete = async (id) => {
-    if (window.confirm('Are you sure you want to delete this subject?')) {
-      try {
-        await api.delete(`/api/subjects/${id}`);
-        toast.success('Subject deleted successfully');
-        fetchSubjects();
-      } catch (error) {
-        console.error('Error deleting subject:', error);
-        toast.error('Failed to delete subject');
-      }
+  const handleDeleteConfirm = async () => {
+    if (!deleteTargetId) return;
+    setDeleteLoading(true);
+    try {
+      await api.delete(`/api/subjects/${deleteTargetId}`);
+      toast.success('Subject deleted successfully');
+      setDeleteTargetId(null);
+      fetchSubjects();
+    } catch (err) {
+      console.error('Error deleting subject:', err);
+      toast.error('Failed to delete subject');
+    } finally {
+      setDeleteLoading(false);
     }
   };
 
-  const getTypeBadge = (type) => {
-    const colors = {
-      core: 'badge-primary',
-      elective: 'badge-info',
-      lab: 'badge-warning',
-      practical: 'badge-success',
-      theory: 'badge-secondary',
-    };
-    return (
-      <span className={`badge ${colors[type] || 'badge-info'}`}>{type}</span>
-    );
+  const getTypeVariant = (type) => {
+    switch (type) {
+      case 'core': return 'primary';
+      case 'elective': return 'info';
+      case 'lab': return 'warning';
+      case 'practical': return 'success';
+      default: return 'neutral';
+    }
   };
 
   const SubjectCard = ({ subject, showClassBadge = false }) => (
-    <motion.div
-      initial={{ opacity: 0, scale: 0.95 }}
-      animate={{ opacity: 1, scale: 1 }}
-      exit={{ opacity: 0, scale: 0.95 }}
-      className="bg-white dark:bg-gray-800 rounded-xl shadow-card hover:shadow-card-hover transition-all duration-200 p-5 border border-gray-200 dark:border-gray-700"
-    >
-      <div className="flex items-start justify-between">
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2">
-            <FiBookOpen className="text-primary-500 flex-shrink-0" />
-            <h3 className="text-lg font-semibold text-gray-800 dark:text-white truncate">
-              {subject.name}
-            </h3>
+    <div className="card p-5 flex flex-col justify-between hover:shadow-md transition-shadow">
+      <div>
+        <div className="flex items-start justify-between gap-2">
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2">
+              <FiBookOpen className="text-indigo-600 dark:text-indigo-400 flex-shrink-0" />
+              <h3 className="text-base font-bold text-slate-900 dark:text-white truncate">
+                {subject.name}
+              </h3>
+            </div>
+            <p className="text-xs font-mono text-slate-400 mt-0.5">
+              Code: {subject.code}
+            </p>
           </div>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
-            Code: {subject.code}
-          </p>
+          <div className="flex gap-1 flex-shrink-0">
+            <button
+              onClick={() => handleEditSubject(subject)}
+              className="p-1.5 rounded-lg text-slate-500 hover:text-indigo-600 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+              title="Edit Subject"
+            >
+              <FiEdit2 className="text-sm" />
+            </button>
+            <button
+              onClick={() => setDeleteTargetId(subject._id)}
+              className="p-1.5 rounded-lg text-slate-500 hover:text-rose-600 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+              title="Delete Subject"
+            >
+              <FiTrash2 className="text-sm" />
+            </button>
+          </div>
         </div>
-        <div className="flex gap-1 flex-shrink-0">
-          <button
-            onClick={() => handleEditSubject(subject)}
-            className="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors text-yellow-600"
-            title="Edit Subject"
-          >
-            <FiEdit2 className="text-sm" />
-          </button>
-          <button
-            onClick={() => handleDelete(subject._id)}
-            className="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors text-red-600"
-            title="Delete Subject"
-          >
-            <FiTrash2 className="text-sm" />
-          </button>
-        </div>
-      </div>
 
-      <div className="mt-3 flex flex-wrap gap-2">
-        {getTypeBadge(subject.type)}
-        <span className="badge badge-info">{subject.credits} Credits</span>
-        {showClassBadge && subject.classes && subject.classes.length > 0 && (
-          <span className="badge badge-secondary flex items-center gap-1">
-            <FiLayers className="text-xs" />
-            {subject.classes.map((c) => c.name || 'N/A').join(', ')}
+        <div className="mt-3 flex flex-wrap gap-1.5 items-center">
+          <StatusBadge variant={getTypeVariant(subject.type)}>
+            {subject.type}
+          </StatusBadge>
+          <span className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
+            {subject.credits} Credits
           </span>
+          {showClassBadge && subject.classes && subject.classes.length > 0 && (
+            <span className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 border border-indigo-200/50 flex items-center gap-1">
+              <FiLayers className="text-[10px]" />
+              {subject.classes.map((c) => c.name || 'N/A').join(', ')}
+            </span>
+          )}
+        </div>
+
+        {subject.description && (
+          <p className="mt-3 text-xs text-slate-500 dark:text-slate-400 line-clamp-2 leading-relaxed">
+            {subject.description}
+          </p>
         )}
       </div>
 
-      {subject.description && (
-        <p className="mt-3 text-sm text-gray-600 dark:text-gray-400 line-clamp-2">
-          {subject.description}
-        </p>
-      )}
-
       {subject.teachers && subject.teachers.length > 0 && (
-        <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
-          <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
-            <FiUser className="text-gray-400 flex-shrink-0" />
+        <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800/80">
+          <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+            <FiUser className="text-slate-400 flex-shrink-0" />
             <span className="truncate">
               {subject.teachers.length === 1
                 ? subject.teachers[0]?.user?.name ||
                   subject.teachers[0]?.name ||
-                  'Teacher assigned'
-                : `${subject.teachers.length} teachers assigned`}
+                  'Faculty Lead Assigned'
+                : `${subject.teachers.length} faculty assigned`}
             </span>
           </div>
         </div>
       )}
-    </motion.div>
+    </div>
   );
 
   const ClassSectionHeader = ({ classData, count, isUnassigned }) => (
-    <div className="flex items-center justify-between mb-4 pb-3 border-b-2 border-gray-200 dark:border-gray-700">
+    <div className="flex items-center justify-between mb-4 pb-2 border-b border-slate-200 dark:border-slate-800">
       <div className="flex items-center gap-3">
-        <div className="w-2 h-8 rounded-full bg-gradient-to-b from-primary-500 to-primary-700"></div>
+        <div className="w-1.5 h-6 rounded-full bg-indigo-600"></div>
         <div>
-          <h2 className="text-xl font-bold text-gray-800 dark:text-white">
+          <h2 className="text-base font-bold text-slate-900 dark:text-white">
             {isUnassigned
-              ? 'Unassigned Subjects'
-              : classData?.name || 'Unknown Class'}
+              ? 'Unassigned Curriculum'
+              : classData?.name || 'Class Cohort'}
           </h2>
-          <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-            {count} {count === 1 ? 'subject' : 'subjects'}
+          <p className="text-[11px] text-slate-400">
+            {count} {count === 1 ? 'subject' : 'subjects'} enrolled
           </p>
         </div>
       </div>
@@ -351,52 +357,56 @@ const Subjects = () => {
   if (loading) return <Loader />;
 
   return (
-    <div>
-      <DashboardHeader
-        title="Subjects Management"
-        subtitle="Manage all subjects across classes"
+    <div className="space-y-6">
+      <PageHeader
+        title="Curriculum & Subjects"
+        subtitle="Manage academic courses, credit definitions, and instructional syllabus"
+        breadcrumbs={[
+          { label: 'Dashboard', path: '/admin/dashboard' },
+          { label: 'Subjects' },
+        ]}
         actions={
           <Button variant="primary" icon={FiPlus} onClick={handleAddSubject}>
-            Add Subject
+            Create Subject
           </Button>
         }
       />
 
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-card border border-gray-200 dark:border-gray-700 p-4 md:p-5 mb-6">
+      <div className="card p-4 sm:p-5">
         <div className="flex flex-col md:flex-row md:items-center gap-3">
           <div className="flex-1 min-w-[200px]">
             <div className="relative">
-              <FiFilter className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+              <FiFilter className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
               <select
                 value={selectedClass}
                 onChange={(e) => setSelectedClass(e.target.value)}
-                className="w-full pl-10 pr-10 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 outline-none appearance-none cursor-pointer transition-all"
+                className="select-field text-xs pl-9 pr-9 py-2.5 w-full appearance-none cursor-pointer"
               >
-                <option value="">All Classes</option>
+                <option value="">All Academic Classes</option>
                 {classes.map((cls) => (
                   <option key={cls._id} value={cls._id}>
                     {cls.name}
                   </option>
                 ))}
               </select>
-              <FiChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+              <FiChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
             </div>
           </div>
 
           <div className="flex-1 min-w-[200px]">
             <div className="relative">
-              <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+              <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search by name, code, or description..."
-                className="w-full pl-10 pr-10 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 outline-none transition-all"
+                placeholder="Search subject by title, code, or overview..."
+                className="input-field text-xs pl-9 pr-9 py-2.5 w-full"
               />
               {searchQuery && (
                 <button
                   onClick={() => setSearchQuery('')}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
                 >
                   <FiX />
                 </button>
@@ -411,128 +421,87 @@ const Subjects = () => {
               onClick={handleClearFilters}
               className="whitespace-nowrap"
             >
-              Clear
+              Clear Filters
             </Button>
           )}
         </div>
 
-        <div className="flex flex-wrap items-center gap-x-6 gap-y-2 mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
-          <div className="flex items-center gap-2 text-sm">
-            <span className="text-gray-500 dark:text-gray-400">Total:</span>
-            <span className="font-semibold text-gray-800 dark:text-white">
-              {subjects.length}
-            </span>
-            <span className="text-gray-500 dark:text-gray-400">subjects</span>
+        <div className="flex flex-wrap items-center gap-x-6 gap-y-2 mt-4 pt-3 border-t border-slate-100 dark:border-slate-800 text-xs text-slate-500">
+          <div>
+            Total Subjects: <span className="font-semibold text-slate-900 dark:text-white">{subjects.length}</span>
           </div>
-          <div className="flex items-center gap-2 text-sm">
-            <span className="text-gray-500 dark:text-gray-400">Classes:</span>
-            <span className="font-semibold text-gray-800 dark:text-white">
-              {classes.length}
-            </span>
+          <div>
+            Classes: <span className="font-semibold text-slate-900 dark:text-white">{classes.length}</span>
           </div>
           {hasActiveFilters && (
-            <div className="flex items-center gap-2 text-sm">
-              <span className="text-gray-500 dark:text-gray-400">Showing:</span>
-              <span className="font-semibold text-primary-600 dark:text-primary-400">
-                {filteredSubjects.length}
-              </span>
-              <span className="text-gray-500 dark:text-gray-400">results</span>
+            <div>
+              Matching Query: <span className="font-semibold text-indigo-600 dark:text-indigo-400">{filteredSubjects.length}</span>
             </div>
           )}
         </div>
       </div>
 
       {filteredSubjects.length === 0 ? (
-        <div className="text-center py-16 bg-white dark:bg-gray-800 rounded-xl shadow-card border border-gray-200 dark:border-gray-700">
-          <FiBookOpen className="text-5xl text-gray-300 dark:text-gray-600 mx-auto mb-4" />
-          <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-300 mb-2">
-            {hasActiveFilters
-              ? 'No subjects match your filters'
-              : 'No subjects found'}
-          </h3>
-          <p className="text-gray-500 dark:text-gray-400 mb-6">
-            {hasActiveFilters
-              ? 'Try changing your filter or search query'
-              : 'Get started by adding your first subject'}
-          </p>
-          <div className="flex justify-center gap-3">
-            {hasActiveFilters && (
-              <Button variant="secondary" onClick={handleClearFilters}>
-                Clear Filters
-              </Button>
-            )}
-            <Button variant="primary" icon={FiPlus} onClick={handleAddSubject}>
-              Add Subject
-            </Button>
-          </div>
+        <div className="card p-12">
+          <EmptyState
+            icon={FiBookOpen}
+            title={hasActiveFilters ? 'No curriculum matches filter' : 'No subjects registered'}
+            description={hasActiveFilters ? 'Try adjusting your search criteria or class selector' : 'Create course offerings to populate the institutional curriculum.'}
+            actionLabel={hasActiveFilters ? 'Reset Filters' : 'Add Subject'}
+            onAction={hasActiveFilters ? handleClearFilters : handleAddSubject}
+          />
         </div>
       ) : selectedClass ? (
         <div>
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-3">
-              <div className="w-2 h-8 rounded-full bg-gradient-to-b from-primary-500 to-primary-700"></div>
-              <div>
-                <h2 className="text-xl font-bold text-gray-800 dark:text-white">
-                  {classes.find((c) => c._id === selectedClass)?.name ||
-                    'Selected Class'}
-                </h2>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                  {filteredSubjects.length}{' '}
-                  {filteredSubjects.length === 1 ? 'subject' : 'subjects'}
-                  {searchQuery && ` matching "${searchQuery}"`}
-                </p>
-              </div>
-            </div>
+          <div className="mb-4">
+            <h2 className="text-base font-bold text-slate-900 dark:text-white">
+              {classes.find((c) => c._id === selectedClass)?.name || 'Class Cohort'}
+            </h2>
+            <p className="text-xs text-slate-400">
+              {filteredSubjects.length} courses registered
+            </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <AnimatePresence>
-              {filteredSubjects.map((subject) => (
-                <SubjectCard
-                  key={`${subject._id}-${selectedClass}`}
-                  subject={subject}
-                />
-              ))}
-            </AnimatePresence>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+            {filteredSubjects.map((subject) => (
+              <SubjectCard
+                key={`${subject._id}-${selectedClass}`}
+                subject={subject}
+              />
+            ))}
           </div>
         </div>
       ) : (
         <div className="space-y-8">
           {Object.entries(groupedSubjects).map(
             ([classId, { classData, subjects: classSubjects }]) => (
-              <motion.div
-                key={classId}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3 }}
-              >
+              <div key={classId}>
                 <ClassSectionHeader
                   classData={classData}
                   count={classSubjects.length}
                   isUnassigned={classId === 'unassigned'}
                 />
 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  <AnimatePresence>
-                    {classSubjects.map((subject) => (
-                      <SubjectCard
-                        key={`${subject._id}-${classId}`}
-                        subject={subject}
-                        showClassBadge={false}
-                      />
-                    ))}
-                  </AnimatePresence>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                  {classSubjects.map((subject) => (
+                    <SubjectCard
+                      key={`${subject._id}-${classId}`}
+                      subject={subject}
+                      showClassBadge={false}
+                    />
+                  ))}
                 </div>
-              </motion.div>
+              </div>
             )
           )}
         </div>
       )}
 
+      {/* Add / Edit Modal */}
       <Modal
         isOpen={showModal}
         onClose={() => setShowModal(false)}
-        title={editingSubject ? 'Edit Subject' : 'Add Subject'}
+        title={editingSubject ? 'Edit Subject Offering' : 'Register New Subject'}
         size="md"
       >
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -541,40 +510,40 @@ const Subjects = () => {
             name="name"
             value={formData.name}
             onChange={handleChange}
-            placeholder="Enter subject name"
+            placeholder="e.g. Advanced Mathematics"
             required
             icon={FiBookOpen}
             error={errors.name}
           />
 
           <Input
-            label="Subject Code"
+            label="Course Code"
             name="code"
             value={formData.code}
             onChange={handleChange}
-            placeholder="Enter subject code (e.g., MATH-9)"
+            placeholder="e.g. MATH-401"
             required
             error={errors.code}
           />
 
           <Select
-            label="Assign to Class"
+            label="Class Cohort"
             name="class"
             value={formData.classes?.[0] || ''}
             onChange={handleClassChange}
             options={[
-              { value: '', label: 'Select Class (optional)' },
+              { value: '', label: 'Select Cohort (optional)' },
               ...classes.map((c) => ({ value: c._id, label: c.name })),
             ]}
           />
 
           <Select
-            label="Assign Teacher"
+            label="Instructor Lead"
             name="teacher"
             value={formData.teachers?.[0] || ''}
             onChange={handleTeacherChange}
             options={[
-              { value: '', label: 'Select Teacher (optional)' },
+              { value: '', label: 'Select Instructor (optional)' },
               ...teachers.map((t) => ({
                 value: t._id,
                 label: t.user?.name || t.teacherId,
@@ -583,46 +552,44 @@ const Subjects = () => {
           />
 
           <Input
-            label="Description"
+            label="Course Description"
             name="description"
             value={formData.description}
             onChange={handleChange}
-            placeholder="Enter description (optional)"
+            placeholder="Brief syllabus outline..."
           />
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Select
-              label="Subject Type"
+              label="Subject Classification"
               name="type"
               value={formData.type}
               onChange={handleChange}
               options={[
-                { value: 'core', label: 'Core' },
+                { value: 'core', label: 'Core Requirement' },
                 { value: 'elective', label: 'Elective' },
-                { value: 'lab', label: 'Lab' },
+                { value: 'lab', label: 'Laboratory' },
                 { value: 'practical', label: 'Practical' },
                 { value: 'theory', label: 'Theory' },
               ]}
             />
 
             <Input
-              label="Credits"
+              label="Credit Units"
               name="credits"
               type="number"
               value={formData.credits}
               onChange={handleChange}
-              placeholder="Enter credits"
               min={1}
               max={6}
             />
           </div>
 
-          <div className="flex flex-col-reverse sm:flex-row justify-end gap-3 pt-6 border-t border-gray-200 dark:border-gray-700">
+          <div className="flex justify-end gap-2 pt-4 border-t border-slate-200 dark:border-slate-800">
             <Button
               type="button"
               variant="secondary"
               onClick={() => setShowModal(false)}
-              className="w-full sm:w-auto"
             >
               Cancel
             </Button>
@@ -630,13 +597,24 @@ const Subjects = () => {
               type="submit"
               variant="primary"
               loading={formLoading}
-              className="w-full sm:w-auto"
             >
-              {editingSubject ? 'Update Subject' : 'Add Subject'}
+              {editingSubject ? 'Save Changes' : 'Create Course'}
             </Button>
           </div>
         </form>
       </Modal>
+
+      {/* Confirm Deletion */}
+      <ConfirmDialog
+        isOpen={Boolean(deleteTargetId)}
+        onClose={() => setDeleteTargetId(null)}
+        onConfirm={handleDeleteConfirm}
+        title="Delete Subject"
+        message="Are you sure you want to delete this subject? Curriculum associations and gradebooks referencing this course code may be affected."
+        confirmText="Delete Subject"
+        confirmVariant="danger"
+        loading={deleteLoading}
+      />
     </div>
   );
 };

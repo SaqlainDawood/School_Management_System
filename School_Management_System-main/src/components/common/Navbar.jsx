@@ -13,7 +13,7 @@ import {
 } from 'react-icons/fi';
 import { useAuth } from '../../context/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useTheme } from '../../context/ThemeContext';
 import { ROLE_LABELS } from '../../utils/constants';
 
@@ -67,7 +67,7 @@ const ROUTE_DIRECTORY = [
   { path: '/profile', title: 'User Profile', roles: ['admin', 'teacher', 'student', 'parent', 'coordinator', 'examination', 'superadmin'] },
 ];
 
-const Navbar = ({ toggleSidebar, mobileOpen, onMenuClick }) => {
+const Navbar = ({ toggleSidebar, onMenuClick }) => {
   const [showProfile, setShowProfile] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -75,7 +75,6 @@ const Navbar = ({ toggleSidebar, mobileOpen, onMenuClick }) => {
   const { user, logout } = useAuth();
   const { isDark, toggleTheme } = useTheme();
   const navigate = useNavigate();
-  const location = useLocation();
 
   const profileRef = useRef(null);
   const notifRef = useRef(null);
@@ -299,6 +298,8 @@ const Navbar = ({ toggleSidebar, mobileOpen, onMenuClick }) => {
                 <button
                   onClick={() => setShowSearchModal(false)}
                   className="p-1 text-slate-400 hover:text-slate-600 rounded"
+                  type="button"
+                  aria-label="Close search modal"
                 >
                   <FiX className="text-base" />
                 </button>

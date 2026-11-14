@@ -43,33 +43,44 @@ const Teachers = () => {
     designation: '',
     status: 'active',
   });
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   useEffect(() => {
-    fetchTeachers();
-  }, [search, pagination.page]);
+    let ignore = false;
+    const fetchTeachers = async () => {
+      setLoading(true);
+      try {
+        const params = {
+          page: pagination.page,
+          limit: pagination.limit,
+          search,
+        };
+        const response = await api.get('/api/teachers', { params });
+        if (ignore) return;
+        setTeachers(response.data.teachers || []);
+        setPagination((prev) => ({
+          ...prev,
+          total: response.data.total || 0,
+          totalPages: response.data.pagination?.totalPages || 1,
+        }));
+      } catch (error) {
+        if (!ignore) {
+          console.error('Error fetching teachers:', error);
+          toast.error('Failed to fetch teachers');
+        }
+      } finally {
+        if (!ignore) {
+          setLoading(false);
+        }
+      }
+    };
 
-  const fetchTeachers = async () => {
-    setLoading(true);
-    try {
-      const params = {
-        page: pagination.page,
-        limit: pagination.limit,
-        search,
-      };
-      const response = await api.get('/api/teachers', { params });
-      setTeachers(response.data.teachers || []);
-      setPagination({
-        ...pagination,
-        total: response.data.total || 0,
-        totalPages: response.data.pagination?.totalPages || 1,
-      });
-    } catch (error) {
-      console.error('Error fetching teachers:', error);
-      toast.error('Failed to fetch teachers');
-    } finally {
-      setLoading(false);
-    }
-  };
+    fetchTeachers();
+
+    return () => {
+      ignore = true;
+    };
+  }, [search, pagination.page, pagination.limit, refreshTrigger]);
 
   const handleSearch = (value) => {
     setSearch(value);
@@ -135,7 +146,7 @@ const Teachers = () => {
         );
       }
       setShowModal(false);
-      fetchTeachers();
+      setRefreshTrigger((prev) => prev + 1);
     } catch (error) {
       console.error('Error saving teacher:', error);
       toast.error(error.response?.data?.message || 'Failed to save teacher');
@@ -151,7 +162,7 @@ const Teachers = () => {
       await api.delete(`/api/teachers/${deleteTargetId}`);
       toast.success('Teacher record removed successfully');
       setDeleteTargetId(null);
-      fetchTeachers();
+      setRefreshTrigger((prev) => prev + 1);
     } catch (error) {
       console.error('Error deleting teacher:', error);
       toast.error('Failed to delete teacher');

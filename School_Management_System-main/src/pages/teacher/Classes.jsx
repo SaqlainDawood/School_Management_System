@@ -15,20 +15,20 @@ const TeacherClasses = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    const fetchClasses = async () => {
+      try {
+        const response = await api.get('/api/teachers/classes');
+        setClasses(response.data?.classes || []);
+      } catch (err) {
+        console.error('Error fetching teacher classes:', err);
+        setClasses([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
     fetchClasses();
   }, []);
-
-  const fetchClasses = async () => {
-    try {
-      const response = await api.get('/api/teachers/classes');
-      setClasses(response.data?.classes || []);
-    } catch (err) {
-      console.error('Error fetching teacher classes:', err);
-      setClasses([]);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   if (loading) return <Loader />;
 

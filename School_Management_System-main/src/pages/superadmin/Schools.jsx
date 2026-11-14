@@ -1,13 +1,7 @@
 import React, { useState } from 'react';
 import {
-  FiBook,
   FiPlus,
   FiSearch,
-  FiMapPin,
-  FiUsers,
-  FiPhone,
-  FiMail,
-  FiInfo,
 } from 'react-icons/fi';
 import { toast } from 'react-toastify';
 import PageHeader from '../../components/common/PageHeader';

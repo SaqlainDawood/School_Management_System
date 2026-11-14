@@ -47,35 +47,57 @@ const Transport = () => {
     status: 'active',
   });
   const [errors, setErrors] = useState({});
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   useEffect(() => {
+    let ignore = false;
+    const fetchTransports = async () => {
+      setLoading(true);
+      try {
+        const response = await api.get('/api/transport');
+        if (ignore) return;
+        setTransports(response.data.transports || []);
+      } catch (err) {
+        if (!ignore) {
+          console.error('Error fetching transports:', err);
+          toast.error('Failed to fetch transports');
+        }
+      } finally {
+        if (!ignore) {
+          setLoading(false);
+        }
+      }
+    };
+
     fetchTransports();
+
+    return () => {
+      ignore = true;
+    };
+  }, [refreshTrigger]);
+
+  useEffect(() => {
+    let ignore = false;
+    const fetchStudents = async () => {
+      try {
+        const response = await api.get('/api/students', {
+          params: { limit: 100 },
+        });
+        if (ignore) return;
+        setStudents(response.data.students || []);
+      } catch (err) {
+        if (!ignore) {
+          console.error('Error fetching students:', err);
+        }
+      }
+    };
+
     fetchStudents();
+
+    return () => {
+      ignore = true;
+    };
   }, []);
-
-  const fetchTransports = async () => {
-    setLoading(true);
-    try {
-      const response = await api.get('/api/transport');
-      setTransports(response.data.transports || []);
-    } catch (err) {
-      console.error('Error fetching transports:', err);
-      toast.error('Failed to fetch transports');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchStudents = async () => {
-    try {
-      const response = await api.get('/api/students', {
-        params: { limit: 100 },
-      });
-      setStudents(response.data.students || []);
-    } catch (err) {
-      console.error('Error fetching students:', err);
-    }
-  };
 
   const handleAddTransport = () => {
     setEditingTransport(null);
@@ -168,7 +190,7 @@ const Transport = () => {
         toast.success('Transport route added successfully');
       }
       setShowModal(false);
-      fetchTransports();
+      setRefreshTrigger((prev) => prev + 1);
     } catch (err) {
       console.error('Error saving transport:', err);
       toast.error(err.response?.data?.message || 'Failed to save transport');
@@ -184,7 +206,7 @@ const Transport = () => {
       await api.delete(`/api/transport/${deleteTargetId}`);
       toast.success('Transport route decommissioned');
       setDeleteTargetId(null);
-      fetchTransports();
+      setRefreshTrigger((prev) => prev + 1);
     } catch (err) {
       console.error('Error deleting transport:', err);
       toast.error('Failed to delete transport');
@@ -207,7 +229,7 @@ const Transport = () => {
       );
       toast.success('Student assigned to transit route');
       setShowAssignModal(false);
-      fetchTransports();
+      setRefreshTrigger((prev) => prev + 1);
     } catch (err) {
       console.error('Error assigning student:', err);
       toast.error(err.response?.data?.message || 'Failed to assign student');
@@ -222,7 +244,7 @@ const Transport = () => {
         studentId,
       });
       toast.success('Student unassigned from transit route');
-      fetchTransports();
+      setRefreshTrigger((prev) => prev + 1);
     } catch (err) {
       console.error('Error removing student:', err);
       toast.error('Failed to remove student');

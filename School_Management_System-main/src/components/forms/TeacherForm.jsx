@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   FiUser,
   FiMail,
@@ -11,42 +11,30 @@ import Select from './Select';
 import Button from './Button';
 import { GENDER_OPTIONS, TEACHER_STATUS } from '../../utils/constants';
 
-const TeacherForm = ({ initialData, onSubmit, onCancel, loading }) => {
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    teacherId: '',
-    qualification: '',
-    specialization: '',
-    dateOfBirth: '',
-    gender: '',
-    phone: '',
-    address: '',
-    department: '',
-    designation: '',
-    status: 'active',
-  });
+const getInitialTeacherForm = (data) => ({
+  name: data?.name || '',
+  email: data?.email || '',
+  teacherId: data?.teacherId || '',
+  qualification: data?.qualification || '',
+  specialization: data?.specialization || '',
+  dateOfBirth: data?.dateOfBirth || '',
+  gender: data?.gender || '',
+  phone: data?.phone || '',
+  address: data?.address || '',
+  department: data?.department || '',
+  designation: data?.designation || '',
+  status: data?.status || 'active',
+});
 
+const TeacherForm = ({ initialData, onSubmit, onCancel, loading }) => {
+  const [formData, setFormData] = useState(() => getInitialTeacherForm(initialData));
+  const [prevInitialData, setPrevInitialData] = useState(initialData);
   const [errors, setErrors] = useState({});
 
-  useEffect(() => {
-    if (initialData) {
-      setFormData({
-        name: initialData.name || '',
-        email: initialData.email || '',
-        teacherId: initialData.teacherId || '',
-        qualification: initialData.qualification || '',
-        specialization: initialData.specialization || '',
-        dateOfBirth: initialData.dateOfBirth || '',
-        gender: initialData.gender || '',
-        phone: initialData.phone || '',
-        address: initialData.address || '',
-        department: initialData.department || '',
-        designation: initialData.designation || '',
-        status: initialData.status || 'active',
-      });
-    }
-  }, [initialData]);
+  if (initialData !== prevInitialData) {
+    setPrevInitialData(initialData);
+    setFormData(getInitialTeacherForm(initialData));
+  }
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -253,8 +241,8 @@ const TeacherForm = ({ initialData, onSubmit, onCancel, loading }) => {
           {loading
             ? 'Saving...'
             : isEditMode
-            ? 'Update Teacher'
-            : 'Add Teacher'}
+              ? 'Update Teacher'
+              : 'Add Teacher'}
         </Button>
       </div>
     </form>

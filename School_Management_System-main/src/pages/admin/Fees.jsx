@@ -7,7 +7,6 @@ import {
   FiClock,
   FiEye,
   FiDownload,
-  FiTrendingUp,
   FiAlertCircle,
   FiCheckCircle,
 } from 'react-icons/fi';
@@ -41,6 +40,7 @@ const Fees = () => {
   const [selectedFee, setSelectedFee] = useState(null);
   const [selectedVoucherFee, setSelectedVoucherFee] = useState(null);
   const [filters, setFilters] = useState({ status: '', feeType: '' });
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [deleteTargetId, setDeleteTargetId] = useState(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
 
@@ -52,33 +52,54 @@ const Fees = () => {
   });
 
   useEffect(() => {
+    let ignore = false;
+    const fetchFees = async () => {
+      setLoading(true);
+      try {
+        const response = await api.get('/api/fees', { params: filters });
+        if (ignore) return;
+        setFees(response.data.fees || []);
+      } catch (err) {
+        if (!ignore) {
+          console.error('Error fetching fees:', err);
+          toast.error('Failed to fetch fees');
+        }
+      } finally {
+        if (!ignore) {
+          setLoading(false);
+        }
+      }
+    };
+
     fetchFees();
+
+    return () => {
+      ignore = true;
+    };
+  }, [filters, refreshTrigger]);
+
+  useEffect(() => {
+    let ignore = false;
+    const fetchStudents = async () => {
+      try {
+        const response = await api.get('/api/students', {
+          params: { limit: 100 },
+        });
+        if (ignore) return;
+        setStudents(response.data.students || []);
+      } catch (err) {
+        if (!ignore) {
+          console.error('Error fetching students:', err);
+        }
+      }
+    };
+
     fetchStudents();
-  }, [filters]);
 
-  const fetchFees = async () => {
-    setLoading(true);
-    try {
-      const response = await api.get('/api/fees', { params: filters });
-      setFees(response.data.fees || []);
-    } catch (err) {
-      console.error('Error fetching fees:', err);
-      toast.error('Failed to fetch fees');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchStudents = async () => {
-    try {
-      const response = await api.get('/api/students', {
-        params: { limit: 100 },
-      });
-      setStudents(response.data.students || []);
-    } catch (err) {
-      console.error('Error fetching students:', err);
-    }
-  };
+    return () => {
+      ignore = true;
+    };
+  }, []);
 
   const handleAddFee = () => {
     setShowAddModal(true);
@@ -129,7 +150,7 @@ const Fees = () => {
       await api.post('/api/fees', data);
       toast.success('Fee voucher issued successfully');
       setShowAddModal(false);
-      fetchFees();
+      setRefreshTrigger((prev) => prev + 1);
     } catch (err) {
       console.error('Error saving fee:', err);
       if (err.response?.data?.errors) {
@@ -162,7 +183,7 @@ const Fees = () => {
       });
       toast.success('Payment recorded successfully');
       setShowPayModal(false);
-      fetchFees();
+      setRefreshTrigger((prev) => prev + 1);
     } catch (err) {
       console.error('Error processing payment:', err);
       toast.error(err.response?.data?.message || 'Failed to process payment');
@@ -178,7 +199,7 @@ const Fees = () => {
       await api.delete(`/api/fees/${deleteTargetId}`);
       toast.success('Fee record deleted');
       setDeleteTargetId(null);
-      fetchFees();
+      setRefreshTrigger((prev) => prev + 1);
     } catch (err) {
       console.error('Error deleting fee:', err);
       toast.error('Failed to delete fee');

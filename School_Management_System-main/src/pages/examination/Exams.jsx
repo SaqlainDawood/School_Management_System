@@ -1,10 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
   FiPlus,
-  FiEdit2,
-  FiTrash2,
   FiCalendar,
-  FiClock,
   FiAward,
 } from 'react-icons/fi';
 import { toast } from 'react-toastify';
@@ -25,25 +22,35 @@ const ExaminationExams = () => {
   const [filters, setFilters] = useState({ status: '', classId: '' });
 
   useEffect(() => {
-    fetchData();
-  }, [filters]);
+    let ignore = false;
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        const [examsRes, classesRes] = await Promise.all([
+          api.get('/api/exams', { params: filters }),
+          api.get('/api/classes'),
+        ]);
+        if (ignore) return;
+        setExams(examsRes.data?.exams || []);
+        setClasses(classesRes.data?.classes || []);
+      } catch (error) {
+        if (!ignore) {
+          console.error('Error fetching exams:', error);
+          setExams([]);
+        }
+      } finally {
+        if (!ignore) {
+          setLoading(false);
+        }
+      }
+    };
 
-  const fetchData = async () => {
-    try {
-      setLoading(true);
-      const [examsRes, classesRes] = await Promise.all([
-        api.get('/api/exams', { params: filters }),
-        api.get('/api/classes'),
-      ]);
-      setExams(examsRes.data?.exams || []);
-      setClasses(classesRes.data?.classes || []);
-    } catch (error) {
-      console.error('Error fetching exams:', error);
-      setExams([]);
-    } finally {
-      setLoading(false);
-    }
-  };
+    fetchData();
+
+    return () => {
+      ignore = true;
+    };
+  }, [filters]);
 
   if (loading) return <Loader />;
 

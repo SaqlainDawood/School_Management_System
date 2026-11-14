@@ -5,8 +5,6 @@ import {
   FiDownload,
   FiPrinter,
   FiUser,
-  FiMail,
-  FiCalendar,
   FiBook,
   FiDollarSign,
   FiCreditCard,

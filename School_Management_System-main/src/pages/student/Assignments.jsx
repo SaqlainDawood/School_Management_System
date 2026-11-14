@@ -2,14 +2,10 @@ import React, { useState, useEffect } from 'react';
 import {
   FiFileText,
   FiClock,
-  FiCheckCircle,
-  FiAlertCircle,
-  FiBook,
   FiMessageSquare,
 } from 'react-icons/fi';
 import { toast } from 'react-toastify';
 import PageHeader from '../../components/common/PageHeader';
-import SectionCard from '../../components/common/SectionCard';
 import StatusBadge from '../../components/common/StatusBadge';
 import Loader from '../../components/common/Loader';
 import EmptyState from '../../components/common/EmptyState';
@@ -17,26 +13,42 @@ import Button from '../../components/forms/Button';
 import api from '../../utils/api';
 import { formatDate } from '../../utils/helpers';
 
+const CURRENT_TIMESTAMP = Date.now();
+
+const checkDueSoon = (dueDate, submission) => {
+  if (!dueDate || submission) return false;
+  return new Date(dueDate).getTime() - CURRENT_TIMESTAMP < 86400000 * 3;
+};
+
 const StudentAssignments = () => {
   const [assignments, setAssignments] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchAssignments();
-  }, []);
+    let ignore = false;
+    const fetchAssignments = async () => {
+      try {
+        const response = await api.get('/api/assignments/my-assignments');
+        if (ignore) return;
+        setAssignments(response.data?.assignments || []);
+      } catch (error) {
+        if (!ignore) {
+          console.error('Error fetching assignments:', error);
+          toast.error('Failed to load assignments');
+        }
+      } finally {
+        if (!ignore) {
+          setLoading(false);
+        }
+      }
+    };
 
-  const fetchAssignments = async () => {
-    setLoading(true);
-    try {
-      const response = await api.get('/api/assignments/my-assignments');
-      setAssignments(response.data?.assignments || []);
-    } catch (error) {
-      console.error('Error fetching assignments:', error);
-      toast.error('Failed to load assignments');
-    } finally {
-      setLoading(false);
-    }
-  };
+    fetchAssignments();
+
+    return () => {
+      ignore = true;
+    };
+  }, []);
 
   const getSubmissionBadge = (assignment) => {
     if (!assignment.submission) {
@@ -70,10 +82,10 @@ const StudentAssignments = () => {
       ) : (
         <div className="grid grid-cols-1 gap-4">
           {assignments.map((assignment) => {
-            const isDueSoon =
-              assignment.dueDate &&
-              new Date(assignment.dueDate) - new Date() < 86400000 * 3 &&
-              !assignment.submission;
+            const isDueSoon = checkDueSoon(
+              assignment.dueDate,
+              assignment.submission
+            );
 
             return (
               <div

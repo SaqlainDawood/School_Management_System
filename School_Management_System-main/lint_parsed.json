@@ -1,0 +1,1137 @@
+[
+  {
+    "rule": "eslint(no-useless-escape)",
+    "file": "src/utils/validators.js",
+    "line": 3
+  },
+  {
+    "rule": "eslint(no-useless-escape)",
+    "file": "src/utils/validators.js",
+    "line": 3
+  },
+  {
+    "rule": "eslint(no-unused-vars)",
+    "file": "src/utils/helpers.js",
+    "line": 259
+  },
+  {
+    "rule": "react(immutability)",
+    "file": "src/pages/teacher/Classes.jsx",
+    "line": 18
+  },
+  {
+    "rule": "eslint(no-unused-vars)",
+    "file": "src/components/common/Navbar.jsx",
+    "line": 70
+  },
+  {
+    "rule": "eslint(no-unused-vars)",
+    "file": "src/components/common/Navbar.jsx",
+    "line": 78
+  },
+  {
+    "rule": "eslint(no-unused-vars)",
+    "file": "src/pages/student/Dashboard.jsx",
+    "line": 3
+  },
+  {
+    "rule": "eslint(no-unused-vars)",
+    "file": "src/pages/student/Dashboard.jsx",
+    "line": 10
+  },
+  {
+    "rule": "eslint(no-unused-vars)",
+    "file": "src/pages/student/Dashboard.jsx",
+    "line": 11
+  },
+  {
+    "rule": "eslint(no-unused-vars)",
+    "file": "src/pages/student/Dashboard.jsx",
+    "line": 13
+  },
+  {
+    "rule": "eslint(no-unused-vars)",
+    "file": "src/pages/student/Dashboard.jsx",
+    "line": 21
+  },
+  {
+    "rule": "react(immutability)",
+    "file": "src/pages/student/Dashboard.jsx",
+    "line": 41
+  },
+  {
+    "rule": "react(purity)",
+    "file": "src/pages/student/Dashboard.jsx",
+    "line": 32
+  },
+  {
+    "rule": "react(immutability)",
+    "file": "src/pages/teacher/Assignments.jsx",
+    "line": 51
+  },
+  {
+    "rule": "react(immutability)",
+    "file": "src/pages/teacher/Assignments.jsx",
+    "line": 52
+  },
+  {
+    "rule": "react(immutability)",
+    "file": "src/pages/admin/Notices.jsx",
+    "line": 24
+  },
+  {
+    "rule": "react(immutability)",
+    "file": "src/pages/teacher/Dashboard.jsx",
+    "line": 39
+  },
+  {
+    "rule": "eslint(no-unused-vars)",
+    "file": "src/pages/admin/Library.jsx",
+    "line": 8
+  },
+  {
+    "rule": "react(immutability)",
+    "file": "src/pages/admin/Library.jsx",
+    "line": 24
+  },
+  {
+    "rule": "react-hooks(exhaustive-deps)",
+    "file": "src/pages/admin/Library.jsx",
+    "line": 25
+  },
+  {
+    "rule": "eslint(no-unused-vars)",
+    "file": "src/pages/student/Attendance.jsx",
+    "line": 7
+  },
+  {
+    "rule": "eslint(no-unused-vars)",
+    "file": "src/pages/student/Attendance.jsx",
+    "line": 9
+  },
+  {
+    "rule": "react(immutability)",
+    "file": "src/pages/student/Attendance.jsx",
+    "line": 45
+  },
+  {
+    "rule": "react(purity)",
+    "file": "src/pages/student/Attendance.jsx",
+    "line": 33
+  },
+  {
+    "rule": "react(purity)",
+    "file": "src/pages/student/Attendance.jsx",
+    "line": 34
+  },
+  {
+    "rule": "react-hooks(exhaustive-deps)",
+    "file": "src/pages/student/Attendance.jsx",
+    "line": 46
+  },
+  {
+    "rule": "react(immutability)",
+    "file": "src/components/modals/ClassDetailModal.jsx",
+    "line": 32
+  },
+  {
+    "rule": "react-hooks(exhaustive-deps)",
+    "file": "src/components/modals/ClassDetailModal.jsx",
+    "line": 34
+  },
+  {
+    "rule": "eslint(no-unused-vars)",
+    "file": "src/pages/superadmin/Analytics.jsx",
+    "line": 6
+  },
+  {
+    "rule": "eslint(no-unused-vars)",
+    "file": "src/pages/superadmin/Analytics.jsx",
+    "line": 7
+  },
+  {
+    "rule": "eslint(no-unused-vars)",
+    "file": "src/pages/superadmin/Analytics.jsx",
+    "line": 8
+  },
+  {
+    "rule": "eslint(no-unused-vars)",
+    "file": "src/pages/parent/Dashboard.jsx",
+    "line": 8
+  },
+  {
+    "rule": "eslint(no-unused-vars)",
+    "file": "src/pages/parent/Dashboard.jsx",
+    "line": 9
+  },
+  {
+    "rule": "eslint(no-unused-vars)",
+    "file": "src/pages/parent/Dashboard.jsx",
+    "line": 10
+  },
+  {
+    "rule": "eslint(no-unused-vars)",
+    "file": "src/pages/parent/Dashboard.jsx",
+    "line": 13
+  },
+  {
+    "rule": "eslint(no-unused-vars)",
+    "file": "src/pages/parent/Dashboard.jsx",
+    "line": 18
+  },
+  {
+    "rule": "react(immutability)",
+    "file": "src/pages/parent/Dashboard.jsx",
+    "line": 25
+  },
+  {
+    "rule": "eslint(no-unused-vars)",
+    "file": "src/pages/student/Assignments.jsx",
+    "line": 5
+  },
+  {
+    "rule": "eslint(no-unused-vars)",
+    "file": "src/pages/student/Assignments.jsx",
+    "line": 6
+  },
+  {
+    "rule": "eslint(no-unused-vars)",
+    "file": "src/pages/student/Assignments.jsx",
+    "line": 7
+  },
+  {
+    "rule": "eslint(no-unused-vars)",
+    "file": "src/pages/student/Assignments.jsx",
+    "line": 12
+  },
+  {
+    "rule": "react(immutability)",
+    "file": "src/pages/student/Assignments.jsx",
+    "line": 25
+  },
+  {
+    "rule": "react(purity)",
+    "file": "src/pages/student/Assignments.jsx",
+    "line": 75
+  },
+  {
+    "rule": "eslint(no-unused-vars)",
+    "file": "src/pages/auth/Register.jsx",
+    "line": 58
+  },
+  {
+    "rule": "eslint(no-unused-vars)",
+    "file": "src/pages/teacher/Attendance.jsx",
+    "line": 5
+  },
+  {
+    "rule": "eslint(no-unused-vars)",
+    "file": "src/pages/teacher/Attendance.jsx",
+    "line": 6
+  },
+  {
+    "rule": "eslint(no-unused-vars)",
+    "file": "src/pages/teacher/Attendance.jsx",
+    "line": 7
+  },
+  {
+    "rule": "eslint(no-unused-vars)",
+    "file": "src/pages/teacher/Attendance.jsx",
+    "line": 10
+  },
+  {
+    "rule": "react(immutability)",
+    "file": "src/pages/teacher/Attendance.jsx",
+    "line": 26
+  },
+  {
+    "rule": "react(immutability)",
+    "file": "src/pages/teacher/Attendance.jsx",
+    "line": 31
+  },
+  {
+    "rule": "react(immutability)",
+    "file": "src/pages/teacher/Attendance.jsx",
+    "line": 32
+  },
+  {
+    "rule": "react(purity)",
+    "file": "src/pages/teacher/Attendance.jsx",
+    "line": 23
+  },
+  {
+    "rule": "react-hooks(exhaustive-deps)",
+    "file": "src/pages/teacher/Attendance.jsx",
+    "line": 34
+  },
+  {
+    "rule": "eslint(no-unused-vars)",
+    "file": "src/layouts/AuthLayout.jsx",
+    "line": 3
+  },
+  {
+    "rule": "react(purity)",
+    "file": "src/layouts/AuthLayout.jsx",
+    "line": 61
+  },
+  {
+    "rule": "eslint(no-unused-vars)",
+    "file": "src/pages/parent/Children.jsx",
+    "line": 4
+  },
+  {
+    "rule": "eslint(no-unused-vars)",
+    "file": "src/pages/parent/Children.jsx",
+    "line": 5
+  },
+  {
+    "rule": "eslint(no-unused-vars)",
+    "file": "src/pages/parent/Children.jsx",
+    "line": 6
+  },
+  {
+    "rule": "eslint(no-unused-vars)",
+    "file": "src/pages/parent/Children.jsx",
+    "line": 7
+  },
+  {
+    "rule": "eslint(no-unused-vars)",
+    "file": "src/pages/parent/Children.jsx",
+    "line": 8
+  },
+  {
+    "rule": "eslint(no-unused-vars)",
+    "file": "src/pages/parent/Children.jsx",
+    "line": 10
+  },
+  {
+    "rule": "eslint(no-unused-vars)",
+    "file": "src/pages/parent/Children.jsx",
+    "line": 11
+  },
+  {
+    "rule": "eslint(no-unused-vars)",
+    "file": "src/pages/parent/Children.jsx",
+    "line": 14
+  },
+  {
+    "rule": "react(immutability)",
+    "file": "src/pages/parent/Children.jsx",
+    "line": 26
+  },
+  {
+    "rule": "eslint(no-unused-vars)",
+    "file": "src/pages/coordinator/Reports.jsx",
+    "line": 5
+  },
+  {
+    "rule": "eslint(no-unused-vars)",
+    "file": "src/pages/coordinator/Reports.jsx",
+    "line": 6
+  },
+  {
+    "rule": "eslint(no-unused-vars)",
+    "file": "src/pages/coordinator/Reports.jsx",
+    "line": 7
+  },
+  {
+    "rule": "eslint(no-unused-vars)",
+    "file": "src/pages/coordinator/Reports.jsx",
+    "line": 8
+  },
+  {
+    "rule": "react(only-export-components)",
+    "file": "src/context/ThemeContext.jsx",
+    "line": 5
+  },
+  {
+    "rule": "react(only-export-components)",
+    "file": "src/context/ThemeContext.jsx",
+    "line": 3
+  },
+  {
+    "rule": "react(immutability)",
+    "file": "src/pages/teacher/Results.jsx",
+    "line": 19
+  },
+  {
+    "rule": "react-hooks(exhaustive-deps)",
+    "file": "src/pages/teacher/Results.jsx",
+    "line": 20
+  },
+  {
+    "rule": "eslint(no-unused-vars)",
+    "file": "src/pages/coordinator/Departments.jsx",
+    "line": 4
+  },
+  {
+    "rule": "eslint(no-unused-vars)",
+    "file": "src/pages/coordinator/Departments.jsx",
+    "line": 5
+  },
+  {
+    "rule": "eslint(no-unused-vars)",
+    "file": "src/pages/coordinator/Departments.jsx",
+    "line": 12
+  },
+  {
+    "rule": "react(immutability)",
+    "file": "src/pages/coordinator/Departments.jsx",
+    "line": 24
+  },
+  {
+    "rule": "react(only-export-components)",
+    "file": "src/context/NotificationContext.jsx",
+    "line": 6
+  },
+  {
+    "rule": "eslint(no-unused-vars)",
+    "file": "src/pages/coordinator/Dashboard.jsx",
+    "line": 13
+  },
+  {
+    "rule": "eslint(no-unused-vars)",
+    "file": "src/pages/coordinator/Dashboard.jsx",
+    "line": 15
+  },
+  {
+    "rule": "react(immutability)",
+    "file": "src/pages/coordinator/Dashboard.jsx",
+    "line": 23
+  },
+  {
+    "rule": "react(immutability)",
+    "file": "src/pages/coordinator/Attendance.jsx",
+    "line": 17
+  },
+  {
+    "rule": "react(immutability)",
+    "file": "src/pages/parent/Attendance.jsx",
+    "line": 31
+  },
+  {
+    "rule": "react(immutability)",
+    "file": "src/pages/parent/Attendance.jsx",
+    "line": 35
+  },
+  {
+    "rule": "react(purity)",
+    "file": "src/pages/parent/Attendance.jsx",
+    "line": 27
+  },
+  {
+    "rule": "react(purity)",
+    "file": "src/pages/parent/Attendance.jsx",
+    "line": 28
+  },
+  {
+    "rule": "react-hooks(exhaustive-deps)",
+    "file": "src/pages/parent/Attendance.jsx",
+    "line": 36
+  },
+  {
+    "rule": "eslint(no-unused-vars)",
+    "file": "src/pages/student/Timetable.jsx",
+    "line": 2
+  },
+  {
+    "rule": "eslint(no-unused-vars)",
+    "file": "src/pages/student/Timetable.jsx",
+    "line": 2
+  },
+  {
+    "rule": "react(immutability)",
+    "file": "src/pages/student/Timetable.jsx",
+    "line": 26
+  },
+  {
+    "rule": "react(set-state-in-effect)",
+    "file": "src/layouts/MainLayout.jsx",
+    "line": 31
+  },
+  {
+    "rule": "eslint(no-unused-vars)",
+    "file": "src/components/modals/AddFeeModal.jsx",
+    "line": 7
+  },
+  {
+    "rule": "eslint(no-unused-vars)",
+    "file": "src/components/modals/AddFeeModal.jsx",
+    "line": 23
+  },
+  {
+    "rule": "react(set-state-in-effect)",
+    "file": "src/components/modals/AddFeeModal.jsx",
+    "line": 43
+  },
+  {
+    "rule": "eslint(no-unused-vars)",
+    "file": "src/components/modals/VoucherModal.jsx",
+    "line": 8
+  },
+  {
+    "rule": "eslint(no-unused-vars)",
+    "file": "src/components/modals/VoucherModal.jsx",
+    "line": 9
+  },
+  {
+    "rule": "eslint(no-unused-vars)",
+    "file": "src/pages/admin/Fees.jsx",
+    "line": 10
+  },
+  {
+    "rule": "react(immutability)",
+    "file": "src/pages/admin/Fees.jsx",
+    "line": 55
+  },
+  {
+    "rule": "react(immutability)",
+    "file": "src/pages/admin/Fees.jsx",
+    "line": 56
+  },
+  {
+    "rule": "react-hooks(exhaustive-deps)",
+    "file": "src/pages/admin/Fees.jsx",
+    "line": 57
+  },
+  {
+    "rule": "eslint(no-unused-vars)",
+    "file": "src/components/forms/FileUpload.jsx",
+    "line": 5
+  },
+  {
+    "rule": "react(set-state-in-effect)",
+    "file": "src/components/forms/ClassForm.jsx",
+    "line": 25
+  },
+  {
+    "rule": "eslint(no-unused-vars)",
+    "file": "src/pages/examination/Results.jsx",
+    "line": 4
+  },
+  {
+    "rule": "eslint(no-unused-vars)",
+    "file": "src/pages/examination/Results.jsx",
+    "line": 5
+  },
+  {
+    "rule": "eslint(no-unused-vars)",
+    "file": "src/pages/examination/Results.jsx",
+    "line": 6
+  },
+  {
+    "rule": "eslint(no-unused-vars)",
+    "file": "src/pages/examination/Results.jsx",
+    "line": 7
+  },
+  {
+    "rule": "react(immutability)",
+    "file": "src/pages/examination/Results.jsx",
+    "line": 27
+  },
+  {
+    "rule": "react-hooks(exhaustive-deps)",
+    "file": "src/pages/examination/Results.jsx",
+    "line": 28
+  },
+  {
+    "rule": "eslint(no-unused-vars)",
+    "file": "src/pages/parent/Results.jsx",
+    "line": 5
+  },
+  {
+    "rule": "eslint(no-unused-vars)",
+    "file": "src/pages/parent/Results.jsx",
+    "line": 6
+  },
+  {
+    "rule": "eslint(no-unused-vars)",
+    "file": "src/pages/parent/Results.jsx",
+    "line": 7
+  },
+  {
+    "rule": "react(immutability)",
+    "file": "src/pages/parent/Results.jsx",
+    "line": 34
+  },
+  {
+    "rule": "react(immutability)",
+    "file": "src/pages/parent/Results.jsx",
+    "line": 38
+  },
+  {
+    "rule": "react-hooks(exhaustive-deps)",
+    "file": "src/pages/parent/Results.jsx",
+    "line": 39
+  },
+  {
+    "rule": "eslint(no-unused-vars)",
+    "file": "src/pages/superadmin/Users.jsx",
+    "line": 3
+  },
+  {
+    "rule": "eslint(no-unused-vars)",
+    "file": "src/pages/superadmin/Users.jsx",
+    "line": 5
+  },
+  {
+    "rule": "eslint(no-unused-vars)",
+    "file": "src/pages/superadmin/Users.jsx",
+    "line": 6
+  },
+  {
+    "rule": "eslint(no-unused-vars)",
+    "file": "src/pages/superadmin/Users.jsx",
+    "line": 7
+  },
+  {
+    "rule": "eslint(no-unused-vars)",
+    "file": "src/pages/superadmin/Users.jsx",
+    "line": 9
+  },
+  {
+    "rule": "eslint(no-unused-vars)",
+    "file": "src/pages/superadmin/Users.jsx",
+    "line": 15
+  },
+  {
+    "rule": "eslint(no-unused-vars)",
+    "file": "src/pages/examination/Exams.jsx",
+    "line": 4
+  },
+  {
+    "rule": "eslint(no-unused-vars)",
+    "file": "src/pages/examination/Exams.jsx",
+    "line": 5
+  },
+  {
+    "rule": "eslint(no-unused-vars)",
+    "file": "src/pages/examination/Exams.jsx",
+    "line": 7
+  },
+  {
+    "rule": "react(immutability)",
+    "file": "src/pages/examination/Exams.jsx",
+    "line": 28
+  },
+  {
+    "rule": "react-hooks(exhaustive-deps)",
+    "file": "src/pages/examination/Exams.jsx",
+    "line": 29
+  },
+  {
+    "rule": "eslint(no-unused-vars)",
+    "file": "src/pages/student/Results.jsx",
+    "line": 9
+  },
+  {
+    "rule": "eslint(no-unused-vars)",
+    "file": "src/pages/student/Results.jsx",
+    "line": 14
+  },
+  {
+    "rule": "eslint(no-unused-vars)",
+    "file": "src/pages/student/Results.jsx",
+    "line": 15
+  },
+  {
+    "rule": "react(immutability)",
+    "file": "src/pages/student/Results.jsx",
+    "line": 37
+  },
+  {
+    "rule": "eslint(no-unused-vars)",
+    "file": "src/pages/admin/Subjects.jsx",
+    "line": 3
+  },
+  {
+    "rule": "eslint(no-unused-vars)",
+    "file": "src/pages/admin/Subjects.jsx",
+    "line": 3
+  },
+  {
+    "rule": "react(immutability)",
+    "file": "src/pages/admin/Subjects.jsx",
+    "line": 54
+  },
+  {
+    "rule": "react(immutability)",
+    "file": "src/pages/admin/Subjects.jsx",
+    "line": 55
+  },
+  {
+    "rule": "react(immutability)",
+    "file": "src/pages/admin/Subjects.jsx",
+    "line": 56
+  },
+  {
+    "rule": "eslint(no-unused-vars)",
+    "file": "src/pages/examination/DateSheets.jsx",
+    "line": 6
+  },
+  {
+    "rule": "eslint(no-unused-vars)",
+    "file": "src/pages/examination/DateSheets.jsx",
+    "line": 7
+  },
+  {
+    "rule": "react(immutability)",
+    "file": "src/pages/examination/DateSheets.jsx",
+    "line": 27
+  },
+  {
+    "rule": "react-hooks(exhaustive-deps)",
+    "file": "src/pages/examination/DateSheets.jsx",
+    "line": 28
+  },
+  {
+    "rule": "react(set-state-in-effect)",
+    "file": "src/components/forms/TextArea.jsx",
+    "line": 24
+  },
+  {
+    "rule": "eslint(no-unused-vars)",
+    "file": "src/pages/superadmin/Settings.jsx",
+    "line": 9
+  },
+  {
+    "rule": "eslint(no-unused-vars)",
+    "file": "src/pages/superadmin/Settings.jsx",
+    "line": 10
+  },
+  {
+    "rule": "eslint(no-unused-vars)",
+    "file": "src/pages/superadmin/Settings.jsx",
+    "line": 12
+  },
+  {
+    "rule": "eslint(no-unused-vars)",
+    "file": "src/pages/superadmin/Settings.jsx",
+    "line": 86
+  },
+  {
+    "rule": "eslint(no-unused-vars)",
+    "file": "src/pages/superadmin/Settings.jsx",
+    "line": 99
+  },
+  {
+    "rule": "react(immutability)",
+    "file": "src/pages/superadmin/Settings.jsx",
+    "line": 52
+  },
+  {
+    "rule": "react(immutability)",
+    "file": "src/pages/parent/Fees.jsx",
+    "line": 28
+  },
+  {
+    "rule": "react(immutability)",
+    "file": "src/pages/parent/Fees.jsx",
+    "line": 32
+  },
+  {
+    "rule": "react-hooks(exhaustive-deps)",
+    "file": "src/pages/parent/Fees.jsx",
+    "line": 33
+  },
+  {
+    "rule": "eslint(no-unused-vars)",
+    "file": "src/pages/admin/Settings.jsx",
+    "line": 9
+  },
+  {
+    "rule": "eslint(no-unused-vars)",
+    "file": "src/pages/admin/Settings.jsx",
+    "line": 10
+  },
+  {
+    "rule": "eslint(no-unused-vars)",
+    "file": "src/pages/admin/Settings.jsx",
+    "line": 84
+  },
+  {
+    "rule": "eslint(no-unused-vars)",
+    "file": "src/pages/admin/Settings.jsx",
+    "line": 97
+  },
+  {
+    "rule": "react(immutability)",
+    "file": "src/pages/admin/Settings.jsx",
+    "line": 51
+  },
+  {
+    "rule": "react-hooks(exhaustive-deps)",
+    "file": "src/pages/admin/Settings.jsx",
+    "line": 52
+  },
+  {
+    "rule": "eslint(no-unused-vars)",
+    "file": "src/pages/superadmin/Schools.jsx",
+    "line": 3
+  },
+  {
+    "rule": "eslint(no-unused-vars)",
+    "file": "src/pages/superadmin/Schools.jsx",
+    "line": 6
+  },
+  {
+    "rule": "eslint(no-unused-vars)",
+    "file": "src/pages/superadmin/Schools.jsx",
+    "line": 7
+  },
+  {
+    "rule": "eslint(no-unused-vars)",
+    "file": "src/pages/superadmin/Schools.jsx",
+    "line": 8
+  },
+  {
+    "rule": "eslint(no-unused-vars)",
+    "file": "src/pages/superadmin/Schools.jsx",
+    "line": 9
+  },
+  {
+    "rule": "eslint(no-unused-vars)",
+    "file": "src/pages/superadmin/Schools.jsx",
+    "line": 10
+  },
+  {
+    "rule": "eslint(no-unused-vars)",
+    "file": "src/pages/examination/Dashboard.jsx",
+    "line": 8
+  },
+  {
+    "rule": "eslint(no-unused-vars)",
+    "file": "src/pages/examination/Dashboard.jsx",
+    "line": 9
+  },
+  {
+    "rule": "react(immutability)",
+    "file": "src/pages/examination/Dashboard.jsx",
+    "line": 35
+  },
+  {
+    "rule": "react(set-state-in-effect)",
+    "file": "src/components/forms/TeacherForm.jsx",
+    "line": 34
+  },
+  {
+    "rule": "eslint(no-unused-vars)",
+    "file": "src/pages/admin/Exams.jsx",
+    "line": 10
+  },
+  {
+    "rule": "react(immutability)",
+    "file": "src/pages/admin/Exams.jsx",
+    "line": 57
+  },
+  {
+    "rule": "react(immutability)",
+    "file": "src/pages/admin/Exams.jsx",
+    "line": 58
+  },
+  {
+    "rule": "react(immutability)",
+    "file": "src/pages/admin/Exams.jsx",
+    "line": 59
+  },
+  {
+    "rule": "react-hooks(exhaustive-deps)",
+    "file": "src/pages/admin/Exams.jsx",
+    "line": 60
+  },
+  {
+    "rule": "react-hooks(exhaustive-deps)",
+    "file": "src/pages/admin/Exams.jsx",
+    "line": 64
+  },
+  {
+    "rule": "react(immutability)",
+    "file": "src/pages/admin/Transport.jsx",
+    "line": 52
+  },
+  {
+    "rule": "react(immutability)",
+    "file": "src/pages/admin/Transport.jsx",
+    "line": 53
+  },
+  {
+    "rule": "eslint(no-unused-vars)",
+    "file": "src/pages/superadmin/Dashboard.jsx",
+    "line": 9
+  },
+  {
+    "rule": "eslint(no-unused-vars)",
+    "file": "src/pages/superadmin/Dashboard.jsx",
+    "line": 11
+  },
+  {
+    "rule": "eslint(no-unused-vars)",
+    "file": "src/pages/superadmin/Dashboard.jsx",
+    "line": 16
+  },
+  {
+    "rule": "react(immutability)",
+    "file": "src/pages/superadmin/Dashboard.jsx",
+    "line": 31
+  },
+  {
+    "rule": "eslint(no-unused-vars)",
+    "file": "src/pages/student/Profile.jsx",
+    "line": 9
+  },
+  {
+    "rule": "eslint(no-unused-vars)",
+    "file": "src/pages/student/Profile.jsx",
+    "line": 13
+  },
+  {
+    "rule": "eslint(no-unused-vars)",
+    "file": "src/pages/student/Profile.jsx",
+    "line": 14
+  },
+  {
+    "rule": "eslint(no-unused-vars)",
+    "file": "src/pages/student/Profile.jsx",
+    "line": 15
+  },
+  {
+    "rule": "react(immutability)",
+    "file": "src/pages/student/Profile.jsx",
+    "line": 50
+  },
+  {
+    "rule": "eslint(no-unused-vars)",
+    "file": "src/pages/common/Profile.jsx",
+    "line": 8
+  },
+  {
+    "rule": "eslint(no-unused-vars)",
+    "file": "src/pages/common/Profile.jsx",
+    "line": 13
+  },
+  {
+    "rule": "eslint(no-unused-vars)",
+    "file": "src/pages/admin/Classes.jsx",
+    "line": 13
+  },
+  {
+    "rule": "react(immutability)",
+    "file": "src/pages/admin/Classes.jsx",
+    "line": 63
+  },
+  {
+    "rule": "react(immutability)",
+    "file": "src/pages/admin/Classes.jsx",
+    "line": 64
+  },
+  {
+    "rule": "eslint(no-unused-vars)",
+    "file": "src/pages/admin/Dashboard.jsx",
+    "line": 30
+  },
+  {
+    "rule": "react(immutability)",
+    "file": "src/pages/admin/Dashboard.jsx",
+    "line": 42
+  },
+  {
+    "rule": "react(purity)",
+    "file": "src/pages/admin/Dashboard.jsx",
+    "line": 83
+  },
+  {
+    "rule": "eslint(no-unused-vars)",
+    "file": "src/pages/admin/Attendance.jsx",
+    "line": 7
+  },
+  {
+    "rule": "eslint(no-unused-vars)",
+    "file": "src/pages/admin/Attendance.jsx",
+    "line": 8
+  },
+  {
+    "rule": "eslint(no-unused-vars)",
+    "file": "src/pages/admin/Attendance.jsx",
+    "line": 9
+  },
+  {
+    "rule": "eslint(no-unused-vars)",
+    "file": "src/pages/admin/Attendance.jsx",
+    "line": 13
+  },
+  {
+    "rule": "react(immutability)",
+    "file": "src/pages/admin/Attendance.jsx",
+    "line": 33
+  },
+  {
+    "rule": "react(immutability)",
+    "file": "src/pages/admin/Attendance.jsx",
+    "line": 38
+  },
+  {
+    "rule": "react(immutability)",
+    "file": "src/pages/admin/Attendance.jsx",
+    "line": 39
+  },
+  {
+    "rule": "react(purity)",
+    "file": "src/pages/admin/Attendance.jsx",
+    "line": 25
+  },
+  {
+    "rule": "react-hooks(exhaustive-deps)",
+    "file": "src/pages/admin/Attendance.jsx",
+    "line": 41
+  },
+  {
+    "rule": "react(set-state-in-effect)",
+    "file": "src/components/forms/StudentForm.jsx",
+    "line": 48
+  },
+  {
+    "rule": "react(immutability)",
+    "file": "src/context/AuthContext.jsx",
+    "line": 22
+  },
+  {
+    "rule": "react(only-export-components)",
+    "file": "src/context/AuthContext.jsx",
+    "line": 7
+  },
+  {
+    "rule": "react(set-state-in-effect)",
+    "file": "src/context/AuthContext.jsx",
+    "line": 24
+  },
+  {
+    "rule": "react(immutability)",
+    "file": "src/pages/student/Fees.jsx",
+    "line": 30
+  },
+  {
+    "rule": "eslint(no-unused-vars)",
+    "file": "src/pages/admin/Timetable.jsx",
+    "line": 7
+  },
+  {
+    "rule": "eslint(no-unused-vars)",
+    "file": "src/pages/admin/Timetable.jsx",
+    "line": 8
+  },
+  {
+    "rule": "eslint(no-unused-vars)",
+    "file": "src/pages/admin/Timetable.jsx",
+    "line": 10
+  },
+  {
+    "rule": "react(immutability)",
+    "file": "src/pages/admin/Timetable.jsx",
+    "line": 67
+  },
+  {
+    "rule": "react(immutability)",
+    "file": "src/pages/admin/Timetable.jsx",
+    "line": 68
+  },
+  {
+    "rule": "react(immutability)",
+    "file": "src/pages/admin/Timetable.jsx",
+    "line": 69
+  },
+  {
+    "rule": "react(immutability)",
+    "file": "src/pages/admin/Timetable.jsx",
+    "line": 70
+  },
+  {
+    "rule": "react-hooks(exhaustive-deps)",
+    "file": "src/pages/admin/Timetable.jsx",
+    "line": 71
+  },
+  {
+    "rule": "react-hooks(exhaustive-deps)",
+    "file": "src/pages/admin/Timetable.jsx",
+    "line": 75
+  },
+  {
+    "rule": "react(immutability)",
+    "file": "src/pages/admin/Teachers.jsx",
+    "line": 48
+  },
+  {
+    "rule": "react-hooks(exhaustive-deps)",
+    "file": "src/pages/admin/Teachers.jsx",
+    "line": 49
+  },
+  {
+    "rule": "eslint(no-unused-vars)",
+    "file": "src/pages/admin/Students.jsx",
+    "line": 2
+  },
+  {
+    "rule": "eslint(no-unused-vars)",
+    "file": "src/pages/admin/Students.jsx",
+    "line": 2
+  },
+  {
+    "rule": "react(immutability)",
+    "file": "src/pages/admin/Students.jsx",
+    "line": 56
+  },
+  {
+    "rule": "react(immutability)",
+    "file": "src/pages/admin/Students.jsx",
+    "line": 57
+  },
+  {
+    "rule": "react-hooks(exhaustive-deps)",
+    "file": "src/pages/admin/Students.jsx",
+    "line": 58
+  },
+  {
+    "rule": "eslint(no-unused-vars)",
+    "file": "src/pages/admin/Results.jsx",
+    "line": 7
+  },
+  {
+    "rule": "eslint(no-unused-vars)",
+    "file": "src/pages/admin/Results.jsx",
+    "line": 8
+  },
+  {
+    "rule": "eslint(no-unused-vars)",
+    "file": "src/pages/admin/Results.jsx",
+    "line": 9
+  },
+  {
+    "rule": "eslint(no-unused-vars)",
+    "file": "src/pages/admin/Results.jsx",
+    "line": 14
+  },
+  {
+    "rule": "react(immutability)",
+    "file": "src/pages/admin/Results.jsx",
+    "line": 52
+  },
+  {
+    "rule": "react(immutability)",
+    "file": "src/pages/admin/Results.jsx",
+    "line": 53
+  },
+  {
+    "rule": "react(immutability)",
+    "file": "src/pages/admin/Results.jsx",
+    "line": 54
+  },
+  {
+    "rule": "react(immutability)",
+    "file": "src/pages/admin/Results.jsx",
+    "line": 55
+  },
+  {
+    "rule": "react-hooks(exhaustive-deps)",
+    "file": "src/pages/admin/Results.jsx",
+    "line": 56
+  }
+]

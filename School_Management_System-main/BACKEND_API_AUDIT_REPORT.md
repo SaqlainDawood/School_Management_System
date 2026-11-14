@@ -219,3 +219,4 @@ No real data is fabricated. If an endpoint is unavailable, the user sees a clear
 5. Implement a notifications feed endpoint (e.g. `/api/notifications`) for the Navbar notification menu.
 6. Confirm all Super Admin CRUD endpoints return appropriate status codes.
 7. Ensure voucher PDF endpoint streams a valid `application/pdf` blob.
+

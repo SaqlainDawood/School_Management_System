@@ -6,13 +6,10 @@ import {
   FiRefreshCw,
   FiCheckCircle,
   FiAlertCircle,
-  FiBarChart2,
 } from 'react-icons/fi';
 import {
   LineChart,
   Line,
-  BarChart,
-  Bar,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -27,35 +24,62 @@ import SectionCard from '../../components/common/SectionCard';
 import StatusBadge from '../../components/common/StatusBadge';
 import api from '../../utils/api';
 
+const getGradeVariant = (grade) => {
+  switch (grade) {
+    case 'A+':
+    case 'A':
+      return 'success';
+    case 'B+':
+    case 'B':
+      return 'info';
+    case 'C+':
+    case 'C':
+      return 'warning';
+    default:
+      return 'danger';
+  }
+};
+
 const StudentResults = () => {
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(null);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   useEffect(() => {
-    fetchResults();
-  }, []);
+    let ignore = false;
+    const fetchResults = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const response = await api.get('/api/results/student');
+        if (ignore) return;
+        setResults(response.data?.results || []);
+      } catch (err) {
+        if (!ignore) {
+          console.error('Error fetching results:', err);
+          setError(err.response?.data?.message || 'Failed to load examination results');
+          setResults([]);
+        }
+      } finally {
+        if (!ignore) {
+          setLoading(false);
+          setRefreshing(false);
+        }
+      }
+    };
 
-  const fetchResults = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const response = await api.get('/api/results/student');
-      setResults(response.data?.results || []);
-    } catch (err) {
-      console.error('Error fetching results:', err);
-      setError(err.response?.data?.message || 'Failed to load examination results');
-      setResults([]);
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  };
+    fetchResults();
+
+    return () => {
+      ignore = true;
+    };
+  }, [refreshTrigger]);
 
   const handleRefresh = () => {
     setRefreshing(true);
-    fetchResults();
+    setRefreshTrigger((prev) => prev + 1);
   };
 
   const totalExams = results.length;
@@ -70,22 +94,6 @@ const StudentResults = () => {
     name: r.exam?.name || r.examName || 'Exam',
     percentage: Math.round(Number(r.percentage) || 0),
   }));
-
-  const getGradeVariant = (grade) => {
-    switch (grade) {
-      case 'A+':
-      case 'A':
-        return 'success';
-      case 'B+':
-      case 'B':
-        return 'info';
-      case 'C+':
-      case 'C':
-        return 'warning';
-      default:
-        return 'danger';
-    }
-  };
 
   if (loading) return <Loader />;
 

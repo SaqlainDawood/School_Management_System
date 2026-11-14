@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import Input from './Input';
 import Button from './Button';
 import {
@@ -8,30 +8,24 @@ import {
   FiUsers,
 } from 'react-icons/fi';
 
-const ClassForm = ({ initialData, onSubmit, onCancel, loading }) => {
-  const [formData, setFormData] = useState({
-    name: '',
-    code: '',
-    description: '',
-    academicYear: '',
-    capacity: '',
-    roomNumber: '',
-  });
+const getInitialClassForm = (data) => ({
+  name: data?.name || '',
+  code: data?.code || '',
+  description: data?.description || '',
+  academicYear: data?.academicYear || '',
+  capacity: data?.capacity || '',
+  roomNumber: data?.roomNumber || '',
+});
 
+const ClassForm = ({ initialData, onSubmit, onCancel, loading }) => {
+  const [formData, setFormData] = useState(() => getInitialClassForm(initialData));
+  const [prevInitialData, setPrevInitialData] = useState(initialData);
   const [errors, setErrors] = useState({});
 
-  useEffect(() => {
-    if (initialData) {
-      setFormData({
-        name: initialData.name || '',
-        code: initialData.code || '',
-        description: initialData.description || '',
-        academicYear: initialData.academicYear || '',
-        capacity: initialData.capacity || '',
-        roomNumber: initialData.roomNumber || '',
-      });
-    }
-  }, [initialData]);
+  if (initialData !== prevInitialData) {
+    setPrevInitialData(initialData);
+    setFormData(getInitialClassForm(initialData));
+  }
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });

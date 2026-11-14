@@ -5,8 +5,6 @@ import {
   FiClock,
   FiBarChart2,
   FiCalendar,
-  FiFileText,
-  FiArrowRight,
   FiCheckCircle,
 } from 'react-icons/fi';
 import {
@@ -32,29 +30,39 @@ const ExaminationDashboard = () => {
   const [results, setResults] = useState([]);
 
   useEffect(() => {
+    let ignore = false;
+    const fetchExamOfficeData = async () => {
+      try {
+        setLoading(true);
+        const [examsRes, resultsRes] = await Promise.allSettled([
+          api.get('/api/exams'),
+          api.get('/api/results'),
+        ]);
+
+        if (ignore) return;
+        if (examsRes.status === 'fulfilled' && examsRes.value.data?.exams) {
+          setExams(examsRes.value.data.exams);
+        }
+        if (resultsRes.status === 'fulfilled' && resultsRes.value.data?.results) {
+          setResults(resultsRes.value.data.results);
+        }
+      } catch (error) {
+        if (!ignore) {
+          console.error('Error loading examination dashboard data:', error);
+        }
+      } finally {
+        if (!ignore) {
+          setLoading(false);
+        }
+      }
+    };
+
     fetchExamOfficeData();
+
+    return () => {
+      ignore = true;
+    };
   }, []);
-
-  const fetchExamOfficeData = async () => {
-    try {
-      setLoading(true);
-      const [examsRes, resultsRes] = await Promise.allSettled([
-        api.get('/api/exams'),
-        api.get('/api/results'),
-      ]);
-
-      if (examsRes.status === 'fulfilled' && examsRes.value.data?.exams) {
-        setExams(examsRes.value.data.exams);
-      }
-      if (resultsRes.status === 'fulfilled' && resultsRes.value.data?.results) {
-        setResults(resultsRes.value.data.results);
-      }
-    } catch (error) {
-      console.error('Error loading examination dashboard data:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const totalExams = exams.length;
   const ongoingExams = exams.filter((e) => e.status === 'ongoing').length;

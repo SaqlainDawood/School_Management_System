@@ -315,3 +315,4 @@ Custom tokens defined: `primary`, `accent`, `sidebar`, `navy`, `success`, `warni
 
 > [!NOTE]
 > The chunk-size warning is non-fatal and stems from Recharts + Framer Motion in a single bundle. Code-splitting with dynamic `import()` per route would reduce this, recommended as a follow-up optimization.
+

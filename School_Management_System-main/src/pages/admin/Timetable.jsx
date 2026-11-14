@@ -4,10 +4,7 @@ import {
   FiEdit2,
   FiTrash2,
   FiCalendar,
-  FiClock,
-  FiBook,
   FiUser,
-  FiMapPin,
 } from 'react-icons/fi';
 import { toast } from 'react-toastify';
 import PageHeader from '../../components/common/PageHeader';
@@ -19,6 +16,17 @@ import Loader from '../../components/common/Loader';
 import EmptyState from '../../components/common/EmptyState';
 import ConfirmDialog from '../../components/common/ConfirmDialog';
 import api from '../../utils/api';
+
+const PERIOD_TIMES = [
+  { number: 1, start: '08:00', end: '08:45' },
+  { number: 2, start: '08:45', end: '09:30' },
+  { number: 3, start: '09:30', end: '10:15' },
+  { number: 4, start: '10:30', end: '11:15' },
+  { number: 5, start: '11:15', end: '12:00' },
+  { number: 6, start: '12:00', end: '12:45' },
+  { number: 7, start: '13:30', end: '14:15' },
+  { number: 8, start: '14:15', end: '15:00' },
+];
 
 const Timetable = () => {
   const [timetables, setTimetables] = useState([]);
@@ -32,6 +40,7 @@ const Timetable = () => {
   const [selectedClass, setSelectedClass] = useState('');
   const [deleteTargetId, setDeleteTargetId] = useState(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   const [formData, setFormData] = useState({
     class: '',
@@ -52,71 +61,61 @@ const Timetable = () => {
   const [editingPeriodIndex, setEditingPeriodIndex] = useState(null);
   const [errors, setErrors] = useState({});
 
-  const periodTimes = [
-    { number: 1, start: '08:00', end: '08:45' },
-    { number: 2, start: '08:45', end: '09:30' },
-    { number: 3, start: '09:30', end: '10:15' },
-    { number: 4, start: '10:30', end: '11:15' },
-    { number: 5, start: '11:15', end: '12:00' },
-    { number: 6, start: '12:00', end: '12:45' },
-    { number: 7, start: '13:30', end: '14:15' },
-    { number: 8, start: '14:15', end: '15:00' },
-  ];
-
   useEffect(() => {
+    let ignore = false;
+    const fetchTimetables = async () => {
+      setLoading(true);
+      try {
+        const params = {};
+        if (selectedClass) params.classId = selectedClass;
+        const response = await api.get('/api/timetable', { params });
+        if (ignore) return;
+        setTimetables(response.data.timetables || []);
+      } catch (err) {
+        if (!ignore) {
+          console.error('Error fetching timetables:', err);
+          toast.error('Failed to fetch timetables');
+        }
+      } finally {
+        if (!ignore) {
+          setLoading(false);
+        }
+      }
+    };
+
     fetchTimetables();
-    fetchClasses();
-    fetchTeachers();
-    fetchSubjects();
-  }, []);
+
+    return () => {
+      ignore = true;
+    };
+  }, [selectedClass, refreshTrigger]);
 
   useEffect(() => {
-    if (selectedClass) fetchTimetables();
-  }, [selectedClass]);
+    let ignore = false;
+    const fetchPrerequisites = async () => {
+      try {
+        const [classesRes, teachersRes, subjectsRes] = await Promise.all([
+          api.get('/api/classes'),
+          api.get('/api/teachers', { params: { limit: 100 } }),
+          api.get('/api/subjects'),
+        ]);
+        if (ignore) return;
+        setClasses(classesRes.data.classes || []);
+        setTeachers(teachersRes.data.teachers || []);
+        setSubjects(subjectsRes.data.subjects || []);
+      } catch (err) {
+        if (!ignore) {
+          console.error('Error fetching timetable prerequisites:', err);
+        }
+      }
+    };
 
-  const fetchTimetables = async () => {
-    setLoading(true);
-    try {
-      const params = {};
-      if (selectedClass) params.classId = selectedClass;
-      const response = await api.get('/api/timetable', { params });
-      setTimetables(response.data.timetables || []);
-    } catch (err) {
-      console.error('Error fetching timetables:', err);
-      toast.error('Failed to fetch timetables');
-    } finally {
-      setLoading(false);
-    }
-  };
+    fetchPrerequisites();
 
-  const fetchClasses = async () => {
-    try {
-      const response = await api.get('/api/classes');
-      setClasses(response.data.classes || []);
-    } catch (err) {
-      console.error('Error fetching classes:', err);
-    }
-  };
-
-  const fetchTeachers = async () => {
-    try {
-      const response = await api.get('/api/teachers', {
-        params: { limit: 100 },
-      });
-      setTeachers(response.data.teachers || []);
-    } catch (err) {
-      console.error('Error fetching teachers:', err);
-    }
-  };
-
-  const fetchSubjects = async () => {
-    try {
-      const response = await api.get('/api/subjects');
-      setSubjects(response.data.subjects || []);
-    } catch (err) {
-      console.error('Error fetching subjects:', err);
-    }
-  };
+    return () => {
+      ignore = true;
+    };
+  }, []);
 
   const getSubjectName = (subjectData) => {
     if (!subjectData) return 'Not Assigned';
@@ -235,7 +234,7 @@ const Timetable = () => {
 
     const nextPeriodNumber = formData.periods.length + 2;
     const nextTime =
-      periodTimes.find((p) => p.number === nextPeriodNumber) || periodTimes[0];
+      PERIOD_TIMES.find((p) => p.number === nextPeriodNumber) || PERIOD_TIMES[0];
     setPeriodForm({
       periodNumber: nextPeriodNumber,
       startTime: nextTime.start,
@@ -284,7 +283,7 @@ const Timetable = () => {
         toast.success('Timetable registered successfully');
       }
       setShowModal(false);
-      fetchTimetables();
+      setRefreshTrigger((prev) => prev + 1);
     } catch (err) {
       console.error('Error saving timetable:', err);
       toast.error(err.response?.data?.message || 'Failed to save timetable');
@@ -300,7 +299,7 @@ const Timetable = () => {
       await api.delete(`/api/timetable/${deleteTargetId}`);
       toast.success('Timetable schedule deleted');
       setDeleteTargetId(null);
-      fetchTimetables();
+      setRefreshTrigger((prev) => prev + 1);
     } catch (err) {
       console.error('Error deleting timetable:', err);
       toast.error('Failed to delete timetable');

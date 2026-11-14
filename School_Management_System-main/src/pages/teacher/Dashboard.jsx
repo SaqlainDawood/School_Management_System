@@ -34,38 +34,49 @@ const TeacherDashboard = () => {
   const [attendanceData, setAttendanceData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   useEffect(() => {
-    fetchDashboard();
-  }, []);
+    let ignore = false;
+    const fetchDashboard = async () => {
+      try {
+        setLoading(true);
+        const response = await api.get('/api/teachers/dashboard');
+        if (ignore) return;
+        const data = response.data?.dashboard?.stats || response.data?.stats || {};
+        setStats({
+          classes: data.classes ?? null,
+          students: data.students ?? null,
+          assignments: data.pendingAssignments ?? data.assignments ?? null,
+          attendance: data.todayAttendance ?? null,
+        });
 
-  const fetchDashboard = async () => {
-    setLoading(true);
-    setError(false);
-    try {
-      const response = await api.get('/api/teachers/dashboard');
-      const data = response.data?.dashboard?.stats || response.data?.stats || {};
-      setStats({
-        classes: data.classes ?? null,
-        students: data.students ?? null,
-        assignments: data.pendingAssignments ?? data.assignments ?? null,
-        attendance: data.todayAttendance ?? null,
-      });
-
-      if (Array.isArray(data.attendanceHistory) && data.attendanceHistory.length > 0) {
-        setAttendanceData(data.attendanceHistory);
-      } else {
-        setAttendanceData([]);
+        if (Array.isArray(data.attendanceHistory) && data.attendanceHistory.length > 0) {
+          setAttendanceData(data.attendanceHistory);
+        } else {
+          setAttendanceData([]);
+        }
+        setError(false);
+      } catch (err) {
+        if (!ignore) {
+          console.error('Error fetching teacher dashboard:', err);
+          setError(true);
+          setStats(null);
+          setAttendanceData([]);
+        }
+      } finally {
+        if (!ignore) {
+          setLoading(false);
+        }
       }
-    } catch (err) {
-      console.error('Error fetching teacher dashboard:', err);
-      setError(true);
-      setStats(null);
-      setAttendanceData([]);
-    } finally {
-      setLoading(false);
-    }
-  };
+    };
+
+    fetchDashboard();
+
+    return () => {
+      ignore = true;
+    };
+  }, [refreshTrigger]);
 
   if (loading) return <Loader />;
 
@@ -90,7 +101,7 @@ const TeacherDashboard = () => {
         <ErrorState
           title="Failed to load faculty overview"
           message="Unable to retrieve real-time teacher statistics from the server."
-          onRetry={fetchDashboard}
+          onRetry={() => setRefreshTrigger((prev) => prev + 1)}
         />
       ) : (
         <>

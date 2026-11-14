@@ -25,41 +25,62 @@ const ParentFees = () => {
   const [fetchingFees, setFetchingFees] = useState(false);
 
   useEffect(() => {
+    let ignore = false;
+    const fetchChildren = async () => {
+      try {
+        setLoading(true);
+        const response = await api.get('/api/parents/dashboard');
+        if (ignore) return;
+        const kids = response.data?.dashboard?.parent?.children || [];
+        setChildren(kids);
+        if (kids.length > 0) setSelectedChild(kids[0]._id);
+      } catch (error) {
+        if (!ignore) {
+          console.error('Error fetching children:', error);
+        }
+      } finally {
+        if (!ignore) {
+          setLoading(false);
+        }
+      }
+    };
+
     fetchChildren();
+
+    return () => {
+      ignore = true;
+    };
   }, []);
 
   useEffect(() => {
-    if (selectedChild) fetchFees();
+    if (!selectedChild) return;
+    let ignore = false;
+    const fetchFees = async () => {
+      try {
+        setFetchingFees(true);
+        const response = await api.get(`/api/parents/child/${selectedChild}/fees`);
+        if (ignore) return;
+        setFees(response.data?.fees || []);
+        setSummary(response.data?.summary || {});
+      } catch (error) {
+        if (!ignore) {
+          console.error('Error fetching fees:', error);
+          setFees([]);
+          setSummary({});
+        }
+      } finally {
+        if (!ignore) {
+          setFetchingFees(false);
+        }
+      }
+    };
+
+    fetchFees();
+
+    return () => {
+      ignore = true;
+    };
   }, [selectedChild]);
-
-  const fetchChildren = async () => {
-    try {
-      setLoading(true);
-      const response = await api.get('/api/parents/dashboard');
-      const kids = response.data?.dashboard?.parent?.children || [];
-      setChildren(kids);
-      if (kids.length > 0) setSelectedChild(kids[0]._id);
-    } catch (error) {
-      console.error('Error fetching children:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchFees = async () => {
-    try {
-      setFetchingFees(true);
-      const response = await api.get(`/api/parents/child/${selectedChild}/fees`);
-      setFees(response.data?.fees || []);
-      setSummary(response.data?.summary || {});
-    } catch (error) {
-      console.error('Error fetching fees:', error);
-      setFees([]);
-      setSummary({});
-    } finally {
-      setFetchingFees(false);
-    }
-  };
 
   if (loading) return <Loader />;
 

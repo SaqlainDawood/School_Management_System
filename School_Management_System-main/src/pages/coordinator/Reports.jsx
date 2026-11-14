@@ -2,10 +2,6 @@ import React, { useState } from 'react';
 import {
   FiDownload,
   FiBarChart2,
-  FiUsers,
-  FiDollarSign,
-  FiClock,
-  FiFileText,
   FiInfo,
 } from 'react-icons/fi';
 import { toast } from 'react-toastify';

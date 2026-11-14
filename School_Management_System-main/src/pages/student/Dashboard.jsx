@@ -1,16 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
 import {
   FiCalendar,
   FiClock,
   FiDollarSign,
   FiAward,
   FiFileText,
-  FiBook,
-  FiCheckCircle,
   FiArrowRight,
-  FiAlertCircle,
   FiUser,
 } from 'react-icons/fi';
 import { useAuth } from '../../context/AuthContext';
@@ -18,8 +14,16 @@ import api from '../../utils/api';
 import PageHeader from '../../components/common/PageHeader';
 import StatsCard from '../../components/dashboard/StatsCard';
 import Loader from '../../components/common/Loader';
-import EmptyState from '../../components/common/EmptyState';
 import ErrorState from '../../components/common/ErrorState';
+
+const getFormattedDate = () => {
+  return new Date().toLocaleDateString('en-US', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  });
+};
 
 const StudentDashboard = () => {
   const { user } = useAuth();
@@ -28,41 +32,45 @@ const StudentDashboard = () => {
   const [error, setError] = useState(null);
   const [stats, setStats] = useState(null);
   const [studentData, setStudentData] = useState(null);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
-  const today = new Date();
-  const dateStr = today.toLocaleDateString('en-US', {
-    weekday: 'long',
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  });
+  const dateStr = getFormattedDate();
 
   useEffect(() => {
+    let ignore = false;
+    const fetchDashboard = async () => {
+      try {
+        const [dashRes, profileRes] = await Promise.allSettled([
+          api.get('/api/students/dashboard'),
+          api.get('/api/students/profile'),
+        ]);
+
+        if (ignore) return;
+
+        if (dashRes.status === 'fulfilled' && dashRes.value.data?.dashboard) {
+          setStats(dashRes.value.data.dashboard.stats || null);
+        }
+        if (profileRes.status === 'fulfilled' && profileRes.value.data?.student) {
+          setStudentData(profileRes.value.data.student);
+        }
+      } catch (err) {
+        if (!ignore) {
+          console.error('Error fetching student dashboard:', err);
+          setError('Unable to load student metrics at this time.');
+        }
+      } finally {
+        if (!ignore) {
+          setLoading(false);
+        }
+      }
+    };
+
     fetchDashboard();
-  }, []);
 
-  const fetchDashboard = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const [dashRes, profileRes] = await Promise.allSettled([
-        api.get('/api/students/dashboard'),
-        api.get('/api/students/profile'),
-      ]);
-
-      if (dashRes.status === 'fulfilled' && dashRes.value.data?.dashboard) {
-        setStats(dashRes.value.data.dashboard.stats || null);
-      }
-      if (profileRes.status === 'fulfilled' && profileRes.value.data?.student) {
-        setStudentData(profileRes.value.data.student);
-      }
-    } catch (err) {
-      console.error('Error fetching student dashboard:', err);
-      setError('Unable to load student metrics at this time.');
-    } finally {
-      setLoading(false);
-    }
-  };
+    return () => {
+      ignore = true;
+    };
+  }, [refreshTrigger]);
 
   if (loading) return <Loader />;
 
@@ -86,7 +94,11 @@ const StudentDashboard = () => {
         <ErrorState
           title="Dashboard Notice"
           message={error}
-          onRetry={fetchDashboard}
+          onRetry={() => {
+            setLoading(true);
+            setError(null);
+            setRefreshTrigger((t) => t + 1);
+          }}
         />
       )}
 

@@ -1,6 +1,5 @@
 // frontend/src/pages/admin/Subjects.jsx
 import React, { useState, useEffect, useMemo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import {
   FiPlus,
   FiEdit2,
@@ -49,45 +48,59 @@ const Subjects = () => {
     teachers: [],
   });
   const [errors, setErrors] = useState({});
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   useEffect(() => {
+    let ignore = false;
+    const fetchSubjects = async () => {
+      setLoading(true);
+      try {
+        const response = await api.get('/api/subjects');
+        if (ignore) return;
+        setSubjects(response.data.subjects || []);
+      } catch (err) {
+        if (!ignore) {
+          console.error('Error fetching subjects:', err);
+          toast.error('Failed to fetch subjects');
+        }
+      } finally {
+        if (!ignore) {
+          setLoading(false);
+        }
+      }
+    };
+
     fetchSubjects();
-    fetchClasses();
-    fetchTeachers();
+
+    return () => {
+      ignore = true;
+    };
+  }, [refreshTrigger]);
+
+  useEffect(() => {
+    let ignore = false;
+    const fetchClassesAndTeachers = async () => {
+      try {
+        const [classesRes, teachersRes] = await Promise.all([
+          api.get('/api/classes'),
+          api.get('/api/teachers', { params: { limit: 100 } }),
+        ]);
+        if (ignore) return;
+        setClasses(classesRes.data.classes || []);
+        setTeachers(teachersRes.data.teachers || []);
+      } catch (err) {
+        if (!ignore) {
+          console.error('Error fetching classes or teachers:', err);
+        }
+      }
+    };
+
+    fetchClassesAndTeachers();
+
+    return () => {
+      ignore = true;
+    };
   }, []);
-
-  const fetchSubjects = async () => {
-    setLoading(true);
-    try {
-      const response = await api.get('/api/subjects');
-      setSubjects(response.data.subjects || []);
-    } catch (err) {
-      console.error('Error fetching subjects:', err);
-      toast.error('Failed to fetch subjects');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchClasses = async () => {
-    try {
-      const response = await api.get('/api/classes');
-      setClasses(response.data.classes || []);
-    } catch (err) {
-      console.error('Error fetching classes:', err);
-    }
-  };
-
-  const fetchTeachers = async () => {
-    try {
-      const response = await api.get('/api/teachers', {
-        params: { limit: 100 },
-      });
-      setTeachers(response.data.teachers || []);
-    } catch (err) {
-      console.error('Error fetching teachers:', err);
-    }
-  };
 
   const filteredSubjects = useMemo(() => {
     return subjects.filter((subject) => {
@@ -229,7 +242,7 @@ const Subjects = () => {
         toast.success('Subject added successfully');
       }
       setShowModal(false);
-      fetchSubjects();
+      setRefreshTrigger((prev) => prev + 1);
     } catch (err) {
       console.error('Error saving subject:', err);
       toast.error(err.response?.data?.message || 'Failed to save subject');
@@ -245,7 +258,7 @@ const Subjects = () => {
       await api.delete(`/api/subjects/${deleteTargetId}`);
       toast.success('Subject deleted successfully');
       setDeleteTargetId(null);
-      fetchSubjects();
+      setRefreshTrigger((prev) => prev + 1);
     } catch (err) {
       console.error('Error deleting subject:', err);
       toast.error('Failed to delete subject');

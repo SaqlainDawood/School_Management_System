@@ -28,27 +28,37 @@ const ClassDetailModal = ({ isOpen, onClose, classId }) => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (isOpen && classId) {
-      fetchClassDetails();
-    }
-  }, [isOpen, classId]);
+    if (!isOpen || !classId) return;
 
-  const fetchClassDetails = async () => {
-    setLoading(true);
-    setError('');
-    try {
-      const response = await api.get(`/api/classes/${classId}`);
-      setClassData(response.data.class);
-    } catch (error) {
-      console.error('Error fetching class details:', error);
-      setError(
-        error.response?.data?.message || 'Failed to fetch class details'
-      );
-      toast.error('Failed to fetch class details');
-    } finally {
-      setLoading(false);
-    }
-  };
+    let ignore = false;
+    const fetchClassDetails = async () => {
+      setLoading(true);
+      setError('');
+      try {
+        const response = await api.get(`/api/classes/${classId}`);
+        if (ignore) return;
+        setClassData(response.data.class);
+      } catch (error) {
+        if (!ignore) {
+          console.error('Error fetching class details:', error);
+          setError(
+            error.response?.data?.message || 'Failed to fetch class details'
+          );
+          toast.error('Failed to fetch class details');
+        }
+      } finally {
+        if (!ignore) {
+          setLoading(false);
+        }
+      }
+    };
+
+    fetchClassDetails();
+
+    return () => {
+      ignore = true;
+    };
+  }, [isOpen, classId]);
 
   const getStatusBadge = (status) => {
     const configs = {

@@ -5,12 +5,10 @@ import {
   FiPhone,
   FiMapPin,
   FiSave,
-  FiShield,
 } from 'react-icons/fi';
 import { toast } from 'react-toastify';
 import { useAuth } from '../../context/AuthContext';
 import PageHeader from '../../components/common/PageHeader';
-import SectionCard from '../../components/common/SectionCard';
 import StatusBadge from '../../components/common/StatusBadge';
 import Input from '../../components/forms/Input';
 import Button from '../../components/forms/Button';

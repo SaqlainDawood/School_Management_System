@@ -4,6 +4,7 @@ import { toast } from 'react-toastify';
 
 const AuthContext = createContext();
 
+// eslint-disable-next-line react/only-export-components
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) {
@@ -14,30 +15,31 @@ export const useAuth = () => {
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!!token);
   const [token, setToken] = useState(localStorage.getItem('token'));
 
   useEffect(() => {
-    if (token) {
-      loadUser();
-    } else {
-      setLoading(false);
-    }
+    if (!token) return;
+    let ignore = false;
+    const fetchCurrentUser = async () => {
+      try {
+        const response = await api.get('/api/auth/me');
+        if (!ignore) setUser(response.data.user);
+      } catch (error) {
+        console.error('Error loading user:', error);
+        if (!ignore) {
+          localStorage.removeItem('token');
+          setToken(null);
+          setUser(null);
+        }
+      } finally {
+        if (!ignore) setLoading(false);
+      }
+    };
+    fetchCurrentUser();
+    return () => { ignore = true; };
   }, [token]);
 
-  const loadUser = async () => {
-    try {
-      const response = await api.get('/api/auth/me');
-      setUser(response.data.user);
-    } catch (error) {
-      console.error('Error loading user:', error);
-      localStorage.removeItem('token');
-      setToken(null);
-      setUser(null);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const login = async (email, password) => {
     try {
@@ -168,7 +170,6 @@ export const AuthProvider = ({ children }) => {
     resetPassword,
     updateProfile,
     changePassword,
-    loadUser,
     isAuthenticated: !!user,
     isSuperAdmin: user?.role === 'superadmin',
     isAdmin: user?.role === 'admin',

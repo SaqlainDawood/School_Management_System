@@ -1,17 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import {
-  FiUser,
-  FiBook,
-  FiClock,
-  FiAward,
-  FiDollarSign,
-  FiUsers,
-  FiHash,
-  FiCalendar,
-} from 'react-icons/fi';
+import { FiUsers } from 'react-icons/fi';
 import PageHeader from '../../components/common/PageHeader';
-import SectionCard from '../../components/common/SectionCard';
 import StatusBadge from '../../components/common/StatusBadge';
 import Loader from '../../components/common/Loader';
 import EmptyState from '../../components/common/EmptyState';
@@ -23,21 +13,31 @@ const ParentChildren = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchChildren();
-  }, []);
+    let ignore = false;
+    const fetchChildren = async () => {
+      try {
+        setLoading(true);
+        const response = await api.get('/api/parents/dashboard');
+        if (ignore) return;
+        setChildren(response.data?.dashboard?.parent?.children || []);
+      } catch (error) {
+        if (!ignore) {
+          console.error('Error fetching children:', error);
+          setChildren([]);
+        }
+      } finally {
+        if (!ignore) {
+          setLoading(false);
+        }
+      }
+    };
 
-  const fetchChildren = async () => {
-    try {
-      setLoading(true);
-      const response = await api.get('/api/parents/dashboard');
-      setChildren(response.data?.dashboard?.parent?.children || []);
-    } catch (error) {
-      console.error('Error fetching children:', error);
-      setChildren([]);
-    } finally {
-      setLoading(false);
-    }
-  };
+    fetchChildren();
+
+    return () => {
+      ignore = true;
+    };
+  }, []);
 
   if (loading) return <Loader />;
 

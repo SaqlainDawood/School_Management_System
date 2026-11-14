@@ -27,9 +27,15 @@ import RecentActivity from '../../components/dashboard/RecentActivity';
 import PageHeader from '../../components/common/PageHeader';
 import ErrorState from '../../components/common/ErrorState';
 import Loader from '../../components/common/Loader';
-import Button from '../../components/forms/Button';
 import api from '../../utils/api';
 import { useAuth } from '../../context/AuthContext';
+
+const getGreeting = () => {
+  const h = new Date().getHours();
+  if (h < 12) return 'Good morning';
+  if (h < 17) return 'Good afternoon';
+  return 'Good evening';
+};
 
 const AdminDashboard = () => {
   const { user } = useAuth();
@@ -38,53 +44,58 @@ const AdminDashboard = () => {
   const [error, setError] = useState(false);
   const [attendanceData, setAttendanceData] = useState([]);
 
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
+
   useEffect(() => {
-    fetchStats();
-  }, []);
+    let ignore = false;
+    const fetchStats = async () => {
+      try {
+        const response = await api.get('/api/admin/stats');
+        if (ignore) return;
+        const data = response.data;
+        const statsData = data.stats || data;
 
-  const fetchStats = async () => {
-    setLoading(true);
-    setError(false);
-    try {
-      const response = await api.get('/api/admin/stats');
-      const data = response.data;
-      const statsData = data.stats || data;
+        setStats({
+          totalStudents: statsData.students ?? statsData.totalStudents ?? null,
+          totalTeachers: statsData.teachers ?? statsData.totalTeachers ?? null,
+          totalClasses: statsData.classes ?? statsData.totalClasses ?? null,
+          totalRevenue: statsData.totalRevenue ?? statsData.revenue ?? null,
+          attendancePercentage:
+            statsData.attendance?.percentage ?? statsData.attendancePercentage ?? null,
+          attendanceHistory: statsData.attendanceHistory || [],
+        });
 
-      setStats({
-        totalStudents: statsData.students ?? statsData.totalStudents ?? null,
-        totalTeachers: statsData.teachers ?? statsData.totalTeachers ?? null,
-        totalClasses: statsData.classes ?? statsData.totalClasses ?? null,
-        totalRevenue: statsData.totalRevenue ?? statsData.revenue ?? null,
-        attendancePercentage:
-          statsData.attendance?.percentage ?? statsData.attendancePercentage ?? null,
-        attendanceHistory: statsData.attendanceHistory || [],
-      });
-
-      // Build attendance chart data only from real API data
-      if (statsData.attendanceHistory && statsData.attendanceHistory.length > 0) {
-        setAttendanceData(statsData.attendanceHistory);
-      } else {
-        setAttendanceData([]);
+        // Build attendance chart data only from real API data
+        if (statsData.attendanceHistory && statsData.attendanceHistory.length > 0) {
+          setAttendanceData(statsData.attendanceHistory);
+        } else {
+          setAttendanceData([]);
+        }
+      } catch (err) {
+        if (!ignore) {
+          console.error('Error fetching stats:', err);
+          setError(true);
+          setStats(null);
+          setAttendanceData([]);
+        }
+      } finally {
+        if (!ignore) {
+          setLoading(false);
+        }
       }
-    } catch (err) {
-      console.error('Error fetching stats:', err);
-      setError(true);
-      setStats(null);
-      setAttendanceData([]);
-    } finally {
-      setLoading(false);
-    }
-  };
+    };
+
+    fetchStats();
+
+    return () => {
+      ignore = true;
+    };
+  }, [refreshTrigger]);
 
   if (loading) return <Loader />;
 
   const schoolName = user?.schoolName || user?.school?.name || 'Your School';
-  const greeting = () => {
-    const h = new Date().getHours();
-    if (h < 12) return 'Good morning';
-    if (h < 17) return 'Good afternoon';
-    return 'Good evening';
-  };
+  const greetingText = getGreeting();
 
   const quickActions = [
     { label: 'Add Student', icon: FiUserPlus, to: '/admin/students' },
@@ -98,7 +109,7 @@ const AdminDashboard = () => {
   return (
     <div className="space-y-6">
       <PageHeader
-        title={`${greeting()}, Admin`}
+        title={`${greetingText}, Admin`}
         subtitle={`Welcome back to ${schoolName} dashboard`}
         breadcrumbs={[{ label: 'Dashboard' }]}
       />
@@ -107,7 +118,11 @@ const AdminDashboard = () => {
         <ErrorState
           title="Failed to load dashboard statistics"
           message="Unable to reach the server. Check your connection and try again."
-          onRetry={fetchStats}
+          onRetry={() => {
+            setLoading(true);
+            setError(false);
+            setRefreshTrigger((t) => t + 1);
+          }}
         />
       ) : (
         <>

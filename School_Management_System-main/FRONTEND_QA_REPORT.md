@@ -236,3 +236,4 @@ The Navbar notification menu previously displayed hardcoded/demo notifications. 
 | Responsive layouts | ✅ |
 | All 53 pages redesigned | ✅ |
 | All 7 role portals complete | ✅ |
+

@@ -46,47 +46,69 @@ const TeacherAssignments = () => {
     status: 'draft',
   });
   const [errors, setErrors] = useState({});
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   useEffect(() => {
+    let ignore = false;
+    const fetchAssignments = async () => {
+      try {
+        setLoading(true);
+        const response = await api.get('/api/assignments');
+        if (ignore) return;
+        setAssignments(response.data?.assignments || []);
+      } catch (err) {
+        if (!ignore) {
+          console.error('Error fetching assignments:', err);
+          toast.error('Failed to fetch assignments');
+        }
+      } finally {
+        if (!ignore) {
+          setLoading(false);
+        }
+      }
+    };
+
     fetchAssignments();
-    fetchTeacherData();
-  }, []);
 
-  const fetchAssignments = async () => {
-    setLoading(true);
-    try {
-      const response = await api.get('/api/assignments');
-      setAssignments(response.data?.assignments || []);
-    } catch (err) {
-      console.error('Error fetching assignments:', err);
-      toast.error('Failed to fetch assignments');
-    } finally {
-      setLoading(false);
-    }
-  };
+    return () => {
+      ignore = true;
+    };
+  }, [refreshTrigger]);
 
-  const fetchTeacherData = async () => {
-    try {
-      const classesRes = await api.get('/api/teachers/classes');
-      const classList = classesRes.data?.classes || [];
-      setClasses(classList);
+  useEffect(() => {
+    let ignore = false;
+    const fetchTeacherData = async () => {
+      try {
+        const classesRes = await api.get('/api/teachers/classes');
+        if (ignore) return;
+        const classList = classesRes.data?.classes || [];
+        setClasses(classList);
 
-      const subjectsSet = new Set();
-      classList.forEach((cls) => {
-        cls.subjects?.forEach((s) => {
-          if (s.subject?._id) {
-            subjectsSet.add(
-              JSON.stringify({ _id: s.subject._id, name: s.subject.name })
-            );
-          }
+        const subjectsSet = new Set();
+        classList.forEach((cls) => {
+          cls.subjects?.forEach((s) => {
+            if (s.subject?._id) {
+              subjectsSet.add(
+                JSON.stringify({ _id: s.subject._id, name: s.subject.name })
+              );
+            }
+          });
         });
-      });
-      const uniqueSubjects = Array.from(subjectsSet).map((s) => JSON.parse(s));
-      setSubjects(uniqueSubjects);
-    } catch (err) {
-      console.error('Error fetching teacher class data:', err);
-    }
-  };
+        const uniqueSubjects = Array.from(subjectsSet).map((s) => JSON.parse(s));
+        setSubjects(uniqueSubjects);
+      } catch (err) {
+        if (!ignore) {
+          console.error('Error fetching teacher class data:', err);
+        }
+      }
+    };
+
+    fetchTeacherData();
+
+    return () => {
+      ignore = true;
+    };
+  }, []);
 
   const handleAddAssignment = () => {
     setEditingAssignment(null);
@@ -167,7 +189,7 @@ const TeacherAssignments = () => {
         toast.success('Assignment created successfully');
       }
       setShowModal(false);
-      fetchAssignments();
+      setRefreshTrigger((prev) => prev + 1);
     } catch (err) {
       console.error('Error saving assignment:', err);
       toast.error(err.response?.data?.message || 'Failed to save assignment');
@@ -183,7 +205,7 @@ const TeacherAssignments = () => {
       await api.delete(`/api/assignments/${deleteTargetId}`);
       toast.success('Assignment deleted');
       setDeleteTargetId(null);
-      fetchAssignments();
+      setRefreshTrigger((prev) => prev + 1);
     } catch (err) {
       console.error('Error deleting assignment:', err);
       toast.error('Failed to delete assignment');
@@ -196,7 +218,7 @@ const TeacherAssignments = () => {
     try {
       await api.put(`/api/assignments/${id}`, { status: 'published' });
       toast.success('Assignment published to students');
-      fetchAssignments();
+      setRefreshTrigger((prev) => prev + 1);
     } catch (err) {
       console.error('Error publishing assignment:', err);
       toast.error('Failed to publish assignment');

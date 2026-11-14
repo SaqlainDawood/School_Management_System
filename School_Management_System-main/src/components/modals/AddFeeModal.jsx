@@ -1,10 +1,9 @@
 // frontend/src/components/modals/AddFeeModal.jsx
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   FiX,
   FiUser,
-  FiBook,
   FiDollarSign,
   FiFileText,
   FiAlertCircle,
@@ -15,46 +14,44 @@ import {
 } from 'react-icons/fi';
 import { formatCurrency } from '../../utils/helpers';
 
+const getInitialFeeForm = (data) => ({
+  student: data?.student || '',
+  feeType: data?.feeType || 'tuition',
+  amount: data?.amount || '',
+  dueDate: data?.dueDate || '',
+  academicYear: data?.academicYear || '',
+  semester: data?.semester || 'annual',
+  remarks: data?.remarks || '',
+});
+
 const AddFeeModal = ({
   isOpen,
   onClose,
   onSubmit,
   students,
-  classes,
+  _classes,
   loading = false,
   initialData = null,
 }) => {
-  const [formData, setFormData] = useState({
-    student: '',
-    feeType: 'tuition',
-    amount: '',
-    dueDate: '',
-    academicYear: '',
-    semester: 'annual',
-    remarks: '',
+  const [formData, setFormData] = useState(() => getInitialFeeForm(initialData));
+  const [prevInitialData, setPrevInitialData] = useState(initialData);
+  const [selectedStudent, setSelectedStudent] = useState(() => {
+    if (initialData?.student && students) {
+      return students.find((s) => s._id === initialData.student) || null;
+    }
+    return null;
   });
-
-  const [selectedStudent, setSelectedStudent] = useState(null);
   const [errors, setErrors] = useState({});
   const [touched, setTouched] = useState({});
 
-  useEffect(() => {
-    if (initialData) {
-      setFormData({
-        student: initialData.student || '',
-        feeType: initialData.feeType || 'tuition',
-        amount: initialData.amount || '',
-        dueDate: initialData.dueDate || '',
-        academicYear: initialData.academicYear || '',
-        semester: initialData.semester || 'annual',
-        remarks: initialData.remarks || '',
-      });
-      if (initialData.student && students) {
-        const student = students.find((s) => s._id === initialData.student);
-        setSelectedStudent(student);
-      }
+  if (initialData !== prevInitialData) {
+    setPrevInitialData(initialData);
+    setFormData(getInitialFeeForm(initialData));
+    if (initialData?.student && students) {
+      const student = students.find((s) => s._id === initialData.student);
+      setSelectedStudent(student || null);
     }
-  }, [initialData, students]);
+  }
 
   const handleStudentSelect = (studentId) => {
     const student = students?.find((s) => s._id === studentId);

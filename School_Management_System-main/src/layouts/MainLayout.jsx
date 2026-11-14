@@ -26,10 +26,11 @@ const MainLayout = () => {
     return () => window.removeEventListener('sidebar-collapse-change', handleCollapseChange);
   }, []);
 
-  // Close mobile drawer on route navigation
-  useEffect(() => {
+  const [prevPath, setPrevPath] = useState(location.pathname);
+  if (prevPath !== location.pathname) {
+    setPrevPath(location.pathname);
     setMobileOpen(false);
-  }, [location.pathname]);
+  }
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-[#0B1120] text-slate-900 dark:text-slate-100 flex flex-col">

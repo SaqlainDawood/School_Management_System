@@ -1,0 +1,770 @@
+[
+  {
+    "file": "src/components/modals/ClassDetailModal.jsx",
+    "line": 40,
+    "method": "GET",
+    "endpoint": "/api/classes/${classId}"
+  },
+  {
+    "file": "src/context/AuthContext.jsx",
+    "line": 30,
+    "method": "GET",
+    "endpoint": "/api/auth/me"
+  },
+  {
+    "file": "src/context/AuthContext.jsx",
+    "line": 45,
+    "method": "POST",
+    "endpoint": "/api/auth/login"
+  },
+  {
+    "file": "src/context/AuthContext.jsx",
+    "line": 69,
+    "method": "POST",
+    "endpoint": "/api/auth/register"
+  },
+  {
+    "file": "src/context/AuthContext.jsx",
+    "line": 92,
+    "method": "POST",
+    "endpoint": "/api/auth/logout"
+  },
+  {
+    "file": "src/context/AuthContext.jsx",
+    "line": 106,
+    "method": "POST",
+    "endpoint": "/api/auth/forgot-password"
+  },
+  {
+    "file": "src/context/AuthContext.jsx",
+    "line": 119,
+    "method": "PUT",
+    "endpoint": "/api/auth/reset-password/${resetToken}"
+  },
+  {
+    "file": "src/context/AuthContext.jsx",
+    "line": 132,
+    "method": "PUT",
+    "endpoint": "/api/auth/update-profile"
+  },
+  {
+    "file": "src/context/AuthContext.jsx",
+    "line": 146,
+    "method": "PUT",
+    "endpoint": "/api/auth/change-password"
+  },
+  {
+    "file": "src/pages/admin/Attendance.jsx",
+    "line": 39,
+    "method": "GET",
+    "endpoint": "/api/classes"
+  },
+  {
+    "file": "src/pages/admin/Attendance.jsx",
+    "line": 52,
+    "method": "GET",
+    "endpoint": "/api/classes/${selectedClass}/students"
+  },
+  {
+    "file": "src/pages/admin/Attendance.jsx",
+    "line": 64,
+    "method": "GET",
+    "endpoint": ""
+  },
+  {
+    "file": "src/pages/admin/Attendance.jsx",
+    "line": 92,
+    "method": "POST",
+    "endpoint": "/api/attendance"
+  },
+  {
+    "file": "src/pages/admin/Classes.jsx",
+    "line": 57,
+    "method": "GET",
+    "endpoint": "/api/classes"
+  },
+  {
+    "file": "src/pages/admin/Classes.jsx",
+    "line": 70,
+    "method": "GET",
+    "endpoint": "/api/teachers"
+  },
+  {
+    "file": "src/pages/admin/Classes.jsx",
+    "line": 114,
+    "method": "PUT",
+    "endpoint": "/api/classes/${editingClass._id}"
+  },
+  {
+    "file": "src/pages/admin/Classes.jsx",
+    "line": 117,
+    "method": "POST",
+    "endpoint": "/api/classes"
+  },
+  {
+    "file": "src/pages/admin/Classes.jsx",
+    "line": 150,
+    "method": "DELETE",
+    "endpoint": "/api/classes/${id}"
+  },
+  {
+    "file": "src/pages/admin/Classes.jsx",
+    "line": 198,
+    "method": "DELETE",
+    "endpoint": "/api/classes/${id}/clean-delete"
+  },
+  {
+    "file": "src/pages/admin/Classes.jsx",
+    "line": 231,
+    "method": "DELETE",
+    "endpoint": "/api/classes/${id}/force-delete"
+  },
+  {
+    "file": "src/pages/admin/Classes.jsx",
+    "line": 257,
+    "method": "PUT",
+    "endpoint": "/api/classes/${id}/archive"
+  },
+  {
+    "file": "src/pages/admin/Classes.jsx",
+    "line": 280,
+    "method": "PUT",
+    "endpoint": "/api/classes/${id}/restore"
+  },
+  {
+    "file": "src/pages/admin/Classes.jsx",
+    "line": 309,
+    "method": "DELETE",
+    "endpoint": "/api/classes/${classId}/students"
+  },
+  {
+    "file": "src/pages/admin/Classes.jsx",
+    "line": 338,
+    "method": "DELETE",
+    "endpoint": "/api/classes/${classId}/subjects"
+  },
+  {
+    "file": "src/pages/admin/Classes.jsx",
+    "line": 357,
+    "method": "PUT",
+    "endpoint": "/api/classes/${selectedClass}/assign-teacher"
+  },
+  {
+    "file": "src/pages/admin/Dashboard.jsx",
+    "line": 79,
+    "method": "GET",
+    "endpoint": "/api/admin/stats"
+  },
+  {
+    "file": "src/pages/admin/Exams.jsx",
+    "line": 63,
+    "method": "GET",
+    "endpoint": "/api/exams"
+  },
+  {
+    "file": "src/pages/admin/Exams.jsx",
+    "line": 75,
+    "method": "GET",
+    "endpoint": "/api/classes"
+  },
+  {
+    "file": "src/pages/admin/Exams.jsx",
+    "line": 84,
+    "method": "GET",
+    "endpoint": "/api/subjects"
+  },
+  {
+    "file": "src/pages/admin/Exams.jsx",
+    "line": 189,
+    "method": "PUT",
+    "endpoint": "/api/exams/${editingExam._id}"
+  },
+  {
+    "file": "src/pages/admin/Exams.jsx",
+    "line": 192,
+    "method": "POST",
+    "endpoint": "/api/exams"
+  },
+  {
+    "file": "src/pages/admin/Exams.jsx",
+    "line": 208,
+    "method": "DELETE",
+    "endpoint": "/api/exams/${id}"
+  },
+  {
+    "file": "src/pages/admin/Exams.jsx",
+    "line": 220,
+    "method": "PUT",
+    "endpoint": "/api/exams/${id}/publish"
+  },
+  {
+    "file": "src/pages/admin/Fees.jsx",
+    "line": 56,
+    "method": "GET",
+    "endpoint": "/api/fees"
+  },
+  {
+    "file": "src/pages/admin/Fees.jsx",
+    "line": 68,
+    "method": "GET",
+    "endpoint": "/api/students"
+  },
+  {
+    "file": "src/pages/admin/Fees.jsx",
+    "line": 89,
+    "method": "GET",
+    "endpoint": "/api/fees/${fee._id}/download-pdf"
+  },
+  {
+    "file": "src/pages/admin/Fees.jsx",
+    "line": 124,
+    "method": "POST",
+    "endpoint": "/api/fees"
+  },
+  {
+    "file": "src/pages/admin/Fees.jsx",
+    "line": 152,
+    "method": "POST",
+    "endpoint": "/api/fees/${selectedFee._id}/pay"
+  },
+  {
+    "file": "src/pages/admin/Fees.jsx",
+    "line": 172,
+    "method": "DELETE",
+    "endpoint": "/api/fees/${id}"
+  },
+  {
+    "file": "src/pages/admin/Library.jsx",
+    "line": 26,
+    "method": "GET",
+    "endpoint": "/api/library"
+  },
+  {
+    "file": "src/pages/admin/Notices.jsx",
+    "line": 25,
+    "method": "GET",
+    "endpoint": "/api/notices"
+  },
+  {
+    "file": "src/pages/admin/Results.jsx",
+    "line": 55,
+    "method": "GET",
+    "endpoint": "/api/results"
+  },
+  {
+    "file": "src/pages/admin/Results.jsx",
+    "line": 67,
+    "method": "GET",
+    "endpoint": "/api/classes"
+  },
+  {
+    "file": "src/pages/admin/Results.jsx",
+    "line": 76,
+    "method": "GET",
+    "endpoint": "/api/exams"
+  },
+  {
+    "file": "src/pages/admin/Results.jsx",
+    "line": 85,
+    "method": "GET",
+    "endpoint": "/api/subjects"
+  },
+  {
+    "file": "src/pages/admin/Results.jsx",
+    "line": 94,
+    "method": "GET",
+    "endpoint": "/api/classes/${classId}/students"
+  },
+  {
+    "file": "src/pages/admin/Results.jsx",
+    "line": 225,
+    "method": "PUT",
+    "endpoint": "/api/results/${editingResult._id}"
+  },
+  {
+    "file": "src/pages/admin/Results.jsx",
+    "line": 228,
+    "method": "POST",
+    "endpoint": "/api/results"
+  },
+  {
+    "file": "src/pages/admin/Results.jsx",
+    "line": 244,
+    "method": "DELETE",
+    "endpoint": "/api/results/${id}"
+  },
+  {
+    "file": "src/pages/admin/Settings.jsx",
+    "line": 56,
+    "method": "GET",
+    "endpoint": "/api/admin/settings"
+  },
+  {
+    "file": "src/pages/admin/Settings.jsx",
+    "line": 82,
+    "method": "PUT",
+    "endpoint": "/api/admin/settings"
+  },
+  {
+    "file": "src/pages/admin/Settings.jsx",
+    "line": 95,
+    "method": "PUT",
+    "endpoint": "/api/auth/update-profile"
+  },
+  {
+    "file": "src/pages/admin/Settings.jsx",
+    "line": 113,
+    "method": "PUT",
+    "endpoint": "/api/auth/change-password"
+  },
+  {
+    "file": "src/pages/admin/Students.jsx",
+    "line": 65,
+    "method": "GET",
+    "endpoint": "/api/students"
+  },
+  {
+    "file": "src/pages/admin/Students.jsx",
+    "line": 82,
+    "method": "GET",
+    "endpoint": "/api/classes"
+  },
+  {
+    "file": "src/pages/admin/Students.jsx",
+    "line": 160,
+    "method": "PUT",
+    "endpoint": "/api/students/${editingStudent._id}"
+  },
+  {
+    "file": "src/pages/admin/Students.jsx",
+    "line": 163,
+    "method": "POST",
+    "endpoint": "/api/students"
+  },
+  {
+    "file": "src/pages/admin/Students.jsx",
+    "line": 183,
+    "method": "DELETE",
+    "endpoint": "/api/students/${id}"
+  },
+  {
+    "file": "src/pages/admin/Subjects.jsx",
+    "line": 57,
+    "method": "GET",
+    "endpoint": "/api/subjects"
+  },
+  {
+    "file": "src/pages/admin/Subjects.jsx",
+    "line": 69,
+    "method": "GET",
+    "endpoint": "/api/classes"
+  },
+  {
+    "file": "src/pages/admin/Subjects.jsx",
+    "line": 78,
+    "method": "GET",
+    "endpoint": "/api/teachers"
+  },
+  {
+    "file": "src/pages/admin/Subjects.jsx",
+    "line": 220,
+    "method": "PUT",
+    "endpoint": "/api/subjects/${editingSubject._id}"
+  },
+  {
+    "file": "src/pages/admin/Subjects.jsx",
+    "line": 223,
+    "method": "POST",
+    "endpoint": "/api/subjects"
+  },
+  {
+    "file": "src/pages/admin/Subjects.jsx",
+    "line": 239,
+    "method": "DELETE",
+    "endpoint": "/api/subjects/${id}"
+  },
+  {
+    "file": "src/pages/admin/Teachers.jsx",
+    "line": 55,
+    "method": "GET",
+    "endpoint": "/api/teachers"
+  },
+  {
+    "file": "src/pages/admin/Teachers.jsx",
+    "line": 123,
+    "method": "PUT",
+    "endpoint": "/api/teachers/${editingTeacher._id}"
+  },
+  {
+    "file": "src/pages/admin/Teachers.jsx",
+    "line": 126,
+    "method": "POST",
+    "endpoint": "/api/teachers"
+  },
+  {
+    "file": "src/pages/admin/Teachers.jsx",
+    "line": 146,
+    "method": "DELETE",
+    "endpoint": "/api/teachers/${id}"
+  },
+  {
+    "file": "src/pages/admin/Timetable.jsx",
+    "line": 73,
+    "method": "GET",
+    "endpoint": "/api/timetable"
+  },
+  {
+    "file": "src/pages/admin/Timetable.jsx",
+    "line": 85,
+    "method": "GET",
+    "endpoint": "/api/classes"
+  },
+  {
+    "file": "src/pages/admin/Timetable.jsx",
+    "line": 94,
+    "method": "GET",
+    "endpoint": "/api/teachers"
+  },
+  {
+    "file": "src/pages/admin/Timetable.jsx",
+    "line": 105,
+    "method": "GET",
+    "endpoint": "/api/subjects"
+  },
+  {
+    "file": "src/pages/admin/Timetable.jsx",
+    "line": 271,
+    "method": "PUT",
+    "endpoint": "/api/timetable/${editingTimetable._id}"
+  },
+  {
+    "file": "src/pages/admin/Timetable.jsx",
+    "line": 274,
+    "method": "POST",
+    "endpoint": "/api/timetable"
+  },
+  {
+    "file": "src/pages/admin/Timetable.jsx",
+    "line": 290,
+    "method": "DELETE",
+    "endpoint": "/api/timetable/${id}"
+  },
+  {
+    "file": "src/pages/admin/Transport.jsx",
+    "line": 51,
+    "method": "GET",
+    "endpoint": "/api/transport"
+  },
+  {
+    "file": "src/pages/admin/Transport.jsx",
+    "line": 63,
+    "method": "GET",
+    "endpoint": "/api/students"
+  },
+  {
+    "file": "src/pages/admin/Transport.jsx",
+    "line": 158,
+    "method": "PUT",
+    "endpoint": "/api/transport/${editingTransport._id}"
+  },
+  {
+    "file": "src/pages/admin/Transport.jsx",
+    "line": 161,
+    "method": "POST",
+    "endpoint": "/api/transport"
+  },
+  {
+    "file": "src/pages/admin/Transport.jsx",
+    "line": 177,
+    "method": "DELETE",
+    "endpoint": "/api/transport/${id}"
+  },
+  {
+    "file": "src/pages/admin/Transport.jsx",
+    "line": 195,
+    "method": "POST",
+    "endpoint": ""
+  },
+  {
+    "file": "src/pages/admin/Transport.jsx",
+    "line": 213,
+    "method": "POST",
+    "endpoint": "/api/transport/${transportId}/remove-student"
+  },
+  {
+    "file": "src/pages/coordinator/Attendance.jsx",
+    "line": 37,
+    "method": "GET",
+    "endpoint": "/api/coordinator/departments"
+  },
+  {
+    "file": "src/pages/coordinator/Dashboard.jsx",
+    "line": 35,
+    "method": "GET",
+    "endpoint": "/api/coordinator/dashboard"
+  },
+  {
+    "file": "src/pages/coordinator/Departments.jsx",
+    "line": 24,
+    "method": "GET",
+    "endpoint": "/api/coordinator/departments"
+  },
+  {
+    "file": "src/pages/examination/DateSheets.jsx",
+    "line": 29,
+    "method": "GET",
+    "endpoint": "/api/exams"
+  },
+  {
+    "file": "src/pages/examination/DateSheets.jsx",
+    "line": 32,
+    "method": "GET",
+    "endpoint": "/api/classes"
+  },
+  {
+    "file": "src/pages/examination/Exams.jsx",
+    "line": 30,
+    "method": "GET",
+    "endpoint": "/api/exams"
+  },
+  {
+    "file": "src/pages/examination/Exams.jsx",
+    "line": 31,
+    "method": "GET",
+    "endpoint": "/api/classes"
+  },
+  {
+    "file": "src/pages/examination/Results.jsx",
+    "line": 28,
+    "method": "GET",
+    "endpoint": "/api/results"
+  },
+  {
+    "file": "src/pages/examination/Results.jsx",
+    "line": 29,
+    "method": "GET",
+    "endpoint": "/api/exams"
+  },
+  {
+    "file": "src/pages/parent/Attendance.jsx",
+    "line": 37,
+    "method": "GET",
+    "endpoint": "/api/parents/dashboard"
+  },
+  {
+    "file": "src/pages/parent/Attendance.jsx",
+    "line": 50,
+    "method": "GET",
+    "endpoint": ""
+  },
+  {
+    "file": "src/pages/parent/Children.jsx",
+    "line": 18,
+    "method": "GET",
+    "endpoint": "/api/parents/dashboard"
+  },
+  {
+    "file": "src/pages/parent/Dashboard.jsx",
+    "line": 18,
+    "method": "GET",
+    "endpoint": "/api/parents/dashboard"
+  },
+  {
+    "file": "src/pages/parent/Fees.jsx",
+    "line": 31,
+    "method": "GET",
+    "endpoint": "/api/parents/dashboard"
+  },
+  {
+    "file": "src/pages/parent/Fees.jsx",
+    "line": 44,
+    "method": "GET",
+    "endpoint": "/api/parents/child/${selectedChild}/fees"
+  },
+  {
+    "file": "src/pages/parent/Results.jsx",
+    "line": 33,
+    "method": "GET",
+    "endpoint": "/api/parents/dashboard"
+  },
+  {
+    "file": "src/pages/parent/Results.jsx",
+    "line": 46,
+    "method": "GET",
+    "endpoint": ""
+  },
+  {
+    "file": "src/pages/student/Assignments.jsx",
+    "line": 25,
+    "method": "GET",
+    "endpoint": "/api/assignments/my-assignments"
+  },
+  {
+    "file": "src/pages/student/Attendance.jsx",
+    "line": 60,
+    "method": "GET",
+    "endpoint": "/api/attendance/my-attendance"
+  },
+  {
+    "file": "src/pages/student/Dashboard.jsx",
+    "line": 98,
+    "method": "GET",
+    "endpoint": "/api/students/dashboard"
+  },
+  {
+    "file": "src/pages/student/Fees.jsx",
+    "line": 33,
+    "method": "GET",
+    "endpoint": "/api/fees/my-fees"
+  },
+  {
+    "file": "src/pages/student/Fees.jsx",
+    "line": 51,
+    "method": "GET",
+    "endpoint": "/api/fees/${fee._id}/download-pdf"
+  },
+  {
+    "file": "src/pages/student/Profile.jsx",
+    "line": 66,
+    "method": "GET",
+    "endpoint": "/api/students/profile"
+  },
+  {
+    "file": "src/pages/student/Profile.jsx",
+    "line": 151,
+    "method": "PUT",
+    "endpoint": "/api/students/${student._id}"
+  },
+  {
+    "file": "src/pages/student/Results.jsx",
+    "line": 57,
+    "method": "GET",
+    "endpoint": "/api/results/student"
+  },
+  {
+    "file": "src/pages/student/Timetable.jsx",
+    "line": 28,
+    "method": "GET",
+    "endpoint": "/api/timetable/my-timetable"
+  },
+  {
+    "file": "src/pages/superadmin/Dashboard.jsx",
+    "line": 51,
+    "method": "GET",
+    "endpoint": "/api/superadmin/dashboard"
+  },
+  {
+    "file": "src/pages/superadmin/Settings.jsx",
+    "line": 56,
+    "method": "GET",
+    "endpoint": "/api/admin/settings"
+  },
+  {
+    "file": "src/pages/superadmin/Settings.jsx",
+    "line": 80,
+    "method": "PUT",
+    "endpoint": "/api/admin/settings"
+  },
+  {
+    "file": "src/pages/superadmin/Settings.jsx",
+    "line": 93,
+    "method": "PUT",
+    "endpoint": "/api/auth/update-profile"
+  },
+  {
+    "file": "src/pages/superadmin/Settings.jsx",
+    "line": 111,
+    "method": "PUT",
+    "endpoint": "/api/auth/change-password"
+  },
+  {
+    "file": "src/pages/teacher/Assignments.jsx",
+    "line": 50,
+    "method": "GET",
+    "endpoint": "/api/assignments"
+  },
+  {
+    "file": "src/pages/teacher/Assignments.jsx",
+    "line": 62,
+    "method": "GET",
+    "endpoint": "/api/teachers/classes"
+  },
+  {
+    "file": "src/pages/teacher/Assignments.jsx",
+    "line": 155,
+    "method": "PUT",
+    "endpoint": "/api/assignments/${editingAssignment._id}"
+  },
+  {
+    "file": "src/pages/teacher/Assignments.jsx",
+    "line": 158,
+    "method": "POST",
+    "endpoint": "/api/assignments"
+  },
+  {
+    "file": "src/pages/teacher/Assignments.jsx",
+    "line": 174,
+    "method": "DELETE",
+    "endpoint": "/api/assignments/${id}"
+  },
+  {
+    "file": "src/pages/teacher/Assignments.jsx",
+    "line": 186,
+    "method": "PUT",
+    "endpoint": "/api/assignments/${id}"
+  },
+  {
+    "file": "src/pages/teacher/Attendance.jsx",
+    "line": 33,
+    "method": "GET",
+    "endpoint": "/api/teachers/classes"
+  },
+  {
+    "file": "src/pages/teacher/Attendance.jsx",
+    "line": 44,
+    "method": "GET",
+    "endpoint": "/api/classes/${selectedClass}/students"
+  },
+  {
+    "file": "src/pages/teacher/Attendance.jsx",
+    "line": 53,
+    "method": "GET",
+    "endpoint": "/api/attendance/class/${selectedClass}"
+  },
+  {
+    "file": "src/pages/teacher/Attendance.jsx",
+    "line": 71,
+    "method": "POST",
+    "endpoint": "/api/attendance"
+  },
+  {
+    "file": "src/pages/teacher/Classes.jsx",
+    "line": 22,
+    "method": "GET",
+    "endpoint": "/api/teachers/classes"
+  },
+  {
+    "file": "src/pages/teacher/Dashboard.jsx",
+    "line": 49,
+    "method": "GET",
+    "endpoint": "/api/teachers/dashboard"
+  },
+  {
+    "file": "src/pages/teacher/Results.jsx",
+    "line": 28,
+    "method": "GET",
+    "endpoint": "/api/results"
+  },
+  {
+    "file": "src/pages/teacher/Results.jsx",
+    "line": 29,
+    "method": "GET",
+    "endpoint": "/api/teachers/classes"
+  },
+  {
+    "file": "src/pages/teacher/Results.jsx",
+    "line": 30,
+    "method": "GET",
+    "endpoint": "/api/exams"
+  }
+]

@@ -6,8 +6,6 @@ import {
   FiPhone,
   FiMapPin,
   FiGlobe,
-  FiMoon,
-  FiSun,
   FiLock,
   FiShield,
 } from 'react-icons/fi';
@@ -48,19 +46,31 @@ const Settings = () => {
   const [errors, setErrors] = useState({});
 
   useEffect(() => {
-    fetchSettings();
-  }, []);
+    let ignore = false;
+    const fetchSettings = async () => {
+      try {
+        const response = await api.get('/api/admin/settings');
+        if (ignore) return;
+        if (response.data?.settings) {
+          setSettings(response.data.settings);
+        }
+      } catch (err) {
+        if (!ignore) {
+          console.error('Error fetching settings:', err);
+        }
+      } finally {
+        if (!ignore) {
+          setLoading(false);
+        }
+      }
+    };
 
-  const fetchSettings = async () => {
-    try {
-      const response = await api.get('/api/admin/settings');
-      setSettings(response.data.settings || settings);
-    } catch (err) {
-      console.error('Error fetching settings:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
+    fetchSettings();
+
+    return () => {
+      ignore = true;
+    };
+  }, []);
 
   const handleSettingChange = (e) => {
     setSettings({ ...settings, [e.target.name]: e.target.value });
@@ -82,6 +92,7 @@ const Settings = () => {
       await api.put('/api/admin/settings', settings);
       toast.success('System configuration saved successfully');
     } catch (err) {
+      console.error('Error saving settings:', err);
       toast.error('Failed to save settings');
     } finally {
       setSaving(false);
@@ -95,6 +106,7 @@ const Settings = () => {
       await api.put('/api/auth/update-profile', profileData);
       toast.success('Administrator profile updated');
     } catch (err) {
+      console.error('Error updating profile:', err);
       toast.error('Failed to update profile');
     } finally {
       setSaving(false);

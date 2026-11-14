@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   FiUser,
   FiMail,
@@ -17,55 +17,35 @@ import Input from './Input';
 import Select from './Select';
 import { GENDER_OPTIONS, STUDENT_STATUS } from '../../utils/constants';
 
+const getInitialStudentForm = (data) => ({
+  name: data?.name || '',
+  email: data?.email || '',
+  studentId: data?.studentId || '',
+  rollNumber: data?.rollNumber || '',
+  class: data?.class || '',
+  section: data?.section || '',
+  dateOfBirth: data?.dateOfBirth || '',
+  gender: data?.gender || '',
+  phone: data?.phone || '',
+  address: data?.address || '',
+  status: data?.status || 'active',
+  fatherName: data?.fatherName || '',
+  fatherPhone: data?.fatherPhone || '',
+  fatherOccupation: data?.fatherOccupation || '',
+  fatherCnic: data?.fatherCnic || '',
+  motherName: data?.motherName || '',
+  motherPhone: data?.motherPhone || '',
+});
+
 const StudentForm = ({ initialData, onSubmit, onCancel, loading, classes }) => {
-  const [formData, setFormData] = useState({
-    // Student Personal Info
-    name: '',
-    email: '',
-    studentId: '',
-    rollNumber: '',
-    class: '',
-    section: '',
-    dateOfBirth: '',
-    gender: '',
-    phone: '',
-    address: '',
-    status: 'active',
-
-    // Parent Fields
-    fatherName: '',
-    fatherPhone: '',
-    fatherOccupation: '',
-    fatherCnic: '',
-    motherName: '',
-    motherPhone: '',
-  });
-
+  const [formData, setFormData] = useState(() => getInitialStudentForm(initialData));
+  const [prevInitialData, setPrevInitialData] = useState(initialData);
   const [errors, setErrors] = useState({});
 
-  useEffect(() => {
-    if (initialData) {
-      setFormData({
-        name: initialData.name || '',
-        email: initialData.email || '',
-        studentId: initialData.studentId || '',
-        rollNumber: initialData.rollNumber || '',
-        class: initialData.class || '',
-        section: initialData.section || '',
-        dateOfBirth: initialData.dateOfBirth || '',
-        gender: initialData.gender || '',
-        phone: initialData.phone || '',
-        address: initialData.address || '',
-        status: initialData.status || 'active',
-        fatherName: initialData.fatherName || '',
-        fatherPhone: initialData.fatherPhone || '',
-        fatherOccupation: initialData.fatherOccupation || '',
-        fatherCnic: initialData.fatherCnic || '',
-        motherName: initialData.motherName || '',
-        motherPhone: initialData.motherPhone || '',
-      });
-    }
-  }, [initialData]);
+  if (initialData !== prevInitialData) {
+    setPrevInitialData(initialData);
+    setFormData(getInitialStudentForm(initialData));
+  }
 
   const validateForm = () => {
     const newErrors = {};

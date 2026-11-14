@@ -5,7 +5,6 @@ import {
   FiTrash2,
   FiBook,
   FiBookOpen,
-  FiInfo,
 } from 'react-icons/fi';
 import PageHeader from '../../components/common/PageHeader';
 import Button from '../../components/forms/Button';
@@ -21,20 +20,30 @@ const Library = () => {
   const [search, setSearch] = useState('');
 
   useEffect(() => {
-    fetchBooks();
-  }, [search]);
+    let ignore = false;
+    const fetchBooks = async () => {
+      try {
+        const response = await api.get('/api/library', { params: { search } });
+        if (ignore) return;
+        setBooks(response.data?.books || []);
+      } catch (err) {
+        if (!ignore) {
+          console.error('Error fetching library books:', err);
+          setBooks([]);
+        }
+      } finally {
+        if (!ignore) {
+          setLoading(false);
+        }
+      }
+    };
 
-  const fetchBooks = async () => {
-    try {
-      const response = await api.get('/api/library', { params: { search } });
-      setBooks(response.data?.books || []);
-    } catch (err) {
-      console.error('Error fetching library books:', err);
-      setBooks([]);
-    } finally {
-      setLoading(false);
-    }
-  };
+    fetchBooks();
+
+    return () => {
+      ignore = true;
+    };
+  }, [search]);
 
   if (loading) return <Loader />;
 

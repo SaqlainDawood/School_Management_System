@@ -6,13 +6,9 @@ import {
   FiMapPin,
   FiCalendar,
   FiBook,
-  FiAward,
   FiEdit2,
   FiSave,
   FiX,
-  FiCheckCircle,
-  FiAlertCircle,
-  FiUsers,
   FiHash,
 } from 'react-icons/fi';
 import { toast } from 'react-toastify';
@@ -45,42 +41,53 @@ const StudentProfile = () => {
     motherPhone: '',
   });
   const [errors, setErrors] = useState({});
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   useEffect(() => {
-    fetchProfile();
-  }, []);
-
-  const fetchProfile = async () => {
-    try {
-      setLoading(true);
-      const response = await api.get('/api/students/profile');
-      const studentData = response.data?.student;
-      if (studentData) {
-        setStudent(studentData);
-        setFormData({
-          name: studentData.user?.name || '',
-          email: studentData.user?.email || '',
-          phone: studentData.user?.phone || '',
-          address: typeof studentData.user?.address === 'string'
-            ? studentData.user?.address
-            : studentData.user?.address?.street || '',
-          dateOfBirth: studentData.dateOfBirth
-            ? studentData.dateOfBirth.split('T')[0]
-            : '',
-          fatherName: studentData.fatherName || '',
-          fatherPhone: studentData.fatherPhone || '',
-          fatherOccupation: studentData.fatherOccupation || '',
-          motherName: studentData.motherName || '',
-          motherPhone: studentData.motherPhone || '',
-        });
+    let ignore = false;
+    const fetchProfile = async () => {
+      try {
+        setLoading(true);
+        const response = await api.get('/api/students/profile');
+        if (ignore) return;
+        const studentData = response.data?.student;
+        if (studentData) {
+          setStudent(studentData);
+          setFormData({
+            name: studentData.user?.name || '',
+            email: studentData.user?.email || '',
+            phone: studentData.user?.phone || '',
+            address: typeof studentData.user?.address === 'string'
+              ? studentData.user?.address
+              : studentData.user?.address?.street || '',
+            dateOfBirth: studentData.dateOfBirth
+              ? studentData.dateOfBirth.split('T')[0]
+              : '',
+            fatherName: studentData.fatherName || '',
+            fatherPhone: studentData.fatherPhone || '',
+            fatherOccupation: studentData.fatherOccupation || '',
+            motherName: studentData.motherName || '',
+            motherPhone: studentData.motherPhone || '',
+          });
+        }
+      } catch (error) {
+        if (!ignore) {
+          console.error('Error fetching profile:', error);
+          toast.error('Failed to load profile details');
+        }
+      } finally {
+        if (!ignore) {
+          setLoading(false);
+        }
       }
-    } catch (error) {
-      console.error('Error fetching profile:', error);
-      toast.error('Failed to load profile details');
-    } finally {
-      setLoading(false);
-    }
-  };
+    };
+
+    fetchProfile();
+
+    return () => {
+      ignore = true;
+    };
+  }, [refreshTrigger]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -126,7 +133,7 @@ const StudentProfile = () => {
 
       toast.success('Profile updated successfully');
       setEditMode(false);
-      fetchProfile();
+      setRefreshTrigger((prev) => prev + 1);
     } catch (error) {
       console.error('Error updating profile:', error);
       toast.error(error.response?.data?.message || 'Failed to update profile');

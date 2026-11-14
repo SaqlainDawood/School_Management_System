@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FiClock, FiCalendar, FiBook } from 'react-icons/fi';
+import { FiCalendar } from 'react-icons/fi';
 import PageHeader from '../../components/common/PageHeader';
 import SectionCard from '../../components/common/SectionCard';
 import Loader from '../../components/common/Loader';
@@ -7,37 +7,47 @@ import EmptyState from '../../components/common/EmptyState';
 import api from '../../utils/api';
 import { DAYS_OF_WEEK } from '../../utils/constants';
 
+const PERIODS = [
+  { id: 1, time: '08:00 - 08:45' },
+  { id: 2, time: '08:45 - 09:30' },
+  { id: 3, time: '09:30 - 10:15' },
+  { id: 4, time: '10:30 - 11:15' },
+  { id: 5, time: '11:15 - 12:00' },
+  { id: 6, time: '12:00 - 12:45' },
+  { id: 7, time: '13:30 - 14:15' },
+  { id: 8, time: '14:15 - 15:00' },
+];
+
 const StudentTimetable = () => {
   const [timetable, setTimetable] = useState({});
   const [loading, setLoading] = useState(true);
 
-  const periods = [
-    { id: 1, time: '08:00 - 08:45' },
-    { id: 2, time: '08:45 - 09:30' },
-    { id: 3, time: '09:30 - 10:15' },
-    { id: 4, time: '10:30 - 11:15' },
-    { id: 5, time: '11:15 - 12:00' },
-    { id: 6, time: '12:00 - 12:45' },
-    { id: 7, time: '13:30 - 14:15' },
-    { id: 8, time: '14:15 - 15:00' },
-  ];
-
   useEffect(() => {
-    fetchTimetable();
-  }, []);
+    let ignore = false;
+    const fetchTimetable = async () => {
+      try {
+        setLoading(true);
+        const response = await api.get('/api/timetable/my-timetable');
+        if (ignore) return;
+        setTimetable(response.data?.timetable || {});
+      } catch (error) {
+        if (!ignore) {
+          console.error('Error fetching timetable:', error);
+          setTimetable({});
+        }
+      } finally {
+        if (!ignore) {
+          setLoading(false);
+        }
+      }
+    };
 
-  const fetchTimetable = async () => {
-    try {
-      setLoading(true);
-      const response = await api.get('/api/timetable/my-timetable');
-      setTimetable(response.data?.timetable || {});
-    } catch (error) {
-      console.error('Error fetching timetable:', error);
-      setTimetable({});
-    } finally {
-      setLoading(false);
-    }
-  };
+    fetchTimetable();
+
+    return () => {
+      ignore = true;
+    };
+  }, []);
 
   if (loading) return <Loader />;
 
@@ -71,7 +81,7 @@ const StudentTimetable = () => {
                   <th className="py-3.5 px-4 text-left text-xs font-bold text-slate-700 dark:text-slate-300 uppercase w-32">
                     Day / Period
                   </th>
-                  {periods.map((period) => (
+                  {PERIODS.map((period) => (
                     <th
                       key={period.id}
                       className="py-3.5 px-3 text-center text-xs font-semibold text-slate-600 dark:text-slate-400 border-l border-slate-200/80 dark:border-slate-800"
@@ -91,7 +101,7 @@ const StudentTimetable = () => {
                       <td className="py-4 px-4 font-bold text-slate-900 dark:text-slate-100 bg-slate-50/40 dark:bg-slate-800/20">
                         {day}
                       </td>
-                      {periods.map((period) => {
+                      {PERIODS.map((period) => {
                         const slot = daySlots.find(
                           (p) => p.periodNumber === period.id
                         );

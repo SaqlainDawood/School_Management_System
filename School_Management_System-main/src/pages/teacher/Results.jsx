@@ -8,6 +8,14 @@ import EmptyState from '../../components/common/EmptyState';
 import StatusBadge from '../../components/common/StatusBadge';
 import api from '../../utils/api';
 
+const getGradeVariant = (grade) => {
+  if (!grade) return 'neutral';
+  if (grade.startsWith('A')) return 'success';
+  if (grade.startsWith('B')) return 'info';
+  if (grade.startsWith('C')) return 'warning';
+  return 'danger';
+};
+
 const TeacherResults = () => {
   const [results, setResults] = useState([]);
   const [classes, setClasses] = useState([]);
@@ -16,34 +24,36 @@ const TeacherResults = () => {
   const [filters, setFilters] = useState({ classId: '', examId: '' });
 
   useEffect(() => {
+    let ignore = false;
+    const fetchData = async () => {
+      try {
+        const [resultsRes, classesRes, examsRes] = await Promise.all([
+          api.get('/api/results', { params: filters }),
+          api.get('/api/teachers/classes'),
+          api.get('/api/exams'),
+        ]);
+        if (ignore) return;
+        setResults(resultsRes.data?.results || []);
+        setClasses(classesRes.data?.classes || []);
+        setExams(examsRes.data?.exams || []);
+      } catch (err) {
+        if (!ignore) {
+          console.error('Error fetching teacher results data:', err);
+          setResults([]);
+        }
+      } finally {
+        if (!ignore) {
+          setLoading(false);
+        }
+      }
+    };
+
     fetchData();
+
+    return () => {
+      ignore = true;
+    };
   }, [filters]);
-
-  const fetchData = async () => {
-    try {
-      const [resultsRes, classesRes, examsRes] = await Promise.all([
-        api.get('/api/results', { params: filters }),
-        api.get('/api/teachers/classes'),
-        api.get('/api/exams'),
-      ]);
-      setResults(resultsRes.data?.results || []);
-      setClasses(classesRes.data?.classes || []);
-      setExams(examsRes.data?.exams || []);
-    } catch (err) {
-      console.error('Error fetching teacher results data:', err);
-      setResults([]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const getGradeVariant = (grade) => {
-    if (!grade) return 'neutral';
-    if (grade.startsWith('A')) return 'success';
-    if (grade.startsWith('B')) return 'info';
-    if (grade.startsWith('C')) return 'warning';
-    return 'danger';
-  };
 
   if (loading && results.length === 0) return <Loader />;
 

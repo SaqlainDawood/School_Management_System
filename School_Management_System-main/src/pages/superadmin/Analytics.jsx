@@ -3,9 +3,6 @@ import {
   FiActivity,
   FiServer,
   FiDatabase,
-  FiCpu,
-  FiHardDrive,
-  FiShield,
   FiCheckCircle,
 } from 'react-icons/fi';
 import PageHeader from '../../components/common/PageHeader';

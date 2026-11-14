@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FiUserPlus, FiEdit2, FiTrash2, FiEye, FiUsers, FiFilter } from 'react-icons/fi';
+import { FiUserPlus, FiEdit2, FiTrash2, FiUsers } from 'react-icons/fi';
 import { toast } from 'react-toastify';
 import PageHeader from '../../components/common/PageHeader';
 import Button from '../../components/forms/Button';
@@ -51,47 +51,69 @@ const Students = () => {
     motherName: '',
     motherPhone: '',
   });
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   useEffect(() => {
+    let ignore = false;
+    const fetchStudents = async () => {
+      setLoading(true);
+      try {
+        const params = {
+          page: pagination.page,
+          limit: pagination.limit,
+          search,
+          ...filters,
+        };
+        const response = await api.get('/api/students', { params });
+        if (ignore) return;
+        setStudents(response.data.students || []);
+        setPagination((prev) => ({
+          ...prev,
+          total: response.data.total || 0,
+          totalPages: response.data.pagination?.totalPages || 1,
+        }));
+      } catch (error) {
+        if (!ignore) {
+          console.error('Error fetching students:', error);
+          toast.error('Failed to fetch students');
+        }
+      } finally {
+        if (!ignore) {
+          setLoading(false);
+        }
+      }
+    };
+
     fetchStudents();
+
+    return () => {
+      ignore = true;
+    };
+  }, [search, filters, pagination.page, pagination.limit, refreshTrigger]);
+
+  useEffect(() => {
+    let ignore = false;
+    const fetchClasses = async () => {
+      try {
+        const response = await api.get('/api/classes');
+        if (ignore) return;
+        const validClasses = (response.data.classes || []).filter(
+          (c) => c._id && c._id.length === 24
+        );
+        setClasses(validClasses);
+      } catch (error) {
+        if (!ignore) {
+          console.error('Error fetching classes:', error);
+        }
+      }
+    };
+
     fetchClasses();
-  }, [search, filters, pagination.page]);
 
-  const fetchStudents = async () => {
-    setLoading(true);
-    try {
-      const params = {
-        page: pagination.page,
-        limit: pagination.limit,
-        search,
-        ...filters,
-      };
-      const response = await api.get('/api/students', { params });
-      setStudents(response.data.students || []);
-      setPagination({
-        ...pagination,
-        total: response.data.total || 0,
-        totalPages: response.data.pagination?.totalPages || 1,
-      });
-    } catch (error) {
-      console.error('Error fetching students:', error);
-      toast.error('Failed to fetch students');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchClasses = async () => {
-    try {
-      const response = await api.get('/api/classes');
-      const validClasses = (response.data.classes || []).filter(
-        (c) => c._id && c._id.length === 24
-      );
-      setClasses(validClasses);
-    } catch (error) {
-      console.error('Error fetching classes:', error);
-    }
-  };
+    return () => {
+      ignore = true;
+    };
+  }, []);
 
   const handleSearch = (value) => {
     setSearch(value);
@@ -172,7 +194,7 @@ const Students = () => {
         );
       }
       setShowModal(false);
-      fetchStudents();
+      setRefreshTrigger((prev) => prev + 1);
     } catch (error) {
       console.error('Error saving student:', error);
       toast.error(error.response?.data?.message || 'Failed to save student');
@@ -188,7 +210,7 @@ const Students = () => {
       await api.delete(`/api/students/${deleteTargetId}`);
       toast.success('Student deleted successfully');
       setDeleteTargetId(null);
-      fetchStudents();
+      setRefreshTrigger((prev) => prev + 1);
     } catch (error) {
       console.error('Error deleting student:', error);
       toast.error('Failed to delete student');

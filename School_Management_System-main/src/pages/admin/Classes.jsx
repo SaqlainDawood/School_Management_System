@@ -10,7 +10,6 @@ import {
   FiArchive,
   FiRefreshCw,
   FiUserMinus,
-  FiTrash,
   FiEye,
   FiLayers,
 } from 'react-icons/fi';
@@ -49,6 +48,7 @@ const Classes = () => {
     variant: 'danger',
     action: null,
   });
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   const [formData, setFormData] = useState({
     name: '',
@@ -60,35 +60,56 @@ const Classes = () => {
   });
 
   useEffect(() => {
+    let ignore = false;
+    const fetchClasses = async () => {
+      setLoading(true);
+      setError('');
+      try {
+        const response = await api.get('/api/classes');
+        if (ignore) return;
+        setClasses(response.data.classes || []);
+      } catch (err) {
+        if (!ignore) {
+          console.error('Error fetching classes:', err);
+          setError('Failed to fetch classes');
+          toast.error('Failed to fetch classes');
+        }
+      } finally {
+        if (!ignore) {
+          setLoading(false);
+        }
+      }
+    };
+
     fetchClasses();
+
+    return () => {
+      ignore = true;
+    };
+  }, [refreshTrigger]);
+
+  useEffect(() => {
+    let ignore = false;
+    const fetchTeachers = async () => {
+      try {
+        const response = await api.get('/api/teachers', {
+          params: { limit: 100 },
+        });
+        if (ignore) return;
+        setTeachers(response.data.teachers || []);
+      } catch (err) {
+        if (!ignore) {
+          console.error('Error fetching teachers:', err);
+        }
+      }
+    };
+
     fetchTeachers();
+
+    return () => {
+      ignore = true;
+    };
   }, []);
-
-  const fetchClasses = async () => {
-    setLoading(true);
-    setError('');
-    try {
-      const response = await api.get('/api/classes');
-      setClasses(response.data.classes || []);
-    } catch (err) {
-      console.error('Error fetching classes:', err);
-      setError('Failed to fetch classes');
-      toast.error('Failed to fetch classes');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchTeachers = async () => {
-    try {
-      const response = await api.get('/api/teachers', {
-        params: { limit: 100 },
-      });
-      setTeachers(response.data.teachers || []);
-    } catch (err) {
-      console.error('Error fetching teachers:', err);
-    }
-  };
 
   const handleViewClass = (classId) => {
     setSelectedClassId(classId);
@@ -132,7 +153,7 @@ const Classes = () => {
         toast.success('Class added successfully');
       }
       setShowModal(false);
-      fetchClasses();
+      setRefreshTrigger((prev) => prev + 1);
     } catch (err) {
       console.error('Error saving class:', err);
       toast.error(err.response?.data?.message || 'Failed to save class');
@@ -161,7 +182,7 @@ const Classes = () => {
           const response = await api.delete(`/api/classes/${id}`);
           if (response.data.success) {
             toast.success('Class deleted successfully');
-            fetchClasses();
+            setRefreshTrigger((prev) => prev + 1);
           }
         } catch (err) {
           console.error('Error deleting class:', err);
@@ -189,7 +210,7 @@ const Classes = () => {
           const response = await api.delete(`/api/classes/${id}/clean-delete`);
           if (response.data.success) {
             toast.success(response.data.message || 'Clean delete completed');
-            fetchClasses();
+            setRefreshTrigger((prev) => prev + 1);
           }
         } catch (err) {
           console.error('Error in clean delete:', err);
@@ -212,7 +233,7 @@ const Classes = () => {
           const response = await api.delete(`/api/classes/${id}/force-delete`);
           if (response.data.success) {
             toast.success(response.data.message || 'Force delete completed');
-            fetchClasses();
+            setRefreshTrigger((prev) => prev + 1);
           }
         } catch (err) {
           console.error('Error in force delete:', err);
@@ -234,7 +255,7 @@ const Classes = () => {
           const response = await api.put(`/api/classes/${id}/archive`);
           if (response.data.success) {
             toast.success('Class archived successfully');
-            fetchClasses();
+            setRefreshTrigger((prev) => prev + 1);
           }
         } catch (err) {
           console.error('Error archiving class:', err);
@@ -256,7 +277,7 @@ const Classes = () => {
           const response = await api.put(`/api/classes/${id}/restore`);
           if (response.data.success) {
             toast.success('Class restored successfully');
-            fetchClasses();
+            setRefreshTrigger((prev) => prev + 1);
           }
         } catch (err) {
           console.error('Error restoring class:', err);
@@ -283,7 +304,7 @@ const Classes = () => {
         try {
           await api.delete(`/api/classes/${classId}/students`);
           toast.success(`Removed ${studentCount} students from class`);
-          fetchClasses();
+          setRefreshTrigger((prev) => prev + 1);
         } catch (err) {
           console.error('Error removing students:', err);
           toast.error(err.response?.data?.message || 'Failed to remove students');
@@ -309,7 +330,7 @@ const Classes = () => {
         try {
           await api.delete(`/api/classes/${classId}/subjects`);
           toast.success(`Removed ${subjectCount} subjects from class`);
-          fetchClasses();
+          setRefreshTrigger((prev) => prev + 1);
         } catch (err) {
           console.error('Error removing subjects:', err);
           toast.error(err.response?.data?.message || 'Failed to remove subjects');
@@ -333,7 +354,7 @@ const Classes = () => {
       setShowAssignTeacherModal(false);
       setSelectedClass(null);
       setSelectedTeacher('');
-      fetchClasses();
+      setRefreshTrigger((prev) => prev + 1);
     } catch (err) {
       console.error('Error assigning teacher:', err);
       toast.error(err.response?.data?.message || 'Failed to assign teacher');

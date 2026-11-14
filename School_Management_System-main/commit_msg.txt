@@ -1,1 +1,1 @@
-fix: resolve all remaining lint warnings - zero warnings achieved
+perf: add manual chunk splitting in vite.config.js for optimal caching

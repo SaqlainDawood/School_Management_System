@@ -3,7 +3,6 @@ import { toast } from 'react-toastify';
 
 const NotificationContext = createContext();
 
-// eslint-disable-next-line react/only-export-components
 export const useNotification = () => {
   const context = useContext(NotificationContext);
   if (!context) {

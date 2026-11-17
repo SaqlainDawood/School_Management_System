@@ -10,6 +10,7 @@ import {
   FiArchive,
   FiRefreshCw,
   FiUserMinus,
+  FiTrash,
   FiEye,
   FiLayers,
 } from 'react-icons/fi';
@@ -48,7 +49,6 @@ const Classes = () => {
     variant: 'danger',
     action: null,
   });
-  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   const [formData, setFormData] = useState({
     name: '',
@@ -60,56 +60,35 @@ const Classes = () => {
   });
 
   useEffect(() => {
-    let ignore = false;
-    const fetchClasses = async () => {
-      setLoading(true);
-      setError('');
-      try {
-        const response = await api.get('/api/classes');
-        if (ignore) return;
-        setClasses(response.data.classes || []);
-      } catch (err) {
-        if (!ignore) {
-          console.error('Error fetching classes:', err);
-          setError('Failed to fetch classes');
-          toast.error('Failed to fetch classes');
-        }
-      } finally {
-        if (!ignore) {
-          setLoading(false);
-        }
-      }
-    };
-
     fetchClasses();
-
-    return () => {
-      ignore = true;
-    };
-  }, [refreshTrigger]);
-
-  useEffect(() => {
-    let ignore = false;
-    const fetchTeachers = async () => {
-      try {
-        const response = await api.get('/api/teachers', {
-          params: { limit: 100 },
-        });
-        if (ignore) return;
-        setTeachers(response.data.teachers || []);
-      } catch (err) {
-        if (!ignore) {
-          console.error('Error fetching teachers:', err);
-        }
-      }
-    };
-
     fetchTeachers();
-
-    return () => {
-      ignore = true;
-    };
   }, []);
+
+  const fetchClasses = async () => {
+    setLoading(true);
+    setError('');
+    try {
+      const response = await api.get('/api/classes');
+      setClasses(response.data.classes || []);
+    } catch (err) {
+      console.error('Error fetching classes:', err);
+      setError('Failed to fetch classes');
+      toast.error('Failed to fetch classes');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchTeachers = async () => {
+    try {
+      const response = await api.get('/api/teachers', {
+        params: { limit: 100 },
+      });
+      setTeachers(response.data.teachers || []);
+    } catch (err) {
+      console.error('Error fetching teachers:', err);
+    }
+  };
 
   const handleViewClass = (classId) => {
     setSelectedClassId(classId);
@@ -153,7 +132,7 @@ const Classes = () => {
         toast.success('Class added successfully');
       }
       setShowModal(false);
-      setRefreshTrigger((prev) => prev + 1);
+      fetchClasses();
     } catch (err) {
       console.error('Error saving class:', err);
       toast.error(err.response?.data?.message || 'Failed to save class');
@@ -182,7 +161,7 @@ const Classes = () => {
           const response = await api.delete(`/api/classes/${id}`);
           if (response.data.success) {
             toast.success('Class deleted successfully');
-            setRefreshTrigger((prev) => prev + 1);
+            fetchClasses();
           }
         } catch (err) {
           console.error('Error deleting class:', err);
@@ -210,7 +189,7 @@ const Classes = () => {
           const response = await api.delete(`/api/classes/${id}/clean-delete`);
           if (response.data.success) {
             toast.success(response.data.message || 'Clean delete completed');
-            setRefreshTrigger((prev) => prev + 1);
+            fetchClasses();
           }
         } catch (err) {
           console.error('Error in clean delete:', err);
@@ -233,7 +212,7 @@ const Classes = () => {
           const response = await api.delete(`/api/classes/${id}/force-delete`);
           if (response.data.success) {
             toast.success(response.data.message || 'Force delete completed');
-            setRefreshTrigger((prev) => prev + 1);
+            fetchClasses();
           }
         } catch (err) {
           console.error('Error in force delete:', err);
@@ -255,7 +234,7 @@ const Classes = () => {
           const response = await api.put(`/api/classes/${id}/archive`);
           if (response.data.success) {
             toast.success('Class archived successfully');
-            setRefreshTrigger((prev) => prev + 1);
+            fetchClasses();
           }
         } catch (err) {
           console.error('Error archiving class:', err);
@@ -277,7 +256,7 @@ const Classes = () => {
           const response = await api.put(`/api/classes/${id}/restore`);
           if (response.data.success) {
             toast.success('Class restored successfully');
-            setRefreshTrigger((prev) => prev + 1);
+            fetchClasses();
           }
         } catch (err) {
           console.error('Error restoring class:', err);
@@ -304,7 +283,7 @@ const Classes = () => {
         try {
           await api.delete(`/api/classes/${classId}/students`);
           toast.success(`Removed ${studentCount} students from class`);
-          setRefreshTrigger((prev) => prev + 1);
+          fetchClasses();
         } catch (err) {
           console.error('Error removing students:', err);
           toast.error(err.response?.data?.message || 'Failed to remove students');
@@ -330,7 +309,7 @@ const Classes = () => {
         try {
           await api.delete(`/api/classes/${classId}/subjects`);
           toast.success(`Removed ${subjectCount} subjects from class`);
-          setRefreshTrigger((prev) => prev + 1);
+          fetchClasses();
         } catch (err) {
           console.error('Error removing subjects:', err);
           toast.error(err.response?.data?.message || 'Failed to remove subjects');
@@ -354,7 +333,7 @@ const Classes = () => {
       setShowAssignTeacherModal(false);
       setSelectedClass(null);
       setSelectedTeacher('');
-      setRefreshTrigger((prev) => prev + 1);
+      fetchClasses();
     } catch (err) {
       console.error('Error assigning teacher:', err);
       toast.error(err.response?.data?.message || 'Failed to assign teacher');
@@ -410,148 +389,150 @@ const Classes = () => {
           />
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-          {classes.map((cls) => {
-            const isArchived = cls.status === 'archived';
-            return (
-              <div
-                key={cls._id}
-                className={`card p-5 flex flex-col justify-between transition-all duration-200 hover:shadow-md ${
-                  isArchived ? 'opacity-70 bg-slate-50/50 dark:bg-slate-900/40 border-amber-300/40' : ''
-                }`}
-              >
-                <div>
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-2">
-                        <h3 className="text-base font-bold text-slate-900 dark:text-white truncate">
-                          {cls.name}
-                        </h3>
-                        <StatusBadge
-                          variant={isArchived ? 'warning' : 'success'}
-                          dot
-                        >
-                          {isArchived ? 'Archived' : 'Active'}
-                        </StatusBadge>
-                      </div>
-                      <p className="text-xs font-mono text-slate-400 mt-0.5">
-                        Code: {cls.code || '—'}
-                      </p>
-                      <p className="text-xs text-indigo-600 dark:text-indigo-400 mt-1 font-medium truncate">
-                        Faculty Lead: {cls.classTeacher?.user?.name || cls.classTeacher?.name || 'Unassigned'}
-                      </p>
-                    </div>
+        <div className="card overflow-hidden border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm bg-white dark:bg-[#162033]">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-sm">
+              <thead className="bg-slate-50 dark:bg-slate-900/60 border-b border-slate-200 dark:border-slate-800 text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                <tr>
+                  <th className="px-6 py-3.5">Class & Code</th>
+                  <th className="px-6 py-3.5">Assigned Teacher</th>
+                  <th className="px-6 py-3.5 text-center">Students</th>
+                  <th className="px-6 py-3.5 text-center">Subjects</th>
+                  <th className="px-6 py-3.5">Status</th>
+                  <th className="px-6 py-3.5 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-800/80">
+                {classes.map((cls) => {
+                  const isArchived = cls.status === 'archived';
+                  const studentCount = getStudentCount(cls);
+                  const subjectCount = getSubjectCount(cls);
+                  const teacherName = cls.classTeacher?.user?.name || cls.classTeacher?.name;
 
-                    <div className="flex items-center gap-1 flex-shrink-0">
-                      <button
-                        onClick={() => handleViewClass(cls._id)}
-                        className="p-1.5 rounded-lg text-slate-500 hover:text-indigo-600 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-                        title="View Class Details"
-                      >
-                        <FiEye className="text-sm" />
-                      </button>
-                      {!isArchived ? (
-                        <>
+                  return (
+                    <tr
+                      key={cls._id}
+                      className={`hover:bg-slate-50/70 dark:hover:bg-slate-800/50 transition-colors ${
+                        isArchived ? 'opacity-70 bg-slate-50/30 dark:bg-slate-900/30' : ''
+                      }`}
+                    >
+                      {/* Class & Code */}
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-9 h-9 rounded-xl bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 flex items-center justify-center font-bold text-sm border border-indigo-100 dark:border-indigo-900/50 flex-shrink-0">
+                            <FiLayers />
+                          </div>
+                          <div>
+                            <div className="font-bold text-slate-900 dark:text-white">
+                              {cls.name}
+                            </div>
+                            <div className="text-xs font-mono text-slate-400">
+                              Code: {cls.code || '—'}
+                            </div>
+                          </div>
+                        </div>
+                      </td>
+
+                      {/* Assigned Teacher */}
+                      <td className="px-6 py-4">
+                        {teacherName ? (
+                          <span className="font-medium text-slate-800 dark:text-slate-200">
+                            {teacherName}
+                          </span>
+                        ) : (
                           <button
-                            onClick={() => handleEditClass(cls)}
-                            className="p-1.5 rounded-lg text-slate-500 hover:text-amber-600 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-                            title="Edit Class"
+                            onClick={() => openAssignTeacherModal(cls._id)}
+                            className="text-xs font-medium text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1"
                           >
-                            <FiEdit2 className="text-sm" />
+                            <FiUserCheck className="text-xs" /> Assign Faculty
                           </button>
-                          {getStudentCount(cls) === 0 && getSubjectCount(cls) === 0 ? (
-                            <button
-                              onClick={() => handleDelete(cls._id)}
-                              className="p-1.5 rounded-lg text-slate-500 hover:text-rose-600 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-                              title="Delete Empty Class"
-                            >
-                              <FiTrash2 className="text-sm" />
-                            </button>
+                        )}
+                      </td>
+
+                      {/* Students */}
+                      <td className="px-6 py-4 text-center">
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 border border-indigo-100 dark:border-indigo-900/50">
+                          <FiUsers className="text-indigo-500 text-xs" />
+                          {studentCount}
+                        </span>
+                      </td>
+
+                      {/* Subjects */}
+                      <td className="px-6 py-4 text-center">
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-100 dark:border-emerald-900/50">
+                          <FiBookOpen className="text-emerald-500 text-xs" />
+                          {subjectCount}
+                        </span>
+                      </td>
+
+                      {/* Status */}
+                      <td className="px-6 py-4">
+                        <StatusBadge status={isArchived ? 'archived' : 'active'} />
+                      </td>
+
+                      {/* Actions */}
+                      <td className="px-6 py-4 text-right">
+                        <div className="inline-flex items-center justify-end gap-1">
+                          <button
+                            onClick={() => handleViewClass(cls._id)}
+                            className="p-1.5 rounded-lg text-slate-500 hover:text-indigo-600 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                            title="View Class Details"
+                          >
+                            <FiEye className="text-base" />
+                          </button>
+
+                          {!isArchived ? (
+                            <>
+                              <button
+                                onClick={() => openAssignTeacherModal(cls._id)}
+                                className="p-1.5 rounded-lg text-slate-500 hover:text-indigo-600 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                                title={teacherName ? 'Change Assigned Teacher' : 'Assign Faculty'}
+                              >
+                                <FiUserCheck className="text-base" />
+                              </button>
+                              <button
+                                onClick={() => handleEditClass(cls)}
+                                className="p-1.5 rounded-lg text-slate-500 hover:text-amber-600 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                                title="Edit Class"
+                              >
+                                <FiEdit2 className="text-base" />
+                              </button>
+
+                              {studentCount === 0 && subjectCount === 0 ? (
+                                <button
+                                  onClick={() => handleDelete(cls._id)}
+                                  className="p-1.5 rounded-lg text-slate-500 hover:text-rose-600 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                                  title="Delete Empty Class"
+                                >
+                                  <FiTrash2 className="text-base" />
+                                </button>
+                              ) : (
+                                <button
+                                  onClick={() => handleArchive(cls._id)}
+                                  className="p-1.5 rounded-lg text-slate-500 hover:text-amber-600 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                                  title="Archive Class"
+                                >
+                                  <FiArchive className="text-base" />
+                                </button>
+                              )}
+                            </>
                           ) : (
                             <button
-                              onClick={() => handleArchive(cls._id)}
-                              className="p-1.5 rounded-lg text-slate-500 hover:text-amber-600 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-                              title="Archive Class"
+                              onClick={() => handleRestore(cls._id)}
+                              className="p-1.5 rounded-lg text-emerald-600 hover:bg-emerald-50 dark:hover:bg-slate-800 transition-colors"
+                              title="Restore Class"
                             >
-                              <FiArchive className="text-sm" />
+                              <FiRefreshCw className="text-base" />
                             </button>
                           )}
-                        </>
-                      ) : (
-                        <button
-                          onClick={() => handleRestore(cls._id)}
-                          className="p-1.5 rounded-lg text-emerald-600 hover:bg-emerald-50 dark:hover:bg-slate-800 transition-colors"
-                          title="Restore Class"
-                        >
-                          <FiRefreshCw className="text-sm" />
-                        </button>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="mt-4 flex items-center gap-4 text-xs text-slate-600 dark:text-slate-400 pt-3 border-t border-slate-100 dark:border-slate-800/80">
-                    <span className="flex items-center gap-1.5 font-medium">
-                      <FiUsers className="text-indigo-500" />
-                      {getStudentCount(cls)} Students
-                    </span>
-                    <span className="flex items-center gap-1.5 font-medium">
-                      <FiBookOpen className="text-emerald-500" />
-                      {getSubjectCount(cls)} Subjects
-                    </span>
-                  </div>
-                </div>
-
-                {/* Operations Toolbar */}
-                {!isArchived && (
-                  <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800/80 flex flex-wrap gap-1.5">
-                    <button
-                      onClick={() => openAssignTeacherModal(cls._id)}
-                      className="px-2.5 py-1 text-[11px] font-medium bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-900/60 rounded-lg transition-colors flex items-center gap-1"
-                    >
-                      <FiUserCheck /> Assign Faculty
-                    </button>
-
-                    {getStudentCount(cls) > 0 && (
-                      <button
-                        onClick={() => handleRemoveAllStudents(cls._id)}
-                        className="px-2.5 py-1 text-[11px] font-medium bg-rose-50 dark:bg-rose-950/30 text-rose-600 dark:text-rose-400 hover:bg-rose-100 rounded-lg transition-colors flex items-center gap-1"
-                      >
-                        <FiUserMinus /> Clear Students
-                      </button>
-                    )}
-
-                    {getSubjectCount(cls) > 0 && (
-                      <button
-                        onClick={() => handleRemoveAllSubjects(cls._id)}
-                        className="px-2.5 py-1 text-[11px] font-medium bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400 hover:bg-amber-100 rounded-lg transition-colors flex items-center gap-1"
-                      >
-                        <FiBookOpen /> Clear Subjects
-                      </button>
-                    )}
-
-                    {(getStudentCount(cls) > 0 || getSubjectCount(cls) > 0) && (
-                      <div className="flex items-center gap-1 ml-auto">
-                        <button
-                          onClick={() => handleCleanDelete(cls._id)}
-                          className="px-2 py-1 text-[10px] font-semibold text-slate-600 hover:text-slate-900 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded transition-colors"
-                          title="Unlink all dependencies then safely delete"
-                        >
-                          Clean Del
-                        </button>
-                        <button
-                          onClick={() => handleForceDelete(cls._id)}
-                          className="px-2 py-1 text-[10px] font-semibold text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded transition-colors"
-                          title="Purge all class data permanently"
-                        >
-                          Force Del
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-            );
-          })}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
 

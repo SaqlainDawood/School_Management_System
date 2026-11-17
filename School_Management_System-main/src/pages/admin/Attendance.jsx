@@ -1,31 +1,70 @@
 // pages/Attendance.jsx
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   FiCalendar,
   FiUser,
   FiRefreshCw,
+  FiCheckCircle,
+  FiXCircle,
+  FiClock,
   FiCheck,
 } from 'react-icons/fi';
 import PageHeader from '../../components/common/PageHeader';
+import Select from '../../components/forms/Select';
 import Button from '../../components/forms/Button';
 import Loader from '../../components/common/Loader';
 import EmptyState from '../../components/common/EmptyState';
 import StatusBadge from '../../components/common/StatusBadge';
 import api from '../../utils/api';
 
-const TODAY_ISO = new Date().toISOString().split('T')[0];
-
 const Attendance = () => {
   const [classes, setClasses] = useState([]);
   const [students, setStudents] = useState([]);
   const [selectedClass, setSelectedClass] = useState('');
-  const [selectedDate, setSelectedDate] = useState(TODAY_ISO);
+  const [selectedDate, setSelectedDate] = useState(
+    new Date().toISOString().split('T')[0]
+  );
   const [loading, setLoading] = useState(true);
   const [attendance, setAttendance] = useState({});
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
-  const fetchAttendance = useCallback(async () => {
+  useEffect(() => {
+    fetchClasses();
+  }, []);
+
+  useEffect(() => {
+    if (selectedClass) {
+      fetchStudents();
+      fetchAttendance();
+    }
+  }, [selectedClass, selectedDate]);
+
+  const fetchClasses = async () => {
+    try {
+      const response = await api.get('/api/classes');
+      setClasses(response.data.classes || []);
+    } catch (err) {
+      console.error('Error fetching classes:', err);
+      setError('Failed to fetch classes');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchStudents = async () => {
+    if (!selectedClass) return;
+    try {
+      const response = await api.get(`/api/classes/${selectedClass}/students`);
+      setStudents(response.data.students || []);
+      setError('');
+    } catch (err) {
+      console.error('Error fetching students:', err);
+      setError('Failed to fetch students for selected class');
+    }
+  };
+
+  const fetchAttendance = async () => {
     if (!selectedClass) return;
     try {
       const response = await api.get(
@@ -52,83 +91,7 @@ const Attendance = () => {
       console.error('Error fetching attendance:', err);
       setError(err.response?.data?.message || 'Failed to fetch attendance');
     }
-  }, [selectedClass, selectedDate]);
-
-  useEffect(() => {
-    let ignore = false;
-    const fetchClasses = async () => {
-      try {
-        const response = await api.get('/api/classes');
-        if (ignore) return;
-        setClasses(response.data.classes || []);
-      } catch (err) {
-        if (!ignore) {
-          console.error('Error fetching classes:', err);
-          setError('Failed to fetch classes');
-        }
-      } finally {
-        if (!ignore) {
-          setLoading(false);
-        }
-      }
-    };
-
-    fetchClasses();
-
-    return () => {
-      ignore = true;
-    };
-  }, []);
-
-  useEffect(() => {
-    if (!selectedClass) return;
-    let ignore = false;
-
-    const loadClassData = async () => {
-      try {
-        const [studentsRes, attendanceRes] = await Promise.allSettled([
-          api.get(`/api/classes/${selectedClass}/students`),
-          api.get(`/api/attendance/class/${selectedClass}`, {
-            params: { date: selectedDate },
-          }),
-        ]);
-
-        if (ignore) return;
-
-        if (studentsRes.status === 'fulfilled') {
-          setStudents(studentsRes.value.data.students || []);
-        }
-
-        if (attendanceRes.status === 'fulfilled') {
-          const respData = attendanceRes.value.data;
-          const attendanceData = {};
-          if (respData.attendance && Array.isArray(respData.attendance)) {
-            respData.attendance.forEach((item) => {
-              if (item.student && item.records && Array.isArray(item.records)) {
-                if (item.records.length > 0) {
-                  const latestRecord = item.records[item.records.length - 1];
-                  attendanceData[item.student._id] = latestRecord.status;
-                } else {
-                  attendanceData[item.student._id] = 'absent';
-                }
-              }
-            });
-          }
-          setAttendance(attendanceData);
-        }
-      } catch (err) {
-        if (!ignore) {
-          console.error('Error fetching class data:', err);
-        }
-      }
-    };
-
-    loadClassData();
-
-    return () => {
-      ignore = true;
-    };
-  }, [selectedClass, selectedDate]);
+  };
 
   const markAttendance = async (studentId, status) => {
     try {
@@ -217,7 +180,7 @@ const Attendance = () => {
                 type="date"
                 value={selectedDate}
                 onChange={(e) => setSelectedDate(e.target.value)}
-                className="input-field text-xs pl-9 py-2 w-full"
+                className="input-field text-xs pl-9 py-2.5 w-full"
               />
             </div>
           </div>
@@ -297,8 +260,8 @@ const Attendance = () => {
                       </td>
                       <td className="px-4 py-3.5 whitespace-nowrap text-center">
                         <StatusBadge
+                          status={status || 'not logged'}
                           variant={getStatusVariant(status)}
-                          dot
                         >
                           {status ? status.toUpperCase() : 'NOT LOGGED'}
                         </StatusBadge>

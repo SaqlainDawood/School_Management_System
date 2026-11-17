@@ -261,8 +261,6 @@ const Sidebar = ({ mobileOpen, onMobileClose }) => {
         {isDrawer && (
           <button
             onClick={onMobileClose}
-            type="button"
-            aria-label="Close mobile navigation drawer"
             className="ml-auto p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 transition-colors"
           >
             <FiX className="w-4 h-4" />
@@ -272,8 +270,7 @@ const Sidebar = ({ mobileOpen, onMobileClose }) => {
         {!isDrawer && (
           <button
             onClick={toggleCollapsed}
-            type="button"
-            aria-label={collapsed ? 'Expand sidebar navigation' : 'Collapse sidebar navigation'}
+            aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
             className={`ml-auto p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 transition-colors flex-shrink-0
               ${collapsed ? 'mx-auto ml-auto' : ''}`}
           >
@@ -286,7 +283,7 @@ const Sidebar = ({ mobileOpen, onMobileClose }) => {
       </div>
 
       {/* ── Nav ── */}
-      <nav aria-label="Main navigation" className="flex-1 overflow-y-auto py-3 px-2 space-y-4 scrollbar-thin scrollbar-thumb-white/10">
+      <nav aria-label="Main navigation" className="flex-1 overflow-y-auto py-3 px-2 space-y-4 sidebar-scroll">
         {groups.map((group, gi) => (
           <div key={gi}>
             {group.group && !collapsed && (
@@ -330,8 +327,7 @@ const Sidebar = ({ mobileOpen, onMobileClose }) => {
         {/* Logout */}
         <button
           onClick={handleLogout}
-          type="button"
-          aria-label="Logout"
+          aria-label="Log out of application"
           className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium
             text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 transition-colors
             ${collapsed && !isDrawer ? 'justify-center' : ''}`}

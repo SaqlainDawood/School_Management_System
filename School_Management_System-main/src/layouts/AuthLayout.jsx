@@ -1,8 +1,7 @@
 import React from 'react';
 import { Outlet } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import { FiBookOpen, FiShield, FiTrendingUp, FiUsers } from 'react-icons/fi';
-
-const CURRENT_YEAR = new Date().getFullYear();
 
 const AuthLayout = () => {
   return (
@@ -59,7 +58,7 @@ const AuthLayout = () => {
 
         {/* Footer info */}
         <div className="relative z-10 text-xs text-slate-500 flex items-center justify-between border-t border-slate-800/80 pt-6">
-          <span>&copy; {CURRENT_YEAR} EduManage Enterprise</span>
+          <span>&copy; {new Date().getFullYear()} EduManage Enterprise</span>
           <span className="flex items-center gap-1.5">
             <FiShield className="text-emerald-500" /> Secure SSL Encrypted
           </span>

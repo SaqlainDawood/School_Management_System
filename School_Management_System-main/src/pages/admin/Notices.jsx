@@ -16,44 +16,34 @@ import StatusBadge from '../../components/common/StatusBadge';
 import api from '../../utils/api';
 import { formatDate } from '../../utils/helpers';
 
-const getPriorityVariant = (priority) => {
-  switch (priority) {
-    case 'urgent': return 'danger';
-    case 'high': return 'warning';
-    case 'medium': return 'info';
-    default: return 'neutral';
-  }
-};
-
 const Notices = () => {
   const [notices, setNotices] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    let ignore = false;
-    const fetchNotices = async () => {
-      try {
-        const response = await api.get('/api/notices');
-        if (ignore) return;
-        setNotices(response.data?.notices || []);
-      } catch (err) {
-        if (!ignore) {
-          console.error('Error fetching notices:', err);
-          setNotices([]);
-        }
-      } finally {
-        if (!ignore) {
-          setLoading(false);
-        }
-      }
-    };
-
     fetchNotices();
-
-    return () => {
-      ignore = true;
-    };
   }, []);
+
+  const fetchNotices = async () => {
+    try {
+      const response = await api.get('/api/notices');
+      setNotices(response.data?.notices || []);
+    } catch (err) {
+      console.error('Error fetching notices:', err);
+      setNotices([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getPriorityVariant = (priority) => {
+    switch (priority) {
+      case 'urgent': return 'danger';
+      case 'high': return 'warning';
+      case 'medium': return 'info';
+      default: return 'neutral';
+    }
+  };
 
   if (loading) return <Loader />;
 

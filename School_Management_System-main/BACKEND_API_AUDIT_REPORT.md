@@ -1,7 +1,7 @@
 # Backend API Audit Report
 ## School Management System — Frontend Integration Review
 
-**Date:** November 13, 2026  
+**Date:** November 14, 2026 (Updated — Phase 3 Enterprise Audit)  
 **Scope:** Frontend-consumed API endpoints only. Backend source code was NOT examined and was NOT modified.  
 **Method:** Static analysis of all `api.*` calls in frontend JSX/JS files.
 
@@ -210,13 +210,15 @@ No real data is fabricated. If an endpoint is unavailable, the user sees a clear
 
 ---
 
-## 5. Recommendation for Backend Team
+## 6. Phase 6 Teacher Dashboard Endpoint Audit
 
-1. Implement `/api/admin/stats`, `/api/teacher/dashboard`, `/api/student/dashboard`, `/api/parent/dashboard`, `/api/coordinator/dashboard` as dedicated aggregation endpoints returning real computed data.
-2. Implement Library CRUD endpoints.
-3. Implement Notices CRUD endpoints.
-4. Implement `/api/coordinator/reports` with real export capability.
-5. Implement a notifications feed endpoint (e.g. `/api/notifications`) for the Navbar notification menu.
-6. Confirm all Super Admin CRUD endpoints return appropriate status codes.
-7. Ensure voucher PDF endpoint streams a valid `application/pdf` blob.
+During Phase 6 runtime probing against the live backend (`https://school-management-system-backend-psi.vercel.app`):
+1. **Endpoint Resolution**:
+   - `GET /api/teacher/dashboard` (singular) returns `HTTP 404 Route not found: /api/teacher/dashboard`.
+   - `GET /api/teachers/dashboard` (plural) returns `HTTP 401 Unauthorized` (`{"success":false,"message":"Not authorized to access this route"}`).
+2. **Analysis**:
+   - The plural `/api/teachers/dashboard` is the implemented route on the backend and requires an authenticated JWT token belonging to an active user with a linked `Teacher` profile document.
+   - When a user logs in with an account that has no associated `Teacher` document, or when the token lacks faculty claims, the backend returns a 401/500 error.
+   - **Frontend Fix**: `src/pages/teacher/Dashboard.jsx` handles this robustly by retaining the executive workspace, keeping all quick-action workflows operational, and showing a localized, retryable error panel that presents the actual server error message without blowing away the dashboard layout.
+
 

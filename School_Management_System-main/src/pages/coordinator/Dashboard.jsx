@@ -10,45 +10,54 @@ import {
 } from 'react-icons/fi';
 import PageHeader from '../../components/common/PageHeader';
 import StatsCard from '../../components/dashboard/StatsCard';
+import SectionCard from '../../components/common/SectionCard';
 import Loader from '../../components/common/Loader';
+import EmptyState from '../../components/common/EmptyState';
 import ErrorState from '../../components/common/ErrorState';
 import api from '../../utils/api';
 
 const CoordinatorDashboard = () => {
-  const [stats, setStats] = useState(null);
+  const [stats, setStats] = useState({});
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
-  const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
-    let ignore = false;
-    const fetchStats = async () => {
-      try {
-        const response = await api.get('/api/coordinator/dashboard');
-        if (ignore) return;
-        setStats(response.data?.dashboard || null);
-        setError(false);
-      } catch (err) {
-        if (!ignore) {
-          console.error('Error fetching coordinator stats:', err);
-          setError(true);
-          setStats(null);
-        }
-      } finally {
-        if (!ignore) {
-          setLoading(false);
-        }
-      }
-    };
-
     fetchStats();
+  }, []);
 
-    return () => {
-      ignore = true;
-    };
-  }, [refreshTrigger]);
+  const fetchStats = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const response = await api.get('/api/coordinator/dashboard');
+      setStats(response.data?.dashboard || {});
+    } catch (err) {
+      console.error('Error fetching coordinator stats:', err);
+      setError(err?.response?.data?.message || err?.message || 'Failed to load coordinator dashboard data');
+      setStats({});
+    } finally {
+      setLoading(false);
+    }
+  };
 
   if (loading) return <Loader />;
+
+  if (error && Object.keys(stats).length === 0) {
+    return (
+      <div className="space-y-6">
+        <PageHeader
+          title="Academic Coordinator Portal"
+          subtitle="Manage educational departments, cross-faculty allocations, and attendance trends"
+          breadcrumbs={[{ label: 'Coordinator' }, { label: 'Dashboard' }]}
+        />
+        <ErrorState
+          title="Coordinator Dashboard Unavailable"
+          message={error}
+          onRetry={fetchStats}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -58,49 +67,37 @@ const CoordinatorDashboard = () => {
         breadcrumbs={[{ label: 'Coordinator' }, { label: 'Dashboard' }]}
       />
 
-      {error ? (
-        <ErrorState
-          title="Failed to load coordinator metrics"
-          message="Unable to communicate with the coordinator API endpoint. Please check your connection and retry."
-          onRetry={() => {
-            setLoading(true);
-            setError(false);
-            setRefreshTrigger((t) => t + 1);
-          }}
+      {/* Real KPI Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+        <StatsCard
+          title="Departments"
+          value={stats.departments || 0}
+          icon={FiLayers}
+          color="primary"
+          subtitle="Active academic divisions"
         />
-      ) : (
-        /* Real KPI Cards */
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-          <StatsCard
-            title="Departments"
-            value={stats?.departments ?? '—'}
-            icon={FiLayers}
-            color="primary"
-            subtitle="Active academic divisions"
-          />
-          <StatsCard
-            title="Faculty Members"
-            value={stats?.teachers ?? '—'}
-            icon={FiUsers}
-            color="secondary"
-            subtitle="Assigned teachers"
-          />
-          <StatsCard
-            title="Enrolled Students"
-            value={stats?.students ?? '—'}
-            icon={FiBook}
-            color="success"
-            subtitle="Under coordination"
-          />
-          <StatsCard
-            title="Attendance Rate"
-            value={stats?.attendance?.percentage != null ? `${stats.attendance.percentage}%` : '—'}
-            icon={FiClock}
-            color="warning"
-            subtitle="Department wide rate"
-          />
-        </div>
-      )}
+        <StatsCard
+          title="Faculty Members"
+          value={stats.teachers || 0}
+          icon={FiUsers}
+          color="secondary"
+          subtitle="Assigned teachers"
+        />
+        <StatsCard
+          title="Enrolled Students"
+          value={stats.students || 0}
+          icon={FiBook}
+          color="success"
+          subtitle="Under coordination"
+        />
+        <StatsCard
+          title="Attendance Rate"
+          value={stats.attendance?.percentage != null ? `${stats.attendance.percentage}%` : '—'}
+          icon={FiClock}
+          color="warning"
+          subtitle="Department wide rate"
+        />
+      </div>
 
       {/* Quick Navigation Cards */}
       <div>

@@ -14,8 +14,10 @@ const statusConfig = {
   late: { label: 'Late', variant: 'warning', dot: true },
   excused: { label: 'Excused', variant: 'info', dot: false },
   holiday: { label: 'Holiday', variant: 'secondary', dot: false },
+  'not logged': { label: 'Not Logged', variant: 'secondary', dot: false },
+  unmarked: { label: 'Unmarked', variant: 'secondary', dot: false },
 
-  // Fees
+  // Fees & Finance
   paid: { label: 'Paid', variant: 'success', dot: true },
   unpaid: { label: 'Unpaid', variant: 'danger', dot: true },
   overdue: { label: 'Overdue', variant: 'danger', dot: true },
@@ -26,10 +28,19 @@ const statusConfig = {
   draft: { label: 'Draft', variant: 'secondary', dot: false },
   published: { label: 'Published', variant: 'success', dot: true },
   ongoing: { label: 'Ongoing', variant: 'info', dot: true },
+  scheduled: { label: 'Scheduled', variant: 'info', dot: true },
+  upcoming: { label: 'Upcoming', variant: 'info', dot: true },
   completed: { label: 'Completed', variant: 'success', dot: false },
+  concluded: { label: 'Concluded', variant: 'success', dot: false },
   cancelled: { label: 'Cancelled', variant: 'danger', dot: false },
   pass: { label: 'Pass', variant: 'success', dot: false },
   fail: { label: 'Fail', variant: 'danger', dot: false },
+
+  // Academic Enrollment
+  enrolled: { label: 'Enrolled', variant: 'success', dot: true },
+  graduated: { label: 'Graduated', variant: 'info', dot: false },
+  transferred: { label: 'Transferred', variant: 'secondary', dot: false },
+  withdrawn: { label: 'Withdrawn', variant: 'danger', dot: false },
 
   // Transport & Operations
   maintenance: { label: 'Maintenance', variant: 'warning', dot: true },
@@ -41,22 +52,66 @@ const statusConfig = {
 
 const StatusBadge = ({
   status,
+  children,
   label: customLabel,
   variant: customVariant,
   dot: customDot,
   size = 'md',
   className = '',
 }) => {
-  const normalized = (status || '').toLowerCase();
-  const config = statusConfig[normalized] || {
-    label: customLabel || status || 'Unknown',
-    variant: 'secondary',
-    dot: false,
-  };
+  // Normalize status key
+  let normalizedKey = '';
+  if (typeof status === 'boolean') {
+    normalizedKey = status ? 'active' : 'inactive';
+  } else if (typeof status === 'string') {
+    normalizedKey = status.trim().toLowerCase();
+  } else if (children && typeof children === 'string') {
+    normalizedKey = children.trim().toLowerCase();
+  } else if (customLabel && typeof customLabel === 'string') {
+    normalizedKey = customLabel.trim().toLowerCase();
+  }
 
-  const variant = customVariant || config.variant;
-  const showDot = customDot !== undefined ? customDot : config.dot;
-  const displayLabel = customLabel || config.label;
+  // Look up config from known dictionary
+  const matchedConfig = statusConfig[normalizedKey];
+
+  // Resolve display label
+  let displayLabel =
+    children !== undefined && children !== null && children !== ''
+      ? children
+      : customLabel !== undefined && customLabel !== null && customLabel !== ''
+      ? customLabel
+      : matchedConfig?.label || (typeof status === 'string' && status.trim() ? status : 'Unknown');
+
+  // If displayLabel is still empty or evaluates to unknown, force neutral styling
+  const isUnknown =
+    !displayLabel ||
+    String(displayLabel).toLowerCase() === 'unknown' ||
+    String(displayLabel).toLowerCase() === 'undefined';
+
+  if (isUnknown) {
+    displayLabel = 'Unknown';
+  }
+
+  // Resolve variant:
+  // If unknown, NEVER show a misleading green/red dot; use neutral/secondary variant
+  let variant = isUnknown
+    ? 'secondary'
+    : customVariant || matchedConfig?.variant || 'secondary';
+
+  // Normalize 'neutral' to 'secondary' for CSS class compatibility
+  if (variant === 'neutral') {
+    variant = 'secondary';
+  }
+
+  // Resolve dot:
+  // If unknown, hide dot
+  const showDot = isUnknown
+    ? false
+    : customDot !== undefined
+    ? customDot
+    : matchedConfig?.dot !== undefined
+    ? matchedConfig.dot
+    : false;
 
   const sizeClasses = {
     sm: 'text-[11px] px-2 py-0.5',
@@ -89,4 +144,3 @@ const StatusBadge = ({
 };
 
 export default StatusBadge;
-

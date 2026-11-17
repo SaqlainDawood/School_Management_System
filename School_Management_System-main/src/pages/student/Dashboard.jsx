@@ -1,12 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import {
   FiCalendar,
   FiClock,
   FiDollarSign,
   FiAward,
   FiFileText,
+  FiBook,
+  FiCheckCircle,
   FiArrowRight,
+  FiAlertCircle,
   FiUser,
 } from 'react-icons/fi';
 import { useAuth } from '../../context/AuthContext';
@@ -14,16 +18,9 @@ import api from '../../utils/api';
 import PageHeader from '../../components/common/PageHeader';
 import StatsCard from '../../components/dashboard/StatsCard';
 import Loader from '../../components/common/Loader';
+import EmptyState from '../../components/common/EmptyState';
 import ErrorState from '../../components/common/ErrorState';
-
-const getFormattedDate = () => {
-  return new Date().toLocaleDateString('en-US', {
-    weekday: 'long',
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  });
-};
+import StatusBadge from '../../components/common/StatusBadge';
 
 const StudentDashboard = () => {
   const { user } = useAuth();
@@ -32,45 +29,41 @@ const StudentDashboard = () => {
   const [error, setError] = useState(null);
   const [stats, setStats] = useState(null);
   const [studentData, setStudentData] = useState(null);
-  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
-  const dateStr = getFormattedDate();
+  const today = new Date();
+  const dateStr = today.toLocaleDateString('en-US', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  });
 
   useEffect(() => {
-    let ignore = false;
-    const fetchDashboard = async () => {
-      try {
-        const [dashRes, profileRes] = await Promise.allSettled([
-          api.get('/api/students/dashboard'),
-          api.get('/api/students/profile'),
-        ]);
-
-        if (ignore) return;
-
-        if (dashRes.status === 'fulfilled' && dashRes.value.data?.dashboard) {
-          setStats(dashRes.value.data.dashboard.stats || null);
-        }
-        if (profileRes.status === 'fulfilled' && profileRes.value.data?.student) {
-          setStudentData(profileRes.value.data.student);
-        }
-      } catch (err) {
-        if (!ignore) {
-          console.error('Error fetching student dashboard:', err);
-          setError('Unable to load student metrics at this time.');
-        }
-      } finally {
-        if (!ignore) {
-          setLoading(false);
-        }
-      }
-    };
-
     fetchDashboard();
+  }, []);
 
-    return () => {
-      ignore = true;
-    };
-  }, [refreshTrigger]);
+  const fetchDashboard = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const [dashRes, profileRes] = await Promise.allSettled([
+        api.get('/api/students/dashboard'),
+        api.get('/api/students/profile'),
+      ]);
+
+      if (dashRes.status === 'fulfilled' && dashRes.value.data?.dashboard) {
+        setStats(dashRes.value.data.dashboard.stats || null);
+      }
+      if (profileRes.status === 'fulfilled' && profileRes.value.data?.student) {
+        setStudentData(profileRes.value.data.student);
+      }
+    } catch (err) {
+      console.error('Error fetching student dashboard:', err);
+      setError('Unable to load student metrics at this time.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   if (loading) return <Loader />;
 
@@ -94,11 +87,7 @@ const StudentDashboard = () => {
         <ErrorState
           title="Dashboard Notice"
           message={error}
-          onRetry={() => {
-            setLoading(true);
-            setError(null);
-            setRefreshTrigger((t) => t + 1);
-          }}
+          onRetry={fetchDashboard}
         />
       )}
 
@@ -138,44 +127,57 @@ const StudentDashboard = () => {
       </div>
 
       {/* Student Academic Identity Card */}
-      {studentData && (
-        <div className="card p-6 bg-gradient-to-r from-navy-900 to-navy-800 text-white rounded-2xl border border-navy-700/60 shadow-xl">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+      {(studentData || user) && (
+        <section className="card p-5 sm:p-6 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm bg-white dark:bg-[#162033]">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-5">
             <div className="flex items-center gap-4">
-              <div className="w-16 h-16 rounded-2xl bg-primary-600/30 border border-primary-500/40 flex items-center justify-center text-2xl font-bold text-primary-300">
-                {studentData.user?.name?.charAt(0) || 'S'}
+              <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-100 dark:border-indigo-900/50 flex items-center justify-center text-xl sm:text-2xl font-bold text-indigo-600 dark:text-indigo-400 shrink-0">
+                {(studentData?.user?.name || user?.name || 'S').charAt(0).toUpperCase()}
               </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <h3 className="text-xl font-bold">{studentData.user?.name}</h3>
-                  <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
-                    Active Student
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-2">
+                  <h3 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-slate-100 truncate">
+                    {studentData?.user?.name || user?.name || 'Student'}
+                  </h3>
+                  <StatusBadge
+                    status={studentData?.status || user?.status || 'active'}
+                    label="Student"
+                  />
+                </div>
+                <div className="mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs sm:text-sm text-slate-500 dark:text-slate-400">
+                  <span>
+                    Class: <strong className="font-semibold text-slate-800 dark:text-slate-200">{studentData?.class?.name || (typeof studentData?.class === 'string' ? studentData.class : null) || 'Assigned'}</strong>
+                  </span>
+                  <span className="text-slate-300 dark:text-slate-600 hidden sm:inline">•</span>
+                  <span>
+                    Section: <strong className="font-semibold text-slate-800 dark:text-slate-200">{studentData?.section || 'A'}</strong>
+                  </span>
+                  <span className="text-slate-300 dark:text-slate-600 hidden sm:inline">•</span>
+                  <span>
+                    Roll No: <strong className="font-semibold text-slate-800 dark:text-slate-200">{studentData?.rollNumber || studentData?.rollNo || '—'}</strong>
                   </span>
                 </div>
-                <p className="text-sm text-slate-300 mt-1">
-                  Class: <span className="font-semibold text-white">{studentData.class?.name || 'Assigned'}</span> • Section: <span className="font-semibold text-white">{studentData.section || 'A'}</span> • Roll No: <span className="font-semibold text-white">{studentData.rollNumber || '—'}</span>
-                </p>
               </div>
             </div>
 
-            <div className="flex flex-wrap items-center gap-3">
+            <div className="flex flex-wrap items-center gap-2.5 shrink-0">
               <Link
                 to="/student/profile"
-                className="px-4 py-2 bg-white/10 hover:bg-white/20 text-white text-sm font-medium rounded-xl transition-colors border border-white/10 flex items-center gap-1.5"
+                className="px-3.5 py-2 rounded-xl text-xs sm:text-sm font-medium border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors inline-flex items-center gap-1.5"
               >
-                <FiUser className="text-base" />
+                <FiUser className="text-sm text-slate-500 dark:text-slate-400" />
                 <span>My Profile</span>
               </Link>
               <Link
                 to="/student/results"
-                className="px-4 py-2 bg-primary-600 hover:bg-primary-500 text-white text-sm font-medium rounded-xl transition-colors shadow-sm flex items-center gap-1.5"
+                className="px-4 py-2 rounded-xl text-xs sm:text-sm font-medium bg-indigo-600 hover:bg-indigo-700 text-white transition-colors shadow-sm inline-flex items-center gap-1.5"
               >
                 <span>Report Card</span>
-                <FiArrowRight className="text-base" />
+                <FiArrowRight className="text-sm" />
               </Link>
             </div>
           </div>
-        </div>
+        </section>
       )}
 
       {/* Quick Navigation Modules */}

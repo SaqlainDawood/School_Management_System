@@ -6,7 +6,10 @@ import {
   FiPhone,
   FiMapPin,
   FiGlobe,
+  FiMoon,
+  FiSun,
   FiLock,
+  FiCheckCircle,
 } from 'react-icons/fi';
 import { toast } from 'react-toastify';
 import PageHeader from '../../components/common/PageHeader';
@@ -17,6 +20,7 @@ import Select from '../../components/forms/Select';
 import Loader from '../../components/common/Loader';
 import api from '../../utils/api';
 import { useAuth } from '../../context/AuthContext';
+import { formatAddress } from '../../utils/helpers';
 
 const SuperAdminSettings = () => {
   const { user } = useAuth();
@@ -36,8 +40,19 @@ const SuperAdminSettings = () => {
     name: user?.name || '',
     email: user?.email || '',
     phone: user?.phone || '',
-    address: user?.address || '',
+    address: formatAddress(user?.address),
   });
+
+  useEffect(() => {
+    if (user) {
+      setProfileData({
+        name: user.name || '',
+        email: user.email || '',
+        phone: user.phone || '',
+        address: formatAddress(user.address),
+      });
+    }
+  }, [user]);
   const [passwordData, setPasswordData] = useState({
     currentPassword: '',
     newPassword: '',
@@ -46,32 +61,22 @@ const SuperAdminSettings = () => {
   const [errors, setErrors] = useState({});
 
   useEffect(() => {
-    let ignore = false;
-    const fetchSettings = async () => {
-      try {
-        setLoading(true);
-        const response = await api.get('/api/admin/settings');
-        if (ignore) return;
-        if (response.data?.settings) {
-          setSettings(response.data.settings);
-        }
-      } catch (error) {
-        if (!ignore) {
-          console.error('Error fetching settings:', error);
-        }
-      } finally {
-        if (!ignore) {
-          setLoading(false);
-        }
-      }
-    };
-
     fetchSettings();
-
-    return () => {
-      ignore = true;
-    };
   }, []);
+
+  const fetchSettings = async () => {
+    try {
+      setLoading(true);
+      const response = await api.get('/api/admin/settings');
+      if (response.data?.settings) {
+        setSettings(response.data.settings);
+      }
+    } catch (error) {
+      console.error('Error fetching settings:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleSettingChange = (e) => {
     setSettings((prev) => ({ ...prev, [e.target.name]: e.target.value }));
@@ -91,7 +96,6 @@ const SuperAdminSettings = () => {
       await api.put('/api/admin/settings', settings);
       toast.success('System configuration updated successfully');
     } catch (error) {
-      console.error('Error saving system settings:', error);
       toast.error('Failed to update system settings');
     } finally {
       setSaving(false);
@@ -105,7 +109,6 @@ const SuperAdminSettings = () => {
       await api.put('/api/auth/update-profile', profileData);
       toast.success('Profile credentials updated successfully');
     } catch (error) {
-      console.error('Error updating profile:', error);
       toast.error('Failed to update profile');
     } finally {
       setSaving(false);
@@ -167,10 +170,11 @@ const SuperAdminSettings = () => {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-2 px-5 py-3 text-sm font-semibold border-b-2 transition-all ${isActive
-                ? 'border-primary-600 text-primary-600 dark:text-primary-400'
-                : 'border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
-                }`}
+              className={`flex items-center gap-2 px-5 py-3 text-sm font-semibold border-b-2 transition-all ${
+                isActive
+                  ? 'border-primary-600 text-primary-600 dark:text-primary-400'
+                  : 'border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
+              }`}
             >
               <Icon className="text-base" />
               <span>{tab.label}</span>

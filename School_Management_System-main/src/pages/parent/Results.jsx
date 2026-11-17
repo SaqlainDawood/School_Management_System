@@ -2,6 +2,9 @@ import React, { useState, useEffect } from 'react';
 import {
   FiAward,
   FiUser,
+  FiBook,
+  FiTrendingUp,
+  FiCheckCircle,
 } from 'react-icons/fi';
 import {
   LineChart,
@@ -20,22 +23,6 @@ import Loader from '../../components/common/Loader';
 import EmptyState from '../../components/common/EmptyState';
 import api from '../../utils/api';
 
-const getGradeVariant = (grade) => {
-  switch (grade) {
-    case 'A+':
-    case 'A':
-      return 'success';
-    case 'B+':
-    case 'B':
-      return 'info';
-    case 'C+':
-    case 'C':
-      return 'warning';
-    default:
-      return 'danger';
-  }
-};
-
 const ParentResults = () => {
   const [children, setChildren] = useState([]);
   const [selectedChild, setSelectedChild] = useState('');
@@ -44,62 +31,62 @@ const ParentResults = () => {
   const [fetchingResults, setFetchingResults] = useState(false);
 
   useEffect(() => {
-    let ignore = false;
-    const fetchChildren = async () => {
-      try {
-        setLoading(true);
-        const response = await api.get('/api/parents/dashboard');
-        if (ignore) return;
-        const kids = response.data?.dashboard?.parent?.children || [];
-        setChildren(kids);
-        if (kids.length > 0) setSelectedChild(kids[0]._id);
-      } catch (error) {
-        if (!ignore) {
-          console.error('Error fetching children:', error);
-        }
-      } finally {
-        if (!ignore) {
-          setLoading(false);
-        }
-      }
-    };
-
     fetchChildren();
-
-    return () => {
-      ignore = true;
-    };
   }, []);
 
   useEffect(() => {
-    if (!selectedChild) return;
-    let ignore = false;
-    const fetchResults = async () => {
-      try {
-        setFetchingResults(true);
-        const response = await api.get(
-          `/api/parents/child/${selectedChild}/results`
-        );
-        if (ignore) return;
-        setResults(response.data?.results || []);
-      } catch (error) {
-        if (!ignore) {
-          console.error('Error fetching results:', error);
-          setResults([]);
-        }
-      } finally {
-        if (!ignore) {
-          setFetchingResults(false);
-        }
-      }
-    };
-
-    fetchResults();
-
-    return () => {
-      ignore = true;
-    };
+    if (selectedChild) fetchResults();
   }, [selectedChild]);
+
+  const fetchChildren = async () => {
+    try {
+      setLoading(true);
+      const response = await api.get('/api/parents/dashboard');
+      const kids = response.data?.dashboard?.parent?.children || [];
+      setChildren(kids);
+      if (kids.length > 0) setSelectedChild(kids[0]._id);
+    } catch (error) {
+      console.error('Error fetching children:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchResults = async () => {
+    try {
+      setFetchingResults(true);
+      const response = await api.get(
+        `/api/parents/child/${selectedChild}/results`
+      );
+      setResults(response.data?.results || []);
+    } catch (error) {
+      console.error('Error fetching results:', error);
+      setResults([]);
+    } finally {
+      setFetchingResults(false);
+    }
+  };
+
+  const chartData = results.map((r) => ({
+    exam: r.exam?.name || 'Exam',
+    percentage: Math.round(Number(r.percentage) || 0),
+  }));
+
+  const getGradeVariant = (grade) => {
+    switch (grade) {
+      case 'A+':
+      case 'A':
+        return 'success';
+      case 'B+':
+      case 'B':
+        return 'info';
+      case 'C+':
+      case 'C':
+        return 'warning';
+      default:
+        return 'danger';
+    }
+  };
 
   if (loading) return <Loader />;
 

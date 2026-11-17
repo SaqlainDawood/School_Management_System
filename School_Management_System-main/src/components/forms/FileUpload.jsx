@@ -2,6 +2,7 @@ import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   FiUploadCloud,
+  FiFile,
   FiX,
   FiImage,
   FiFileText,

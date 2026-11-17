@@ -12,11 +12,16 @@
   :root {
     --bg-canvas: #F8FAFC;
     --surface-card: #FFFFFF;
+    --surface-secondary: #F1F5F9;
     --border-color: #E2E8F0;
+    --border-strong: #CBD5E1;
     --text-primary: #0F172A;
-    --text-secondary: #64748B;
+    --text-secondary: #475569;
+    --text-muted: #64748B;
     --color-primary: #4F46E5;
     --color-primary-hover: #4338CA;
+    --color-primary-active: #3730A3;
+    --color-accent: #818CF8;
     --sidebar-bg: #0F172A;
     --sidebar-surface: #1E293B;
   }
@@ -24,9 +29,14 @@
   .dark {
     --bg-canvas: #0B1120;
     --surface-card: #162033;
+    --surface-secondary: #1E293B;
     --border-color: #334155;
+    --border-strong: #475569;
     --text-primary: #F1F5F9;
-    --text-secondary: #94A3B8;
+    --text-secondary: #CBD5E1;
+    --text-muted: #94A3B8;
+    --color-primary: #4F46E5;
+    --color-primary-hover: #6366F1;
     --sidebar-bg: #0F172A;
     --sidebar-surface: #1E293B;
   }
@@ -44,6 +54,17 @@
   *:focus-visible {
     outline: 2px solid #4F46E5;
     outline-offset: 2px;
+  }
+
+  /* Dark mode native select dropdown options fix */
+  select option {
+    background-color: var(--surface-card);
+    color: var(--text-primary);
+  }
+
+  .dark select option {
+    background-color: #111827;
+    color: #F1F5F9;
   }
 
   @media (prefers-reduced-motion: reduce) {
@@ -74,9 +95,17 @@
 
   /* Inputs */
   .input-field {
-    @apply w-full px-3.5 py-2.5 rounded-lg border border-slate-300 dark:border-slate-700
-           bg-white dark:bg-[#1E293B] text-slate-900 dark:text-slate-100 text-sm
+    @apply w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700
+           bg-white dark:bg-[#111827] text-slate-900 dark:text-slate-100 text-sm
            placeholder:text-slate-400 dark:placeholder:text-slate-500
+           focus:border-indigo-600 focus:ring-2 focus:ring-indigo-600/20 focus:outline-none
+           transition-colors duration-150 disabled:bg-slate-100 dark:disabled:bg-slate-800 disabled:cursor-not-allowed;
+  }
+
+  /* Selects */
+  .select-field {
+    @apply w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700
+           bg-white dark:bg-[#111827] text-slate-900 dark:text-slate-100 text-sm
            focus:border-indigo-600 focus:ring-2 focus:ring-indigo-600/20 focus:outline-none
            transition-colors duration-150 disabled:bg-slate-100 dark:disabled:bg-slate-800 disabled:cursor-not-allowed;
   }
@@ -87,19 +116,19 @@
   }
 
   .badge-success {
-    @apply bg-emerald-50 text-emerald-700 border border-emerald-200/80 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800/50;
+    @apply bg-emerald-50 text-emerald-700 border border-emerald-200/80 dark:bg-emerald-950/40 dark:text-[#6EE7B7] dark:border-emerald-800/50;
   }
 
   .badge-warning {
-    @apply bg-amber-50 text-amber-700 border border-amber-200/80 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800/50;
+    @apply bg-amber-50 text-amber-700 border border-amber-200/80 dark:bg-amber-950/40 dark:text-[#FCD34D] dark:border-amber-800/50;
   }
 
   .badge-danger {
-    @apply bg-rose-50 text-rose-700 border border-rose-200/80 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-800/50;
+    @apply bg-rose-50 text-rose-700 border border-rose-200/80 dark:bg-rose-950/40 dark:text-[#FCA5A5] dark:border-rose-800/50;
   }
 
   .badge-info {
-    @apply bg-sky-50 text-sky-700 border border-sky-200/80 dark:bg-sky-950/40 dark:text-sky-300 dark:border-sky-800/50;
+    @apply bg-sky-50 text-sky-700 border border-sky-200/80 dark:bg-sky-950/40 dark:text-[#7DD3FC] dark:border-sky-800/50;
   }
 
   .badge-primary {
@@ -157,4 +186,19 @@
 
 ::-webkit-scrollbar-thumb:hover {
   @apply bg-slate-400 dark:bg-slate-600;
+}
+
+/* Sidebar scroll styling */
+.sidebar-scroll::-webkit-scrollbar {
+  width: 4px;
+}
+.sidebar-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+.sidebar-scroll::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 9999px;
+}
+.sidebar-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.25);
 }

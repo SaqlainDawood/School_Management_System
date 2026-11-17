@@ -1,5 +1,6 @@
 // frontend/src/pages/admin/Subjects.jsx
 import React, { useState, useEffect, useMemo } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   FiPlus,
   FiEdit2,
@@ -48,59 +49,45 @@ const Subjects = () => {
     teachers: [],
   });
   const [errors, setErrors] = useState({});
-  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   useEffect(() => {
-    let ignore = false;
-    const fetchSubjects = async () => {
-      setLoading(true);
-      try {
-        const response = await api.get('/api/subjects');
-        if (ignore) return;
-        setSubjects(response.data.subjects || []);
-      } catch (err) {
-        if (!ignore) {
-          console.error('Error fetching subjects:', err);
-          toast.error('Failed to fetch subjects');
-        }
-      } finally {
-        if (!ignore) {
-          setLoading(false);
-        }
-      }
-    };
-
     fetchSubjects();
-
-    return () => {
-      ignore = true;
-    };
-  }, [refreshTrigger]);
-
-  useEffect(() => {
-    let ignore = false;
-    const fetchClassesAndTeachers = async () => {
-      try {
-        const [classesRes, teachersRes] = await Promise.all([
-          api.get('/api/classes'),
-          api.get('/api/teachers', { params: { limit: 100 } }),
-        ]);
-        if (ignore) return;
-        setClasses(classesRes.data.classes || []);
-        setTeachers(teachersRes.data.teachers || []);
-      } catch (err) {
-        if (!ignore) {
-          console.error('Error fetching classes or teachers:', err);
-        }
-      }
-    };
-
-    fetchClassesAndTeachers();
-
-    return () => {
-      ignore = true;
-    };
+    fetchClasses();
+    fetchTeachers();
   }, []);
+
+  const fetchSubjects = async () => {
+    setLoading(true);
+    try {
+      const response = await api.get('/api/subjects');
+      setSubjects(response.data.subjects || []);
+    } catch (err) {
+      console.error('Error fetching subjects:', err);
+      toast.error('Failed to fetch subjects');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchClasses = async () => {
+    try {
+      const response = await api.get('/api/classes');
+      setClasses(response.data.classes || []);
+    } catch (err) {
+      console.error('Error fetching classes:', err);
+    }
+  };
+
+  const fetchTeachers = async () => {
+    try {
+      const response = await api.get('/api/teachers', {
+        params: { limit: 100 },
+      });
+      setTeachers(response.data.teachers || []);
+    } catch (err) {
+      console.error('Error fetching teachers:', err);
+    }
+  };
 
   const filteredSubjects = useMemo(() => {
     return subjects.filter((subject) => {
@@ -242,7 +229,7 @@ const Subjects = () => {
         toast.success('Subject added successfully');
       }
       setShowModal(false);
-      setRefreshTrigger((prev) => prev + 1);
+      fetchSubjects();
     } catch (err) {
       console.error('Error saving subject:', err);
       toast.error(err.response?.data?.message || 'Failed to save subject');
@@ -258,7 +245,7 @@ const Subjects = () => {
       await api.delete(`/api/subjects/${deleteTargetId}`);
       toast.success('Subject deleted successfully');
       setDeleteTargetId(null);
-      setRefreshTrigger((prev) => prev + 1);
+      fetchSubjects();
     } catch (err) {
       console.error('Error deleting subject:', err);
       toast.error('Failed to delete subject');
@@ -277,75 +264,124 @@ const Subjects = () => {
     }
   };
 
-  const SubjectCard = ({ subject, showClassBadge = false }) => (
-    <div className="card p-5 flex flex-col justify-between hover:shadow-md transition-shadow">
-      <div>
-        <div className="flex items-start justify-between gap-2">
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2">
-              <FiBookOpen className="text-indigo-600 dark:text-indigo-400 flex-shrink-0" />
-              <h3 className="text-base font-bold text-slate-900 dark:text-white truncate">
-                {subject.name}
-              </h3>
-            </div>
-            <p className="text-xs font-mono text-slate-400 mt-0.5">
-              Code: {subject.code}
-            </p>
-          </div>
-          <div className="flex gap-1 flex-shrink-0">
-            <button
-              onClick={() => handleEditSubject(subject)}
-              className="p-1.5 rounded-lg text-slate-500 hover:text-indigo-600 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-              title="Edit Subject"
-            >
-              <FiEdit2 className="text-sm" />
-            </button>
-            <button
-              onClick={() => setDeleteTargetId(subject._id)}
-              className="p-1.5 rounded-lg text-slate-500 hover:text-rose-600 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-              title="Delete Subject"
-            >
-              <FiTrash2 className="text-sm" />
-            </button>
-          </div>
-        </div>
+  const SubjectTable = ({ subjectList, showClassCol = true }) => (
+    <div className="card overflow-hidden border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm bg-white dark:bg-[#162033]">
+      <div className="overflow-x-auto">
+        <table className="w-full text-left text-sm">
+          <thead className="bg-slate-50 dark:bg-slate-900/60 border-b border-slate-200 dark:border-slate-800 text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+            <tr>
+              <th className="px-6 py-3.5">Subject & Code</th>
+              <th className="px-6 py-3.5">Classification</th>
+              <th className="px-6 py-3.5 text-center">Credits</th>
+              {showClassCol && <th className="px-6 py-3.5">Assigned Classes</th>}
+              <th className="px-6 py-3.5">Faculty Lead</th>
+              <th className="px-6 py-3.5 text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-100 dark:divide-slate-800/80">
+            {subjectList.map((subject) => {
+              const facultyNames = subject.teachers?.map((t) => t.user?.name || t.name).filter(Boolean);
+              const classNames = subject.classes?.map((c) => c.name).filter(Boolean);
 
-        <div className="mt-3 flex flex-wrap gap-1.5 items-center">
-          <StatusBadge variant={getTypeVariant(subject.type)}>
-            {subject.type}
-          </StatusBadge>
-          <span className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
-            {subject.credits} Credits
-          </span>
-          {showClassBadge && subject.classes && subject.classes.length > 0 && (
-            <span className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 border border-indigo-200/50 flex items-center gap-1">
-              <FiLayers className="text-[10px]" />
-              {subject.classes.map((c) => c.name || 'N/A').join(', ')}
-            </span>
-          )}
-        </div>
+              return (
+                <tr
+                  key={subject._id}
+                  className="hover:bg-slate-50/70 dark:hover:bg-slate-800/50 transition-colors"
+                >
+                  {/* Subject & Code */}
+                  <td className="px-6 py-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-xl bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 flex items-center justify-center font-bold text-sm border border-indigo-100 dark:border-indigo-900/50 flex-shrink-0">
+                        <FiBookOpen />
+                      </div>
+                      <div>
+                        <div className="font-bold text-slate-900 dark:text-white">
+                          {subject.name}
+                        </div>
+                        <div className="text-xs font-mono text-slate-400">
+                          Code: {subject.code}
+                        </div>
+                        {subject.description && (
+                          <div className="text-[11px] text-slate-500 dark:text-slate-400 line-clamp-1 max-w-xs mt-0.5">
+                            {subject.description}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </td>
 
-        {subject.description && (
-          <p className="mt-3 text-xs text-slate-500 dark:text-slate-400 line-clamp-2 leading-relaxed">
-            {subject.description}
-          </p>
-        )}
+                  {/* Classification */}
+                  <td className="px-6 py-4">
+                    <StatusBadge variant={getTypeVariant(subject.type)}>
+                      {subject.type}
+                    </StatusBadge>
+                  </td>
+
+                  {/* Credits */}
+                  <td className="px-6 py-4 text-center">
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+                      {subject.credits} Credits
+                    </span>
+                  </td>
+
+                  {/* Assigned Classes */}
+                  {showClassCol && (
+                    <td className="px-6 py-4">
+                      {classNames && classNames.length > 0 ? (
+                        <div className="flex flex-wrap gap-1">
+                          {classNames.map((cName, idx) => (
+                            <span
+                              key={idx}
+                              className="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-900/50"
+                            >
+                              <FiLayers className="text-[10px]" />
+                              {cName}
+                            </span>
+                          ))}
+                        </div>
+                      ) : (
+                        <span className="text-xs text-slate-400 italic">No class assigned</span>
+                      )}
+                    </td>
+                  )}
+
+                  {/* Faculty Lead */}
+                  <td className="px-6 py-4">
+                    {facultyNames && facultyNames.length > 0 ? (
+                      <div className="flex items-center gap-1.5 text-xs text-slate-800 dark:text-slate-200 font-medium">
+                        <FiUser className="text-indigo-500 flex-shrink-0" />
+                        <span className="truncate max-w-[180px]">{facultyNames.join(', ')}</span>
+                      </div>
+                    ) : (
+                      <span className="text-xs text-slate-400 italic">No faculty assigned</span>
+                    )}
+                  </td>
+
+                  {/* Actions */}
+                  <td className="px-6 py-4 text-right">
+                    <div className="inline-flex items-center justify-end gap-1">
+                      <button
+                        onClick={() => handleEditSubject(subject)}
+                        className="p-1.5 rounded-lg text-slate-500 hover:text-indigo-600 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                        title="Edit Subject"
+                      >
+                        <FiEdit2 className="text-base" />
+                      </button>
+                      <button
+                        onClick={() => setDeleteTargetId(subject._id)}
+                        className="p-1.5 rounded-lg text-slate-500 hover:text-rose-600 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                        title="Delete Subject"
+                      >
+                        <FiTrash2 className="text-base" />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
       </div>
-
-      {subject.teachers && subject.teachers.length > 0 && (
-        <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800/80">
-          <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
-            <FiUser className="text-slate-400 flex-shrink-0" />
-            <span className="truncate">
-              {subject.teachers.length === 1
-                ? subject.teachers[0]?.user?.name ||
-                  subject.teachers[0]?.name ||
-                  'Faculty Lead Assigned'
-                : `${subject.teachers.length} faculty assigned`}
-            </span>
-          </div>
-        </div>
-      )}
     </div>
   );
 
@@ -475,14 +511,7 @@ const Subjects = () => {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-            {filteredSubjects.map((subject) => (
-              <SubjectCard
-                key={`${subject._id}-${selectedClass}`}
-                subject={subject}
-              />
-            ))}
-          </div>
+          <SubjectTable subjectList={filteredSubjects} showClassCol={false} />
         </div>
       ) : (
         <div className="space-y-8">
@@ -495,15 +524,10 @@ const Subjects = () => {
                   isUnassigned={classId === 'unassigned'}
                 />
 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-                  {classSubjects.map((subject) => (
-                    <SubjectCard
-                      key={`${subject._id}-${classId}`}
-                      subject={subject}
-                      showClassBadge={false}
-                    />
-                  ))}
-                </div>
+                <SubjectTable
+                  subjectList={classSubjects}
+                  showClassCol={classId === 'unassigned'}
+                />
               </div>
             )
           )}

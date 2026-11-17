@@ -72,7 +72,7 @@ const Input = ({
             ${
               disabled
                 ? 'bg-slate-100 dark:bg-slate-800 cursor-not-allowed opacity-60'
-                : 'bg-white dark:bg-[#1E293B]'
+                : 'bg-white dark:bg-[#111827]'
             }
             placeholder:text-slate-400 dark:placeholder:text-slate-500
           `}
@@ -93,7 +93,7 @@ const Input = ({
             )}
           </button>
         )}
-        {rightElement && !type === 'password' && (
+        {rightElement && type !== 'password' && (
           <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
             {rightElement}
           </div>

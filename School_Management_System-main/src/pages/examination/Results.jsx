@@ -1,6 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import {
   FiAward,
+  FiEdit2,
+  FiTrash2,
+  FiCheckCircle,
+  FiClock,
   FiUpload,
 } from 'react-icons/fi';
 import { toast } from 'react-toastify';
@@ -13,22 +17,6 @@ import Loader from '../../components/common/Loader';
 import EmptyState from '../../components/common/EmptyState';
 import api from '../../utils/api';
 
-const getGradeVariant = (grade) => {
-  switch (grade) {
-    case 'A+':
-    case 'A':
-      return 'success';
-    case 'B+':
-    case 'B':
-      return 'info';
-    case 'C+':
-    case 'C':
-      return 'warning';
-    default:
-      return 'danger';
-  }
-};
-
 const ExaminationResults = () => {
   const [results, setResults] = useState([]);
   const [exams, setExams] = useState([]);
@@ -36,35 +24,41 @@ const ExaminationResults = () => {
   const [filters, setFilters] = useState({ examId: '' });
 
   useEffect(() => {
-    let ignore = false;
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        const [resultsRes, examsRes] = await Promise.all([
-          api.get('/api/results', { params: filters }),
-          api.get('/api/exams'),
-        ]);
-        if (ignore) return;
-        setResults(resultsRes.data?.results || []);
-        setExams(examsRes.data?.exams || []);
-      } catch (error) {
-        if (!ignore) {
-          console.error('Error fetching results:', error);
-          setResults([]);
-        }
-      } finally {
-        if (!ignore) {
-          setLoading(false);
-        }
-      }
-    };
-
     fetchData();
-
-    return () => {
-      ignore = true;
-    };
   }, [filters]);
+
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      const [resultsRes, examsRes] = await Promise.all([
+        api.get('/api/results', { params: filters }),
+        api.get('/api/exams'),
+      ]);
+      setResults(resultsRes.data?.results || []);
+      setExams(examsRes.data?.exams || []);
+    } catch (error) {
+      console.error('Error fetching results:', error);
+      setResults([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getGradeVariant = (grade) => {
+    switch (grade) {
+      case 'A+':
+      case 'A':
+        return 'success';
+      case 'B+':
+      case 'B':
+        return 'info';
+      case 'C+':
+      case 'C':
+        return 'warning';
+      default:
+        return 'danger';
+    }
+  };
 
   if (loading) return <Loader />;
 

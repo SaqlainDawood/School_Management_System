@@ -1,1 +1,0 @@
-perf: add manual chunk splitting in vite.config.js for optimal caching

@@ -10,6 +10,11 @@ import {
   FiX,
   FiPhone,
   FiDollarSign,
+  FiCheckCircle,
+  FiShield,
+  FiAlertTriangle,
+  FiActivity,
+  FiCompass,
 } from 'react-icons/fi';
 import { toast } from 'react-toastify';
 import PageHeader from '../../components/common/PageHeader';
@@ -47,57 +52,35 @@ const Transport = () => {
     status: 'active',
   });
   const [errors, setErrors] = useState({});
-  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   useEffect(() => {
-    let ignore = false;
-    const fetchTransports = async () => {
-      setLoading(true);
-      try {
-        const response = await api.get('/api/transport');
-        if (ignore) return;
-        setTransports(response.data.transports || []);
-      } catch (err) {
-        if (!ignore) {
-          console.error('Error fetching transports:', err);
-          toast.error('Failed to fetch transports');
-        }
-      } finally {
-        if (!ignore) {
-          setLoading(false);
-        }
-      }
-    };
-
     fetchTransports();
-
-    return () => {
-      ignore = true;
-    };
-  }, [refreshTrigger]);
-
-  useEffect(() => {
-    let ignore = false;
-    const fetchStudents = async () => {
-      try {
-        const response = await api.get('/api/students', {
-          params: { limit: 100 },
-        });
-        if (ignore) return;
-        setStudents(response.data.students || []);
-      } catch (err) {
-        if (!ignore) {
-          console.error('Error fetching students:', err);
-        }
-      }
-    };
-
     fetchStudents();
-
-    return () => {
-      ignore = true;
-    };
   }, []);
+
+  const fetchTransports = async () => {
+    setLoading(true);
+    try {
+      const response = await api.get('/api/transport');
+      setTransports(response.data.transports || []);
+    } catch (err) {
+      console.error('Error fetching transports:', err);
+      toast.error('Failed to fetch transports');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchStudents = async () => {
+    try {
+      const response = await api.get('/api/students', {
+        params: { limit: 100 },
+      });
+      setStudents(response.data.students || []);
+    } catch (err) {
+      console.error('Error fetching students:', err);
+    }
+  };
 
   const handleAddTransport = () => {
     setEditingTransport(null);
@@ -190,7 +173,7 @@ const Transport = () => {
         toast.success('Transport route added successfully');
       }
       setShowModal(false);
-      setRefreshTrigger((prev) => prev + 1);
+      fetchTransports();
     } catch (err) {
       console.error('Error saving transport:', err);
       toast.error(err.response?.data?.message || 'Failed to save transport');
@@ -206,7 +189,7 @@ const Transport = () => {
       await api.delete(`/api/transport/${deleteTargetId}`);
       toast.success('Transport route decommissioned');
       setDeleteTargetId(null);
-      setRefreshTrigger((prev) => prev + 1);
+      fetchTransports();
     } catch (err) {
       console.error('Error deleting transport:', err);
       toast.error('Failed to delete transport');
@@ -229,7 +212,7 @@ const Transport = () => {
       );
       toast.success('Student assigned to transit route');
       setShowAssignModal(false);
-      setRefreshTrigger((prev) => prev + 1);
+      fetchTransports();
     } catch (err) {
       console.error('Error assigning student:', err);
       toast.error(err.response?.data?.message || 'Failed to assign student');
@@ -244,7 +227,7 @@ const Transport = () => {
         studentId,
       });
       toast.success('Student unassigned from transit route');
-      setRefreshTrigger((prev) => prev + 1);
+      fetchTransports();
     } catch (err) {
       console.error('Error removing student:', err);
       toast.error('Failed to remove student');
@@ -253,17 +236,31 @@ const Transport = () => {
 
   const getStatusVariant = (status) => {
     switch (status) {
-      case 'active': return 'success';
-      case 'maintenance': return 'warning';
-      case 'inactive': return 'danger';
-      default: return 'neutral';
+      case 'active':
+        return 'success';
+      case 'maintenance':
+        return 'warning';
+      case 'inactive':
+        return 'danger';
+      default:
+        return 'neutral';
     }
   };
 
-  if (loading) return <Loader />;
+  if (loading && transports.length === 0) return <Loader />;
+
+  // Operational fleet calculations from real data
+  const totalFleetCount = transports.length;
+  const activeFleetCount = transports.filter((t) => t.status === 'active').length;
+  const maintenanceCount = transports.filter((t) => t.status === 'maintenance').length;
+  const totalAssignedPassengers = transports.reduce(
+    (acc, t) => acc + (t.students?.length || 0),
+    0
+  );
 
   return (
     <div className="space-y-6">
+      {/* ── Page Header ── */}
       <PageHeader
         title="Institutional Transit & Routes"
         subtitle="Manage school buses, fleet routes, transport fees, and student passenger rosters"
@@ -278,8 +275,68 @@ const Transport = () => {
         }
       />
 
+      {/* ── Fleet Control Center Summary Cards ── */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="card p-4.5 border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#162033] flex items-center gap-3.5">
+          <div className="w-11 h-11 rounded-xl bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 flex items-center justify-center text-xl shrink-0 border border-indigo-100 dark:border-indigo-900/40">
+            <FiTruck />
+          </div>
+          <div>
+            <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+              Total Transit Fleet
+            </p>
+            <p className="text-xl font-bold text-slate-900 dark:text-white mt-0.5">
+              {totalFleetCount} Vehicles
+            </p>
+          </div>
+        </div>
+
+        <div className="card p-4.5 border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#162033] flex items-center gap-3.5">
+          <div className="w-11 h-11 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 flex items-center justify-center text-xl shrink-0 border border-emerald-100 dark:border-emerald-900/40">
+            <FiCheckCircle />
+          </div>
+          <div>
+            <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+              Active Operating
+            </p>
+            <p className="text-xl font-bold text-slate-900 dark:text-white mt-0.5">
+              {activeFleetCount} Active
+            </p>
+          </div>
+        </div>
+
+        <div className="card p-4.5 border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#162033] flex items-center gap-3.5">
+          <div className="w-11 h-11 rounded-xl bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 flex items-center justify-center text-xl shrink-0 border border-amber-100 dark:border-amber-900/40">
+            <FiAlertTriangle />
+          </div>
+          <div>
+            <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+              In Maintenance
+            </p>
+            <p className="text-xl font-bold text-slate-900 dark:text-white mt-0.5">
+              {maintenanceCount} Vehicles
+            </p>
+          </div>
+        </div>
+
+        <div className="card p-4.5 border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#162033] flex items-center gap-3.5">
+          <div className="w-11 h-11 rounded-xl bg-purple-50 dark:bg-purple-950/40 text-purple-600 dark:text-purple-400 flex items-center justify-center text-xl shrink-0 border border-purple-100 dark:border-purple-900/40">
+            <FiUsers />
+          </div>
+          <div>
+            <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+              Assigned Passengers
+            </p>
+            <p className="text-xl font-bold text-slate-900 dark:text-white mt-0.5">
+              {totalAssignedPassengers} Students
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Full-Width Enterprise Transit Directory ── */}
       {transports.length === 0 ? (
-        <div className="card p-12">
+        <div className="card p-12 border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#162033]">
           <EmptyState
             icon={FiTruck}
             title="No transit fleet registered"
@@ -289,7 +346,7 @@ const Transport = () => {
           />
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+        <div className="space-y-4">
           {transports.map((transport) => {
             const assignedCount = transport.students?.length || 0;
             const capacity = transport.capacity || 1;
@@ -298,131 +355,153 @@ const Transport = () => {
             return (
               <div
                 key={transport._id}
-                className="card p-5 flex flex-col justify-between hover:shadow-md transition-shadow"
+                className="card border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-[#162033] rounded-2xl shadow-sm hover:shadow-md transition-shadow overflow-hidden"
               >
-                <div>
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-2">
-                        <FiTruck className="text-indigo-600 dark:text-indigo-400 flex-shrink-0" />
-                        <h3 className="text-base font-bold text-slate-900 dark:text-white truncate">
+                {/* ── Main Vehicle Summary Row ── */}
+                <div className="p-5 sm:p-6 flex flex-col lg:flex-row lg:items-center justify-between gap-5">
+                  {/* Left: Vehicle Identity & Route */}
+                  <div className="flex items-start gap-4 min-w-[280px]">
+                    <div className="w-12 h-12 rounded-2xl bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 flex items-center justify-center text-2xl shrink-0 border border-indigo-100 dark:border-indigo-900/50">
+                      <FiTruck />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2.5">
+                        <h3 className="text-base font-bold text-slate-900 dark:text-white">
                           Bus #{transport.busNumber}
                         </h3>
                         <StatusBadge variant={getStatusVariant(transport.status)} dot>
-                          {transport.status?.toUpperCase()}
+                          {transport.status?.toUpperCase() || 'ACTIVE'}
                         </StatusBadge>
                       </div>
-                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 flex items-center gap-1 truncate">
-                        <FiMapPin className="text-[11px] text-slate-400 flex-shrink-0" />
-                        {transport.route?.start || 'Origin'} → {transport.route?.end || 'Destination'}
+                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 flex items-center gap-1.5 font-medium">
+                        <FiCompass className="text-indigo-500 text-xs shrink-0" />
+                        <span>{transport.route?.start || 'Origin'}</span>
+                        <span className="text-slate-300 dark:text-slate-600">→</span>
+                        <span>{transport.route?.end || 'Destination'}</span>
                       </p>
-                    </div>
-
-                    <div className="flex items-center gap-1 flex-shrink-0">
-                      <button
-                        onClick={() => handleEditTransport(transport)}
-                        className="p-1.5 rounded-lg text-slate-500 hover:text-indigo-600 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-                        title="Edit Bus"
-                      >
-                        <FiEdit2 className="text-sm" />
-                      </button>
-                      <button
-                        onClick={() => setDeleteTargetId(transport._id)}
-                        className="p-1.5 rounded-lg text-slate-500 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-slate-800 transition-colors"
-                        title="Delete Bus"
-                      >
-                        <FiTrash2 className="text-sm" />
-                      </button>
+                      {transport.licenseNumber && (
+                        <p className="text-[11px] font-mono text-slate-400 mt-0.5">
+                          Plate: {transport.licenseNumber}
+                        </p>
+                      )}
                     </div>
                   </div>
 
-                  <div className="mt-4 p-3 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800 space-y-2 text-xs">
-                    <div className="flex items-center justify-between text-slate-600 dark:text-slate-400">
-                      <span className="flex items-center gap-1.5">
-                        <FiUser className="text-slate-400" /> Driver:
-                      </span>
-                      <span className="font-semibold text-slate-900 dark:text-white">
-                        {transport.driverName}
-                      </span>
-                    </div>
+                  {/* Center-Left: Driver Details */}
+                  <div className="min-w-[180px] space-y-1">
+                    <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                      Assigned Driver
+                    </p>
+                    <p className="text-xs font-semibold text-slate-900 dark:text-white flex items-center gap-1.5">
+                      <FiUser className="text-slate-400 text-xs" />
+                      <span>{transport.driverName || 'Unassigned'}</span>
+                    </p>
                     {transport.driverPhone && (
-                      <div className="flex items-center justify-between text-slate-600 dark:text-slate-400">
-                        <span className="flex items-center gap-1.5">
-                          <FiPhone className="text-slate-400" /> Contact:
-                        </span>
-                        <span className="font-mono text-slate-700 dark:text-slate-300">
-                          {transport.driverPhone}
-                        </span>
-                      </div>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 font-mono flex items-center gap-1.5">
+                        <FiPhone className="text-slate-400 text-xs" />
+                        <span>{transport.driverPhone}</span>
+                      </p>
                     )}
-                    <div className="flex items-center justify-between text-slate-600 dark:text-slate-400">
-                      <span className="flex items-center gap-1.5">
-                        <FiDollarSign className="text-slate-400" /> Transit Fee:
-                      </span>
-                      <span className="font-bold text-slate-900 dark:text-white font-mono">
-                        Rs. {transport.fee || 0} / mo
-                      </span>
-                    </div>
                   </div>
 
-                  {/* Capacity Bar */}
-                  <div className="mt-4 space-y-1">
+                  {/* Center: Transit Fee */}
+                  <div className="min-w-[140px] space-y-1">
+                    <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                      Monthly Transit Fee
+                    </p>
+                    <p className="text-sm font-bold text-slate-900 dark:text-white font-mono flex items-center gap-1">
+                      <FiDollarSign className="text-emerald-500 text-xs" />
+                      <span>Rs. {transport.fee || 0}</span>
+                      <span className="text-[11px] font-normal text-slate-400">/ mo</span>
+                    </p>
+                  </div>
+
+                  {/* Center-Right: Capacity Progress */}
+                  <div className="min-w-[180px] lg:w-48 space-y-1.5">
                     <div className="flex items-center justify-between text-xs">
-                      <span className="text-slate-500 text-[11px] font-medium">Occupancy</span>
-                      <span className="font-semibold text-slate-900 dark:text-white text-[11px]">
-                        {assignedCount} / {capacity} Seats ({pct}%)
+                      <span className="text-slate-500 text-[11px] font-semibold">
+                        Seat Occupancy
+                      </span>
+                      <span className="font-bold text-slate-900 dark:text-white text-[11px] font-mono">
+                        {assignedCount} / {capacity} ({pct}%)
                       </span>
                     </div>
-                    <div className="w-full h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                    <div className="w-full h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden border border-slate-200/50 dark:border-slate-700/50">
                       <div
                         className={`h-full rounded-full transition-all duration-300 ${
-                          pct >= 95 ? 'bg-rose-500' : pct >= 75 ? 'bg-amber-500' : 'bg-indigo-600'
+                          pct >= 95
+                            ? 'bg-rose-500'
+                            : pct >= 75
+                            ? 'bg-amber-500'
+                            : 'bg-indigo-600'
                         }`}
                         style={{ width: `${pct}%` }}
                       />
                     </div>
                   </div>
 
-                  {/* Assigned Students Roster Chips */}
-                  {transport.students && transport.students.length > 0 && (
-                    <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800">
-                      <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">
-                        Assigned Passengers:
-                      </p>
-                      <div className="flex flex-wrap gap-1 max-h-24 overflow-y-auto">
-                        {transport.students.map((student) => (
-                          <span
-                            key={student._id}
-                            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-[11px] text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700"
-                          >
-                            <span className="truncate max-w-[100px]">
-                              {student.name || student.user?.name}
-                            </span>
-                            <button
-                              onClick={() => handleRemoveStudent(transport._id, student._id)}
-                              className="text-slate-400 hover:text-rose-500"
-                              title="Unassign"
-                            >
-                              <FiX className="text-xs" />
-                            </button>
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  )}
+                  {/* Right: Actions */}
+                  <div className="flex items-center gap-2 pt-2 lg:pt-0 border-t lg:border-t-0 border-slate-100 dark:border-slate-800 shrink-0">
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      icon={FiUsers}
+                      onClick={() => handleAssignStudent(transport)}
+                      disabled={assignedCount >= capacity}
+                    >
+                      {assignedCount >= capacity ? 'Full Capacity' : 'Assign Passenger'}
+                    </Button>
+                    <button
+                      onClick={() => handleEditTransport(transport)}
+                      className="p-2 rounded-xl text-slate-500 hover:text-indigo-600 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors border border-slate-200 dark:border-slate-700 shadow-xs"
+                      title="Edit Route"
+                    >
+                      <FiEdit2 className="text-sm" />
+                    </button>
+                    <button
+                      onClick={() => setDeleteTargetId(transport._id)}
+                      className="p-2 rounded-xl text-slate-500 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-slate-800 transition-colors border border-slate-200 dark:border-slate-700 shadow-xs"
+                      title="Decommission Vehicle"
+                    >
+                      <FiTrash2 className="text-sm" />
+                    </button>
+                  </div>
                 </div>
 
-                <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800">
-                  <Button
-                    variant="secondary"
-                    icon={FiUsers}
-                    onClick={() => handleAssignStudent(transport)}
-                    size="sm"
-                    fullWidth
-                    disabled={assignedCount >= capacity}
-                  >
-                    {assignedCount >= capacity ? 'Bus at Full Capacity' : 'Assign Student Passenger'}
-                  </Button>
+                {/* ── Assigned Passengers Sub-Panel ── */}
+                <div className="px-5 py-3.5 bg-slate-50/70 dark:bg-slate-800/40 border-t border-slate-100 dark:border-slate-800/80 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                      Enrolled Passengers ({assignedCount}):
+                    </span>
+                    {assignedCount === 0 && (
+                      <span className="text-xs text-slate-400 italic">
+                        No students assigned to this transit route yet.
+                      </span>
+                    )}
+                  </div>
+
+                  {transport.students && transport.students.length > 0 && (
+                    <div className="flex flex-wrap items-center gap-1.5 max-h-24 overflow-y-auto">
+                      {transport.students.map((student) => (
+                        <span
+                          key={student._id}
+                          className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-white dark:bg-slate-800 text-xs text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 shadow-2xs"
+                        >
+                          <span className="truncate max-w-[120px] font-medium">
+                            {student.name || student.user?.name}
+                          </span>
+                          <button
+                            onClick={() => handleRemoveStudent(transport._id, student._id)}
+                            className="p-0.5 rounded-full text-slate-400 hover:text-rose-500 transition-colors"
+                            title="Unassign Passenger"
+                          >
+                            <FiX className="text-xs" />
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
             );
@@ -430,7 +509,7 @@ const Transport = () => {
         </div>
       )}
 
-      {/* Add / Edit Transport Modal */}
+      {/* ── Add / Edit Vehicle Route Modal ── */}
       <Modal
         isOpen={showModal}
         onClose={() => setShowModal(false)}
@@ -470,32 +549,37 @@ const Transport = () => {
               onChange={handleChange}
               placeholder="e.g. +92 300 1234567"
               required
+              icon={FiPhone}
               error={errors.driverPhone}
             />
             <Input
-              label="Commercial Driver License"
+              label="Driver License Number"
               name="licenseNumber"
               value={formData.licenseNumber}
               onChange={handleChange}
-              placeholder="e.g. DL-893240"
+              placeholder="Commercial driver license #"
+              icon={FiShield}
             />
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Input
-              label="Seating Capacity"
+              label="Vehicle Passenger Capacity"
               name="capacity"
               type="number"
+              min="1"
               value={formData.capacity}
               onChange={handleChange}
-              placeholder="e.g. 35"
+              placeholder="e.g. 30"
               required
+              icon={FiUsers}
               error={errors.capacity}
             />
             <Input
-              label="Monthly Transit Fee"
+              label="Monthly Transit Fee (Rs.)"
               name="fee"
               type="number"
+              min="0"
               value={formData.fee}
               onChange={handleChange}
               placeholder="e.g. 2500"
@@ -557,7 +641,7 @@ const Transport = () => {
         </form>
       </Modal>
 
-      {/* Assign Student Modal */}
+      {/* ── Assign Student Passenger Modal ── */}
       <Modal
         isOpen={showAssignModal}
         onClose={() => setShowAssignModal(false)}
@@ -570,27 +654,30 @@ const Transport = () => {
               <strong className="text-slate-900 dark:text-white">Bus:</strong> #{selectedTransport?.busNumber}
             </p>
             <p className="text-slate-600 dark:text-slate-400">
-              <strong className="text-slate-900 dark:text-white">Driver:</strong> {selectedTransport?.driverName}
+              <strong className="text-slate-900 dark:text-white">Designated Route:</strong>{' '}
+              {selectedTransport?.route?.start} → {selectedTransport?.route?.end}
             </p>
             <p className="text-slate-600 dark:text-slate-400">
-              <strong className="text-slate-900 dark:text-white">Route:</strong> {selectedTransport?.route?.start} → {selectedTransport?.route?.end}
+              <strong className="text-slate-900 dark:text-white">Available Capacity:</strong>{' '}
+              {(selectedTransport?.capacity || 0) - (selectedTransport?.students?.length || 0)} / {selectedTransport?.capacity || 0} Seats Remaining
             </p>
           </div>
 
-          <Select
-            label="Candidate Student"
-            name="student"
-            value={selectedStudent}
-            onChange={(e) => setSelectedStudent(e.target.value)}
-            options={[
-              { value: '', label: 'Select a student to assign...' },
-              ...students.map((s) => ({
-                value: s._id,
-                label: `${s.user?.name || s.name} (${s.rollNumber || 'No Roll'})`,
-              })),
-            ]}
-            required
-          />
+          <div>
+            <label className="label">Select Student</label>
+            <select
+              value={selectedStudent}
+              onChange={(e) => setSelectedStudent(e.target.value)}
+              className="select-field text-xs py-2 w-full"
+            >
+              <option value="">Select a student to assign...</option>
+              {students.map((student) => (
+                <option key={student._id} value={student._id}>
+                  {student.name || student.user?.name} — {student.studentId || 'ID Pending'}
+                </option>
+              ))}
+            </select>
+          </div>
 
           <div className="flex justify-end gap-2 pt-4 border-t border-slate-200 dark:border-slate-800">
             <Button
@@ -603,23 +690,24 @@ const Transport = () => {
             <Button
               type="button"
               variant="primary"
-              loading={formLoading}
               onClick={handleAssignSubmit}
+              loading={formLoading}
+              disabled={!selectedStudent}
             >
-              Assign to Bus
+              Confirm Assignment
             </Button>
           </div>
         </div>
       </Modal>
 
-      {/* Confirm Deletion */}
+      {/* ── Confirm Decommission Dialog ── */}
       <ConfirmDialog
         isOpen={Boolean(deleteTargetId)}
         onClose={() => setDeleteTargetId(null)}
         onConfirm={handleDeleteConfirm}
         title="Decommission Transport Route"
-        message="Are you sure you want to delete this bus route? All assigned student passengers will need to be reassigned to other transit routes."
-        confirmText="Delete Route"
+        message="Are you sure you want to decommission this vehicle route? All assigned students will need to be reallocated to another route."
+        confirmText="Decommission Route"
         confirmVariant="danger"
         loading={deleteLoading}
       />

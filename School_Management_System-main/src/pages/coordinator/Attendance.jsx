@@ -14,35 +14,25 @@ const CoordinatorAttendance = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    let ignore = false;
-    const fetchDepartments = async () => {
-      try {
-        setLoading(true);
-        const response = await api.get('/api/coordinator/departments');
-        if (ignore) return;
-        const depts = response.data?.departments || [];
-        setDepartments(depts);
-        if (depts.length > 0) {
-          setSelectedDept(depts[0]._id);
-        }
-      } catch (error) {
-        if (!ignore) {
-          console.error('Error fetching departments:', error);
-          setDepartments([]);
-        }
-      } finally {
-        if (!ignore) {
-          setLoading(false);
-        }
-      }
-    };
-
     fetchDepartments();
-
-    return () => {
-      ignore = true;
-    };
   }, []);
+
+  const fetchDepartments = async () => {
+    try {
+      setLoading(true);
+      const response = await api.get('/api/coordinator/departments');
+      const depts = response.data?.departments || [];
+      setDepartments(depts);
+      if (depts.length > 0) {
+        setSelectedDept(depts[0]._id);
+      }
+    } catch (error) {
+      console.error('Error fetching departments:', error);
+      setDepartments([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const activeDept = departments.find((d) => d._id === selectedDept);
 

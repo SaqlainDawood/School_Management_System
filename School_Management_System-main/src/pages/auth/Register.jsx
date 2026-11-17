@@ -55,7 +55,7 @@ const Register = () => {
     }
 
     setLoading(true);
-    const { confirmPassword: _confirmPassword, ...registerData } = formData;
+    const { confirmPassword, ...registerData } = formData;
     const result = await register(registerData);
 
     if (result.success) {

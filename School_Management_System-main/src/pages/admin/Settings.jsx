@@ -6,6 +6,8 @@ import {
   FiPhone,
   FiMapPin,
   FiGlobe,
+  FiMoon,
+  FiSun,
   FiLock,
   FiShield,
 } from 'react-icons/fi';
@@ -17,6 +19,7 @@ import Select from '../../components/forms/Select';
 import Loader from '../../components/common/Loader';
 import api from '../../utils/api';
 import { useAuth } from '../../context/AuthContext';
+import { formatAddress } from '../../utils/helpers';
 
 const Settings = () => {
   const { user } = useAuth();
@@ -36,8 +39,19 @@ const Settings = () => {
     name: user?.name || '',
     email: user?.email || '',
     phone: user?.phone || '',
-    address: user?.address || '',
+    address: formatAddress(user?.address),
   });
+
+  useEffect(() => {
+    if (user) {
+      setProfileData({
+        name: user.name || '',
+        email: user.email || '',
+        phone: user.phone || '',
+        address: formatAddress(user.address),
+      });
+    }
+  }, [user]);
   const [passwordData, setPasswordData] = useState({
     currentPassword: '',
     newPassword: '',
@@ -46,31 +60,19 @@ const Settings = () => {
   const [errors, setErrors] = useState({});
 
   useEffect(() => {
-    let ignore = false;
-    const fetchSettings = async () => {
-      try {
-        const response = await api.get('/api/admin/settings');
-        if (ignore) return;
-        if (response.data?.settings) {
-          setSettings(response.data.settings);
-        }
-      } catch (err) {
-        if (!ignore) {
-          console.error('Error fetching settings:', err);
-        }
-      } finally {
-        if (!ignore) {
-          setLoading(false);
-        }
-      }
-    };
-
     fetchSettings();
-
-    return () => {
-      ignore = true;
-    };
   }, []);
+
+  const fetchSettings = async () => {
+    try {
+      const response = await api.get('/api/admin/settings');
+      setSettings(response.data.settings || settings);
+    } catch (err) {
+      console.error('Error fetching settings:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleSettingChange = (e) => {
     setSettings({ ...settings, [e.target.name]: e.target.value });
@@ -92,7 +94,6 @@ const Settings = () => {
       await api.put('/api/admin/settings', settings);
       toast.success('System configuration saved successfully');
     } catch (err) {
-      console.error('Error saving settings:', err);
       toast.error('Failed to save settings');
     } finally {
       setSaving(false);
@@ -106,7 +107,6 @@ const Settings = () => {
       await api.put('/api/auth/update-profile', profileData);
       toast.success('Administrator profile updated');
     } catch (err) {
-      console.error('Error updating profile:', err);
       toast.error('Failed to update profile');
     } finally {
       setSaving(false);

@@ -1,7 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { FiUsers } from 'react-icons/fi';
+import {
+  FiUser,
+  FiBook,
+  FiClock,
+  FiAward,
+  FiDollarSign,
+  FiUsers,
+  FiHash,
+  FiCalendar,
+} from 'react-icons/fi';
 import PageHeader from '../../components/common/PageHeader';
+import SectionCard from '../../components/common/SectionCard';
 import StatusBadge from '../../components/common/StatusBadge';
 import Loader from '../../components/common/Loader';
 import EmptyState from '../../components/common/EmptyState';
@@ -13,31 +23,21 @@ const ParentChildren = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    let ignore = false;
-    const fetchChildren = async () => {
-      try {
-        setLoading(true);
-        const response = await api.get('/api/parents/dashboard');
-        if (ignore) return;
-        setChildren(response.data?.dashboard?.parent?.children || []);
-      } catch (error) {
-        if (!ignore) {
-          console.error('Error fetching children:', error);
-          setChildren([]);
-        }
-      } finally {
-        if (!ignore) {
-          setLoading(false);
-        }
-      }
-    };
-
     fetchChildren();
-
-    return () => {
-      ignore = true;
-    };
   }, []);
+
+  const fetchChildren = async () => {
+    try {
+      setLoading(true);
+      const response = await api.get('/api/parents/dashboard');
+      setChildren(response.data?.dashboard?.parent?.children || []);
+    } catch (error) {
+      console.error('Error fetching children:', error);
+      setChildren([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   if (loading) return <Loader />;
 
@@ -63,7 +63,7 @@ const ParentChildren = () => {
           {children.map((child) => (
             <div
               key={child._id}
-              className="card p-6 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm hover:shadow-md transition-all flex flex-col justify-between"
+              className="card p-6 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm hover:shadow-md transition-all h-full flex flex-col justify-between bg-white dark:bg-[#162033]"
             >
               <div>
                 <div className="flex items-start gap-4 mb-5">

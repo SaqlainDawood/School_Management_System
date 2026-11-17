@@ -27,15 +27,9 @@ import RecentActivity from '../../components/dashboard/RecentActivity';
 import PageHeader from '../../components/common/PageHeader';
 import ErrorState from '../../components/common/ErrorState';
 import Loader from '../../components/common/Loader';
+import Button from '../../components/forms/Button';
 import api from '../../utils/api';
 import { useAuth } from '../../context/AuthContext';
-
-const getGreeting = () => {
-  const h = new Date().getHours();
-  if (h < 12) return 'Good morning';
-  if (h < 17) return 'Good afternoon';
-  return 'Good evening';
-};
 
 const AdminDashboard = () => {
   const { user } = useAuth();
@@ -44,58 +38,53 @@ const AdminDashboard = () => {
   const [error, setError] = useState(false);
   const [attendanceData, setAttendanceData] = useState([]);
 
-  const [refreshTrigger, setRefreshTrigger] = useState(0);
-
   useEffect(() => {
-    let ignore = false;
-    const fetchStats = async () => {
-      try {
-        const response = await api.get('/api/admin/stats');
-        if (ignore) return;
-        const data = response.data;
-        const statsData = data.stats || data;
-
-        setStats({
-          totalStudents: statsData.students ?? statsData.totalStudents ?? null,
-          totalTeachers: statsData.teachers ?? statsData.totalTeachers ?? null,
-          totalClasses: statsData.classes ?? statsData.totalClasses ?? null,
-          totalRevenue: statsData.totalRevenue ?? statsData.revenue ?? null,
-          attendancePercentage:
-            statsData.attendance?.percentage ?? statsData.attendancePercentage ?? null,
-          attendanceHistory: statsData.attendanceHistory || [],
-        });
-
-        // Build attendance chart data only from real API data
-        if (statsData.attendanceHistory && statsData.attendanceHistory.length > 0) {
-          setAttendanceData(statsData.attendanceHistory);
-        } else {
-          setAttendanceData([]);
-        }
-      } catch (err) {
-        if (!ignore) {
-          console.error('Error fetching stats:', err);
-          setError(true);
-          setStats(null);
-          setAttendanceData([]);
-        }
-      } finally {
-        if (!ignore) {
-          setLoading(false);
-        }
-      }
-    };
-
     fetchStats();
+  }, []);
 
-    return () => {
-      ignore = true;
-    };
-  }, [refreshTrigger]);
+  const fetchStats = async () => {
+    setLoading(true);
+    setError(false);
+    try {
+      const response = await api.get('/api/admin/stats');
+      const data = response.data;
+      const statsData = data.stats || data;
+
+      setStats({
+        totalStudents: statsData.students ?? statsData.totalStudents ?? null,
+        totalTeachers: statsData.teachers ?? statsData.totalTeachers ?? null,
+        totalClasses: statsData.classes ?? statsData.totalClasses ?? null,
+        totalRevenue: statsData.totalRevenue ?? statsData.revenue ?? null,
+        attendancePercentage:
+          statsData.attendance?.percentage ?? statsData.attendancePercentage ?? null,
+        attendanceHistory: statsData.attendanceHistory || [],
+      });
+
+      // Build attendance chart data only from real API data
+      if (statsData.attendanceHistory && statsData.attendanceHistory.length > 0) {
+        setAttendanceData(statsData.attendanceHistory);
+      } else {
+        setAttendanceData([]);
+      }
+    } catch (err) {
+      console.error('Error fetching stats:', err);
+      setError(true);
+      setStats(null);
+      setAttendanceData([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   if (loading) return <Loader />;
 
   const schoolName = user?.schoolName || user?.school?.name || 'Your School';
-  const greetingText = getGreeting();
+  const greeting = () => {
+    const h = new Date().getHours();
+    if (h < 12) return 'Good morning';
+    if (h < 17) return 'Good afternoon';
+    return 'Good evening';
+  };
 
   const quickActions = [
     { label: 'Add Student', icon: FiUserPlus, to: '/admin/students' },
@@ -109,7 +98,7 @@ const AdminDashboard = () => {
   return (
     <div className="space-y-6">
       <PageHeader
-        title={`${greetingText}, Admin`}
+        title={`${greeting()}, Admin`}
         subtitle={`Welcome back to ${schoolName} dashboard`}
         breadcrumbs={[{ label: 'Dashboard' }]}
       />
@@ -118,33 +107,32 @@ const AdminDashboard = () => {
         <ErrorState
           title="Failed to load dashboard statistics"
           message="Unable to reach the server. Check your connection and try again."
-          onRetry={() => {
-            setLoading(true);
-            setError(false);
-            setRefreshTrigger((t) => t + 1);
-          }}
+          onRetry={fetchStats}
         />
       ) : (
         <>
-          {/* KPI Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+          {/* KPI Cards — Dynamic Responsive Row-Wise Layout */}
+          <div className={`grid grid-cols-1 sm:grid-cols-2 ${stats?.attendancePercentage != null ? 'lg:grid-cols-3 xl:grid-cols-5' : 'lg:grid-cols-4'} gap-4 xl:gap-5`}>
             <StatsCard
               title="Total Students"
               value={stats?.totalStudents != null ? stats.totalStudents.toLocaleString() : null}
               icon={FiUsers}
               color="primary"
+              subtitle="Enrolled learners"
             />
             <StatsCard
               title="Total Teachers"
               value={stats?.totalTeachers != null ? stats.totalTeachers.toLocaleString() : null}
               icon={FiUser}
               color="info"
+              subtitle="Active educators"
             />
             <StatsCard
               title="Total Classes"
               value={stats?.totalClasses != null ? stats.totalClasses.toLocaleString() : null}
               icon={FiBook}
               color="success"
+              subtitle="Academic cohorts"
             />
             <StatsCard
               title="Total Revenue"
@@ -155,12 +143,9 @@ const AdminDashboard = () => {
               }
               icon={FiDollarSign}
               color="warning"
+              subtitle="Gross billing"
             />
-          </div>
-
-          {/* Attendance % card */}
-          {stats?.attendancePercentage != null && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+            {stats?.attendancePercentage != null && (
               <StatsCard
                 title="Attendance Rate"
                 value={`${stats.attendancePercentage}%`}
@@ -168,8 +153,8 @@ const AdminDashboard = () => {
                 color="success"
                 subtitle="School-wide average"
               />
-            </div>
-          )}
+            )}
+          </div>
 
           {/* Attendance Chart — only when real data exists */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

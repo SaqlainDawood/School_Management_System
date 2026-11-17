@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   FiUser,
   FiMail,
@@ -11,30 +11,42 @@ import Select from './Select';
 import Button from './Button';
 import { GENDER_OPTIONS, TEACHER_STATUS } from '../../utils/constants';
 
-const getInitialTeacherForm = (data) => ({
-  name: data?.name || '',
-  email: data?.email || '',
-  teacherId: data?.teacherId || '',
-  qualification: data?.qualification || '',
-  specialization: data?.specialization || '',
-  dateOfBirth: data?.dateOfBirth || '',
-  gender: data?.gender || '',
-  phone: data?.phone || '',
-  address: data?.address || '',
-  department: data?.department || '',
-  designation: data?.designation || '',
-  status: data?.status || 'active',
-});
-
 const TeacherForm = ({ initialData, onSubmit, onCancel, loading }) => {
-  const [formData, setFormData] = useState(() => getInitialTeacherForm(initialData));
-  const [prevInitialData, setPrevInitialData] = useState(initialData);
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    teacherId: '',
+    qualification: '',
+    specialization: '',
+    dateOfBirth: '',
+    gender: '',
+    phone: '',
+    address: '',
+    department: '',
+    designation: '',
+    status: 'active',
+  });
+
   const [errors, setErrors] = useState({});
 
-  if (initialData !== prevInitialData) {
-    setPrevInitialData(initialData);
-    setFormData(getInitialTeacherForm(initialData));
-  }
+  useEffect(() => {
+    if (initialData) {
+      setFormData({
+        name: initialData.name || '',
+        email: initialData.email || '',
+        teacherId: initialData.teacherId || '',
+        qualification: initialData.qualification || '',
+        specialization: initialData.specialization || '',
+        dateOfBirth: initialData.dateOfBirth || '',
+        gender: initialData.gender || '',
+        phone: initialData.phone || '',
+        address: initialData.address || '',
+        department: initialData.department || '',
+        designation: initialData.designation || '',
+        status: initialData.status || 'active',
+      });
+    }
+  }, [initialData]);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -223,7 +235,7 @@ const TeacherForm = ({ initialData, onSubmit, onCancel, loading }) => {
         }))}
       />
 
-      <div className="flex flex-col-reverse sm:flex-row justify-end gap-3 pt-6 border-t border-gray-200 dark:border-gray-700">
+      <div className="flex flex-col-reverse sm:flex-row justify-end gap-3 pt-6 border-t border-slate-200 dark:border-slate-800">
         <Button
           type="button"
           variant="secondary"
@@ -241,8 +253,8 @@ const TeacherForm = ({ initialData, onSubmit, onCancel, loading }) => {
           {loading
             ? 'Saving...'
             : isEditMode
-              ? 'Update Teacher'
-              : 'Add Teacher'}
+            ? 'Update Teacher'
+            : 'Add Teacher'}
         </Button>
       </div>
     </form>

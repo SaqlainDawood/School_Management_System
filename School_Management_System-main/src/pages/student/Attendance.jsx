@@ -4,7 +4,9 @@ import {
   FiCalendar,
   FiCheckCircle,
   FiXCircle,
+  FiAlertCircle,
   FiBarChart2,
+  FiRefreshCw,
 } from 'react-icons/fi';
 import {
   PieChart,
@@ -26,14 +28,10 @@ import Select from '../../components/forms/Select';
 
 const COLORS = ['#10B981', '#EF4444', '#F59E0B', '#3B82F6'];
 
-const CURRENT_DATE = new Date();
-const INITIAL_MONTH = CURRENT_DATE.getMonth() + 1;
-const INITIAL_YEAR = CURRENT_DATE.getFullYear();
-
 const StudentAttendance = () => {
   const [loading, setLoading] = useState(true);
-  const [month, setMonth] = useState(INITIAL_MONTH);
-  const [year, setYear] = useState(INITIAL_YEAR);
+  const [month, setMonth] = useState(new Date().getMonth() + 1);
+  const [year, setYear] = useState(new Date().getFullYear());
   const [attendance, setAttendance] = useState([]);
   const [statistics, setStatistics] = useState({
     totalDays: 0,
@@ -44,39 +42,30 @@ const StudentAttendance = () => {
   });
 
   useEffect(() => {
-    let ignore = false;
-    const fetchAttendance = async () => {
-      try {
-        const response = await api.get('/api/attendance/my-attendance', {
-          params: { month, year },
-        });
-        if (ignore) return;
-        setAttendance(response.data?.attendance || []);
-        setStatistics(response.data?.statistics || {
-          totalDays: 0,
-          presentDays: 0,
-          absentDays: 0,
-          lateDays: 0,
-          attendancePercentage: 0,
-        });
-      } catch (error) {
-        if (!ignore) {
-          console.error('Error fetching attendance:', error);
-          setAttendance([]);
-        }
-      } finally {
-        if (!ignore) {
-          setLoading(false);
-        }
-      }
-    };
-
     fetchAttendance();
-
-    return () => {
-      ignore = true;
-    };
   }, [month, year]);
+
+  const fetchAttendance = async () => {
+    setLoading(true);
+    try {
+      const response = await api.get('/api/attendance/my-attendance', {
+        params: { month, year },
+      });
+      setAttendance(response.data?.attendance || []);
+      setStatistics(response.data?.statistics || {
+        totalDays: 0,
+        presentDays: 0,
+        absentDays: 0,
+        lateDays: 0,
+        attendancePercentage: 0,
+      });
+    } catch (error) {
+      console.error('Error fetching attendance:', error);
+      setAttendance([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const pieData = [
     { name: 'Present', value: statistics.presentDays || 0 },

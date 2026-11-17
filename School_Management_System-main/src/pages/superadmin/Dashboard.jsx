@@ -6,55 +6,67 @@ import {
   FiBook,
   FiDollarSign,
   FiTrendingUp,
+  FiBarChart2,
   FiLayers,
+  FiShield,
   FiArrowRight,
 } from 'react-icons/fi';
 import PageHeader from '../../components/common/PageHeader';
 import StatsCard from '../../components/dashboard/StatsCard';
+import SectionCard from '../../components/common/SectionCard';
 import Loader from '../../components/common/Loader';
 import ErrorState from '../../components/common/ErrorState';
 import api from '../../utils/api';
 import { formatCurrency } from '../../utils/helpers';
 
 const SuperAdminDashboard = () => {
-  const [stats, setStats] = useState(null);
+  const [stats, setStats] = useState({
+    totalSchools: 0,
+    totalStudents: 0,
+    totalTeachers: 0,
+    totalRevenue: 0,
+  });
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
-  const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
-    let ignore = false;
-    const fetchStats = async () => {
-      try {
-        const response = await api.get('/api/superadmin/dashboard');
-        if (ignore) return;
-        if (response.data?.stats) {
-          setStats(response.data.stats);
-          setError(false);
-        } else {
-          setStats(null);
-        }
-      } catch (err) {
-        if (!ignore) {
-          console.error('Error fetching superadmin stats:', err);
-          setError(true);
-          setStats(null);
-        }
-      } finally {
-        if (!ignore) {
-          setLoading(false);
-        }
-      }
-    };
-
     fetchStats();
+  }, []);
 
-    return () => {
-      ignore = true;
-    };
-  }, [refreshTrigger]);
+  const fetchStats = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const response = await api.get('/api/superadmin/dashboard');
+      if (response.data?.stats) {
+        setStats(response.data.stats);
+      }
+    } catch (err) {
+      console.error('Error fetching superadmin stats:', err);
+      setError(err?.response?.data?.message || err?.message || 'Failed to load platform dashboard data');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   if (loading) return <Loader />;
+
+  if (error && !stats.totalSchools && !stats.totalStudents) {
+    return (
+      <div className="space-y-6">
+        <PageHeader
+          title="Super Admin Master Control"
+          subtitle="Multi-tenant institutional infrastructure, platform scale, and revenue overview"
+          breadcrumbs={[{ label: 'Super Admin' }, { label: 'Dashboard' }]}
+        />
+        <ErrorState
+          title="Platform Dashboard Unavailable"
+          message={error}
+          onRetry={fetchStats}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -64,49 +76,37 @@ const SuperAdminDashboard = () => {
         breadcrumbs={[{ label: 'Super Admin' }, { label: 'Dashboard' }]}
       />
 
-      {error ? (
-        <ErrorState
-          title="Failed to load platform telemetry"
-          message="Unable to communicate with the master administration endpoint. Verify cluster connectivity."
-          onRetry={() => {
-            setLoading(true);
-            setError(false);
-            setRefreshTrigger((t) => t + 1);
-          }}
+      {/* Genuine Platform KPIs */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+        <StatsCard
+          title="Total Schools"
+          value={stats.totalSchools || 0}
+          icon={FiBook}
+          color="primary"
+          subtitle="Registered institutions"
         />
-      ) : (
-        /* Genuine Platform KPIs */
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-          <StatsCard
-            title="Total Schools"
-            value={stats?.totalSchools ?? '—'}
-            icon={FiBook}
-            color="primary"
-            subtitle="Registered institutions"
-          />
-          <StatsCard
-            title="Total Students"
-            value={stats?.totalStudents != null ? stats.totalStudents.toLocaleString() : '—'}
-            icon={FiUsers}
-            color="secondary"
-            subtitle="Across all tenants"
-          />
-          <StatsCard
-            title="Total Faculty"
-            value={stats?.totalTeachers != null ? stats.totalTeachers.toLocaleString() : '—'}
-            icon={FiUser}
-            color="success"
-            subtitle="Active educators"
-          />
-          <StatsCard
-            title="Platform Revenue"
-            value={stats?.totalRevenue != null ? formatCurrency(stats.totalRevenue) : '—'}
-            icon={FiDollarSign}
-            color="warning"
-            subtitle="System gross billing"
-          />
-        </div>
-      )}
+        <StatsCard
+          title="Total Students"
+          value={(stats.totalStudents || 0).toLocaleString()}
+          icon={FiUsers}
+          color="secondary"
+          subtitle="Across all tenants"
+        />
+        <StatsCard
+          title="Total Faculty"
+          value={(stats.totalTeachers || 0).toLocaleString()}
+          icon={FiUser}
+          color="success"
+          subtitle="Active educators"
+        />
+        <StatsCard
+          title="Platform Revenue"
+          value={formatCurrency(stats.totalRevenue || 0)}
+          icon={FiDollarSign}
+          color="warning"
+          subtitle="System gross billing"
+        />
+      </div>
 
       {/* Operations Directory */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

@@ -37,24 +37,25 @@ const VoucherModal = ({ isOpen, onClose, fee, onDownloadPDF, onPay }) => {
       paid: {
         label: 'Paid',
         color:
-          'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400',
+          'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/60',
         icon: FiCheckCircle,
       },
       pending: {
         label: 'Pending',
         color:
-          'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400',
+          'bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400 border border-amber-200 dark:border-amber-800/60',
         icon: FiClock,
       },
       overdue: {
         label: 'Overdue',
-        color: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400',
+        color:
+          'bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-400 border border-rose-200 dark:border-rose-800/60',
         icon: FiAlertCircle,
       },
       partial: {
         label: 'Partial',
         color:
-          'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400',
+          'bg-indigo-50 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800/60',
         icon: FiInfo,
       },
     };
@@ -71,7 +72,7 @@ const VoucherModal = ({ isOpen, onClose, fee, onDownloadPDF, onPay }) => {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 bg-black/60 backdrop-blur-sm"
+          className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm"
           onClick={onClose}
         />
 
@@ -81,47 +82,51 @@ const VoucherModal = ({ isOpen, onClose, fee, onDownloadPDF, onPay }) => {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
             transition={{ duration: 0.3 }}
-            className="relative w-full max-w-7xl max-h-[95vh] overflow-y-auto bg-white dark:bg-gray-900 rounded-2xl shadow-2xl"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="voucher-dialog-title"
+            className="relative w-full max-w-7xl max-h-[95vh] overflow-y-auto bg-white dark:bg-[#162033] rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800"
           >
             {/* Header */}
-            <div className="sticky top-0 z-10 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 rounded-t-2xl">
+            <div className="sticky top-0 z-10 bg-white/95 dark:bg-[#162033]/95 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 rounded-t-2xl">
               <div className="flex items-center justify-between p-4 md:p-6">
                 <div className="flex items-center gap-3">
-                  <div className="p-2 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-lg">
-                    <FiFileText className="text-white text-xl" />
+                  <div className="p-2.5 bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-900/40 rounded-xl">
+                    <FiFileText className="text-xl" />
                   </div>
                   <div>
-                    <h2 className="text-xl font-bold text-gray-800 dark:text-white">
+                    <h2 id="voucher-dialog-title" className="text-xl font-bold text-slate-900 dark:text-white">
                       Fee Voucher
                     </h2>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">
+                    <p className="text-sm text-slate-500 dark:text-slate-400">
                       Invoice #{feeData._id?.slice(-8) || 'N/A'}
                     </p>
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-3">
                   <span
-                    className={`px-3 py-1.5 rounded-full text-sm font-medium flex items-center gap-1.5 ${statusConfig.color}`}
+                    className={`px-3 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1.5 ${statusConfig.color}`}
                   >
-                    <StatusIcon className="text-sm" />
+                    <StatusIcon className="text-xs" />
                     {statusConfig.label}
                   </span>
                   <button
                     onClick={onClose}
-                    className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                    aria-label="Close voucher dialog"
+                    className="p-2 rounded-lg text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
                   >
-                    <FiX className="text-xl text-gray-500 dark:text-gray-400" />
+                    <FiX className="text-xl" />
                   </button>
                 </div>
               </div>
 
-              <div className="flex gap-1 px-4 md:px-6 pb-2">
+              <div className="flex gap-2 px-4 md:px-6 pb-3">
                 <button
                   onClick={() => setActiveTab('voucher')}
                   className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
                     activeTab === 'voucher'
-                      ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400'
-                      : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
+                      ? 'bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-900/50 font-semibold'
+                      : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
                   }`}
                 >
                   Voucher Preview
@@ -130,8 +135,8 @@ const VoucherModal = ({ isOpen, onClose, fee, onDownloadPDF, onPay }) => {
                   onClick={() => setActiveTab('payment')}
                   className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
                     activeTab === 'payment'
-                      ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400'
-                      : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
+                      ? 'bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-900/50 font-semibold'
+                      : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
                   }`}
                 >
                   Payment Details
@@ -144,28 +149,28 @@ const VoucherModal = ({ isOpen, onClose, fee, onDownloadPDF, onPay }) => {
               {activeTab === 'voucher' ? (
                 <div className="space-y-6">
                   {/* School Header */}
-                  <div className="bg-gradient-to-r from-blue-600 to-indigo-700 dark:from-blue-800 dark:to-indigo-900 rounded-2xl p-6 md:p-8 text-white relative overflow-hidden">
-                    <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/3"></div>
+                  <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 dark:from-slate-950 dark:via-[#162033] dark:to-slate-950 rounded-2xl p-6 md:p-8 text-white relative overflow-hidden border border-slate-800 shadow-lg">
+                    <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/10 rounded-full -translate-y-1/2 translate-x-1/3 blur-2xl"></div>
                     <div className="relative flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
                       <div className="flex items-center gap-4">
-                        <div className="w-16 h-16 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center border border-white/10">
-                          <FiBook className="text-3xl text-white" />
+                        <div className="w-16 h-16 bg-white/10 backdrop-blur-sm rounded-xl flex items-center justify-center border border-white/10 shadow-inner">
+                          <FiBook className="text-3xl text-indigo-300" />
                         </div>
                         <div>
-                          <h1 className="text-2xl md:text-3xl font-bold">
+                          <h1 className="text-2xl md:text-3xl font-bold tracking-tight">
                             Springfield International School
                           </h1>
-                          <p className="text-blue-100 text-sm">
+                          <p className="text-indigo-200 text-sm mt-0.5">
                             Excellence in Education • Since 2005
                           </p>
                         </div>
                       </div>
                       <div className="text-right">
                         <div className="bg-white/10 backdrop-blur-sm rounded-lg px-4 py-2 border border-white/10">
-                          <p className="text-xs text-blue-200">
+                          <p className="text-xs text-indigo-200 font-medium">
                             Academic Session
                           </p>
-                          <p className="font-semibold">
+                          <p className="font-semibold text-white">
                             {feeData.academicYear || '2026-2027'}
                           </p>
                         </div>
@@ -173,62 +178,62 @@ const VoucherModal = ({ isOpen, onClose, fee, onDownloadPDF, onPay }) => {
                     </div>
                   </div>
 
-                  {/* Student Info */}
+                  {/* Student Info & Status */}
                   <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    <div className="lg:col-span-2 bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
-                      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 px-6 py-3 border-b border-gray-200 dark:border-gray-700 flex items-center gap-2">
-                        <FiUser className="text-blue-600 dark:text-blue-400" />
-                        <h3 className="font-semibold text-gray-800 dark:text-white">
+                    <div className="lg:col-span-2 bg-white dark:bg-[#162033] rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
+                      <div className="bg-slate-50 dark:bg-slate-900/60 px-6 py-3.5 border-b border-slate-200 dark:border-slate-800 flex items-center gap-2">
+                        <FiUser className="text-indigo-600 dark:text-indigo-400" />
+                        <h3 className="font-semibold text-slate-900 dark:text-white">
                           Student Information
                         </h3>
                       </div>
                       <div className="p-6">
                         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                          <div>
-                            <p className="text-xs text-gray-500 dark:text-gray-400">
+                          <div className="p-3 rounded-lg bg-slate-50/60 dark:bg-[#111827]/60 border border-slate-100 dark:border-slate-800/80">
+                            <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
                               Student Name
                             </p>
-                            <p className="font-medium text-gray-800 dark:text-white">
+                            <p className="font-semibold text-slate-900 dark:text-white mt-0.5">
                               {user.name || 'N/A'}
                             </p>
                           </div>
-                          <div>
-                            <p className="text-xs text-gray-500 dark:text-gray-400">
+                          <div className="p-3 rounded-lg bg-slate-50/60 dark:bg-[#111827]/60 border border-slate-100 dark:border-slate-800/80">
+                            <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
                               Student ID
                             </p>
-                            <p className="font-medium text-gray-800 dark:text-white">
+                            <p className="font-semibold text-slate-900 dark:text-white mt-0.5">
                               {student.studentId || 'N/A'}
                             </p>
                           </div>
-                          <div>
-                            <p className="text-xs text-gray-500 dark:text-gray-400">
+                          <div className="p-3 rounded-lg bg-slate-50/60 dark:bg-[#111827]/60 border border-slate-100 dark:border-slate-800/80">
+                            <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
                               Roll Number
                             </p>
-                            <p className="font-medium text-gray-800 dark:text-white">
+                            <p className="font-semibold text-slate-900 dark:text-white mt-0.5">
                               {student.rollNumber || 'N/A'}
                             </p>
                           </div>
-                          <div>
-                            <p className="text-xs text-gray-500 dark:text-gray-400">
+                          <div className="p-3 rounded-lg bg-slate-50/60 dark:bg-[#111827]/60 border border-slate-100 dark:border-slate-800/80">
+                            <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
                               Class
                             </p>
-                            <p className="font-medium text-gray-800 dark:text-white">
+                            <p className="font-semibold text-slate-900 dark:text-white mt-0.5">
                               {classData.name || 'N/A'}
                             </p>
                           </div>
-                          <div>
-                            <p className="text-xs text-gray-500 dark:text-gray-400">
+                          <div className="p-3 rounded-lg bg-slate-50/60 dark:bg-[#111827]/60 border border-slate-100 dark:border-slate-800/80">
+                            <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
                               Section
                             </p>
-                            <p className="font-medium text-gray-800 dark:text-white">
+                            <p className="font-semibold text-slate-900 dark:text-white mt-0.5">
                               {student.section || 'A'}
                             </p>
                           </div>
-                          <div>
-                            <p className="text-xs text-gray-500 dark:text-gray-400">
+                          <div className="p-3 rounded-lg bg-slate-50/60 dark:bg-[#111827]/60 border border-slate-100 dark:border-slate-800/80">
+                            <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
                               Contact
                             </p>
-                            <p className="font-medium text-gray-800 dark:text-white">
+                            <p className="font-semibold text-slate-900 dark:text-white mt-0.5">
                               {user.phone || 'N/A'}
                             </p>
                           </div>
@@ -237,52 +242,52 @@ const VoucherModal = ({ isOpen, onClose, fee, onDownloadPDF, onPay }) => {
                     </div>
 
                     {/* Status Card */}
-                    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
-                      <div className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 px-6 py-3 border-b border-gray-200 dark:border-gray-700 flex items-center gap-2">
-                        <FiTrendingUp className="text-green-600 dark:text-green-400" />
-                        <h3 className="font-semibold text-gray-800 dark:text-white">
+                    <div className="bg-white dark:bg-[#162033] rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
+                      <div className="bg-slate-50 dark:bg-slate-900/60 px-6 py-3.5 border-b border-slate-200 dark:border-slate-800 flex items-center gap-2">
+                        <FiTrendingUp className="text-indigo-600 dark:text-indigo-400" />
+                        <h3 className="font-semibold text-slate-900 dark:text-white">
                           Fee Status
                         </h3>
                       </div>
                       <div className="p-6 space-y-4">
                         <div className="text-center">
                           <div
-                            className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold ${statusConfig.color}`}
+                            className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs font-semibold ${statusConfig.color}`}
                           >
-                            <StatusIcon className="text-lg" />
+                            <StatusIcon className="text-sm" />
                             {statusConfig.label}
                           </div>
                         </div>
                         <div className="grid grid-cols-2 gap-3">
-                          <div className="text-center p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                            <p className="text-xs text-gray-500 dark:text-gray-400">
+                          <div className="text-center p-3 bg-slate-50 dark:bg-[#111827] rounded-lg border border-slate-100 dark:border-slate-800/80">
+                            <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
                               Total
                             </p>
-                            <p className="font-bold text-gray-800 dark:text-white">
+                            <p className="font-bold text-slate-900 dark:text-white mt-1">
                               {formatCurrency(totalAmount)}
                             </p>
                           </div>
-                          <div className="text-center p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                            <p className="text-xs text-gray-500 dark:text-gray-400">
+                          <div className="text-center p-3 bg-slate-50 dark:bg-[#111827] rounded-lg border border-slate-100 dark:border-slate-800/80">
+                            <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
                               Paid
                             </p>
-                            <p className="font-bold text-green-600 dark:text-green-400">
+                            <p className="font-bold text-emerald-600 dark:text-emerald-400 mt-1">
                               {formatCurrency(paidAmount)}
                             </p>
                           </div>
-                          <div className="text-center p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                            <p className="text-xs text-gray-500 dark:text-gray-400">
+                          <div className="text-center p-3 bg-slate-50 dark:bg-[#111827] rounded-lg border border-slate-100 dark:border-slate-800/80">
+                            <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
                               Remaining
                             </p>
-                            <p className="font-bold text-red-600 dark:text-red-400">
+                            <p className="font-bold text-rose-600 dark:text-rose-400 mt-1">
                               {formatCurrency(remainingAmount)}
                             </p>
                           </div>
-                          <div className="text-center p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                            <p className="text-xs text-gray-500 dark:text-gray-400">
+                          <div className="text-center p-3 bg-slate-50 dark:bg-[#111827] rounded-lg border border-slate-100 dark:border-slate-800/80">
+                            <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
                               Due Date
                             </p>
-                            <p className="font-bold text-gray-800 dark:text-white text-xs">
+                            <p className="font-bold text-slate-900 dark:text-white text-xs mt-1">
                               {formatDate(feeData.dueDate)}
                             </p>
                           </div>
@@ -292,45 +297,45 @@ const VoucherModal = ({ isOpen, onClose, fee, onDownloadPDF, onPay }) => {
                   </div>
 
                   {/* Fee Breakdown */}
-                  <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
-                    <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 px-6 py-3 border-b border-gray-200 dark:border-gray-700 flex items-center gap-2">
-                      <FiBook className="text-blue-600 dark:text-blue-400" />
-                      <h3 className="font-semibold text-gray-800 dark:text-white">
+                  <div className="bg-white dark:bg-[#162033] rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
+                    <div className="bg-slate-50 dark:bg-slate-900/60 px-6 py-3.5 border-b border-slate-200 dark:border-slate-800 flex items-center gap-2">
+                      <FiBook className="text-indigo-600 dark:text-indigo-400" />
+                      <h3 className="font-semibold text-slate-900 dark:text-white">
                         Fee Breakdown
                       </h3>
                     </div>
                     <div className="overflow-x-auto">
                       <table className="w-full">
-                        <thead className="bg-gray-50 dark:bg-gray-700/50">
+                        <thead className="bg-slate-50/80 dark:bg-[#111827]/80">
                           <tr>
-                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                            <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                               #
                             </th>
-                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                            <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                               Fee Type
                             </th>
-                            <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                            <th className="px-4 py-3 text-right text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                               Amount
                             </th>
-                            <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                            <th className="px-4 py-3 text-center text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                               Status
                             </th>
                           </tr>
                         </thead>
-                        <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                          <tr className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                            <td className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">
+                        <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
+                          <tr className="hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition-colors">
+                            <td className="px-4 py-3.5 text-sm text-slate-500 dark:text-slate-400">
                               1
                             </td>
-                            <td className="px-4 py-3 text-sm font-medium text-gray-800 dark:text-white capitalize">
+                            <td className="px-4 py-3.5 text-sm font-medium text-slate-900 dark:text-white capitalize">
                               {feeData.feeType} Fee
                             </td>
-                            <td className="px-4 py-3 text-sm text-right font-medium text-gray-800 dark:text-white">
+                            <td className="px-4 py-3.5 text-sm text-right font-medium text-slate-900 dark:text-white">
                               {formatCurrency(totalAmount)}
                             </td>
-                            <td className="px-4 py-3 text-center">
+                            <td className="px-4 py-3.5 text-center">
                               <span
-                                className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${statusConfig.color}`}
+                                className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold ${statusConfig.color}`}
                               >
                                 <StatusIcon className="text-xs" />
                                 {statusConfig.label}
@@ -338,15 +343,15 @@ const VoucherModal = ({ isOpen, onClose, fee, onDownloadPDF, onPay }) => {
                             </td>
                           </tr>
                         </tbody>
-                        <tfoot className="bg-blue-50 dark:bg-blue-900/20 border-t-2 border-gray-200 dark:border-gray-600">
+                        <tfoot className="bg-indigo-50/40 dark:bg-indigo-950/20 border-t-2 border-slate-200 dark:border-slate-800">
                           <tr>
                             <td
                               colSpan="2"
-                              className="px-4 py-3 text-sm font-bold text-right text-blue-700 dark:text-blue-400"
+                              className="px-4 py-3.5 text-sm font-bold text-right text-indigo-700 dark:text-indigo-300"
                             >
                               Grand Total
                             </td>
-                            <td className="px-4 py-3 text-sm font-bold text-right text-blue-700 dark:text-blue-400">
+                            <td className="px-4 py-3.5 text-sm font-bold text-right text-indigo-700 dark:text-indigo-300">
                               {formatCurrency(totalAmount)}
                             </td>
                             <td></td>
@@ -356,48 +361,48 @@ const VoucherModal = ({ isOpen, onClose, fee, onDownloadPDF, onPay }) => {
                     </div>
                   </div>
 
-                  {/* Payment Info */}
+                  {/* Payment Info & Instructions */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
-                      <div className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 px-6 py-3 border-b border-gray-200 dark:border-gray-700 flex items-center gap-2">
-                        <FiCreditCard className="text-green-600 dark:text-green-400" />
-                        <h3 className="font-semibold text-gray-800 dark:text-white">
+                    <div className="bg-white dark:bg-[#162033] rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
+                      <div className="bg-slate-50 dark:bg-slate-900/60 px-6 py-3.5 border-b border-slate-200 dark:border-slate-800 flex items-center gap-2">
+                        <FiCreditCard className="text-emerald-600 dark:text-emerald-400" />
+                        <h3 className="font-semibold text-slate-900 dark:text-white">
                           Payment Information
                         </h3>
                       </div>
-                      <div className="p-6 space-y-3">
-                        <div className="grid grid-cols-2 gap-2">
-                          <div>
-                            <p className="text-xs text-gray-500 dark:text-gray-400">
+                      <div className="p-6">
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="p-3 rounded-lg bg-slate-50/60 dark:bg-[#111827]/60 border border-slate-100 dark:border-slate-800/80">
+                            <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
                               Payment Method
                             </p>
-                            <p className="font-medium text-gray-800 dark:text-white capitalize">
+                            <p className="font-semibold text-slate-900 dark:text-white capitalize mt-0.5">
                               {feeData.paymentMethod || 'N/A'}
                             </p>
                           </div>
-                          <div>
-                            <p className="text-xs text-gray-500 dark:text-gray-400">
+                          <div className="p-3 rounded-lg bg-slate-50/60 dark:bg-[#111827]/60 border border-slate-100 dark:border-slate-800/80">
+                            <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
                               Transaction ID
                             </p>
-                            <p className="font-medium text-gray-800 dark:text-white text-xs">
+                            <p className="font-semibold text-slate-900 dark:text-white text-xs mt-0.5 truncate">
                               {feeData.transactionId || 'N/A'}
                             </p>
                           </div>
-                          <div>
-                            <p className="text-xs text-gray-500 dark:text-gray-400">
+                          <div className="p-3 rounded-lg bg-slate-50/60 dark:bg-[#111827]/60 border border-slate-100 dark:border-slate-800/80">
+                            <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
                               Payment Date
                             </p>
-                            <p className="font-medium text-gray-800 dark:text-white">
+                            <p className="font-semibold text-slate-900 dark:text-white mt-0.5">
                               {feeData.paymentDate
                                 ? formatDate(feeData.paymentDate)
                                 : 'N/A'}
                             </p>
                           </div>
-                          <div>
-                            <p className="text-xs text-gray-500 dark:text-gray-400">
+                          <div className="p-3 rounded-lg bg-slate-50/60 dark:bg-[#111827]/60 border border-slate-100 dark:border-slate-800/80">
+                            <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
                               Receipt No.
                             </p>
-                            <p className="font-medium text-gray-800 dark:text-white text-xs">
+                            <p className="font-semibold text-slate-900 dark:text-white text-xs mt-0.5 truncate">
                               {feeData.receiptNumber || 'N/A'}
                             </p>
                           </div>
@@ -405,29 +410,29 @@ const VoucherModal = ({ isOpen, onClose, fee, onDownloadPDF, onPay }) => {
                       </div>
                     </div>
 
-                    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
-                      <div className="bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 px-6 py-3 border-b border-gray-200 dark:border-gray-700 flex items-center gap-2">
-                        <FiInfo className="text-purple-600 dark:text-purple-400" />
-                        <h3 className="font-semibold text-gray-800 dark:text-white">
+                    <div className="bg-white dark:bg-[#162033] rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
+                      <div className="bg-slate-50 dark:bg-slate-900/60 px-6 py-3.5 border-b border-slate-200 dark:border-slate-800 flex items-center gap-2">
+                        <FiInfo className="text-indigo-600 dark:text-indigo-400" />
+                        <h3 className="font-semibold text-slate-900 dark:text-white">
                           Important Instructions
                         </h3>
                       </div>
                       <div className="p-6">
-                        <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
-                          <li className="flex items-start gap-2">
-                            <span className="text-blue-500 mt-0.5">•</span>
+                        <ul className="space-y-2.5 text-sm text-slate-600 dark:text-slate-300">
+                          <li className="flex items-start gap-2.5">
+                            <span className="text-indigo-500 mt-0.5">•</span>
                             Please pay before the due date to avoid late fees.
                           </li>
-                          <li className="flex items-start gap-2">
-                            <span className="text-blue-500 mt-0.5">•</span>
+                          <li className="flex items-start gap-2.5">
+                            <span className="text-indigo-500 mt-0.5">•</span>
                             Keep this voucher safe for future reference.
                           </li>
-                          <li className="flex items-start gap-2">
-                            <span className="text-blue-500 mt-0.5">•</span>
+                          <li className="flex items-start gap-2.5">
+                            <span className="text-indigo-500 mt-0.5">•</span>
                             Bring this receipt during payment.
                           </li>
-                          <li className="flex items-start gap-2">
-                            <span className="text-blue-500 mt-0.5">•</span>
+                          <li className="flex items-start gap-2.5">
+                            <span className="text-indigo-500 mt-0.5">•</span>
                             Fee once paid is non-refundable.
                           </li>
                         </ul>
@@ -436,38 +441,38 @@ const VoucherModal = ({ isOpen, onClose, fee, onDownloadPDF, onPay }) => {
                   </div>
 
                   {/* Signature Area */}
-                  <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
-                    <div className="bg-gradient-to-r from-amber-50 to-yellow-50 dark:from-amber-900/20 dark:to-yellow-900/20 px-6 py-3 border-b border-gray-200 dark:border-gray-700 flex items-center gap-2">
+                  <div className="bg-white dark:bg-[#162033] rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
+                    <div className="bg-slate-50 dark:bg-slate-900/60 px-6 py-3.5 border-b border-slate-200 dark:border-slate-800 flex items-center gap-2">
                       <FiShield className="text-amber-600 dark:text-amber-400" />
-                      <h3 className="font-semibold text-gray-800 dark:text-white">
+                      <h3 className="font-semibold text-slate-900 dark:text-white">
                         Authorized Signatures
                       </h3>
                     </div>
                     <div className="p-6">
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
                         <div className="text-center">
-                          <div className="h-12 border-b-2 border-gray-300 dark:border-gray-600 mb-1"></div>
-                          <p className="text-xs text-gray-500 dark:text-gray-400">
+                          <div className="h-12 border-b-2 border-slate-300 dark:border-slate-700 mb-2"></div>
+                          <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
                             Account Officer
                           </p>
                         </div>
                         <div className="text-center">
-                          <div className="h-12 border-b-2 border-gray-300 dark:border-gray-600 mb-1"></div>
-                          <p className="text-xs text-gray-500 dark:text-gray-400">
+                          <div className="h-12 border-b-2 border-slate-300 dark:border-slate-700 mb-2"></div>
+                          <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
                             Cashier
                           </p>
                         </div>
                         <div className="text-center">
-                          <div className="h-12 border-b-2 border-gray-300 dark:border-gray-600 mb-1"></div>
-                          <p className="text-xs text-gray-500 dark:text-gray-400">
+                          <div className="h-12 border-b-2 border-slate-300 dark:border-slate-700 mb-2"></div>
+                          <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
                             Principal
                           </p>
                         </div>
                         <div className="text-center">
-                          <div className="w-16 h-16 mx-auto bg-gray-100 dark:bg-gray-700 rounded-lg flex items-center justify-center border-2 border-dashed border-gray-300 dark:border-gray-600">
-                            <FiShield className="text-2xl text-gray-400" />
+                          <div className="w-16 h-16 mx-auto bg-slate-50 dark:bg-[#111827] rounded-lg flex items-center justify-center border-2 border-dashed border-slate-300 dark:border-slate-700">
+                            <FiShield className="text-2xl text-slate-400" />
                           </div>
-                          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                          <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mt-1.5">
                             School Stamp
                           </p>
                         </div>
@@ -478,10 +483,10 @@ const VoucherModal = ({ isOpen, onClose, fee, onDownloadPDF, onPay }) => {
               ) : (
                 // Payment Details Tab
                 <div className="space-y-6">
-                  <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
-                    <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 px-6 py-3 border-b border-gray-200 dark:border-gray-700 flex items-center gap-2">
-                      <FiCreditCard className="text-blue-600 dark:text-blue-400" />
-                      <h3 className="font-semibold text-gray-800 dark:text-white">
+                  <div className="bg-white dark:bg-[#162033] rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
+                    <div className="bg-slate-50 dark:bg-slate-900/60 px-6 py-3.5 border-b border-slate-200 dark:border-slate-800 flex items-center gap-2">
+                      <FiCreditCard className="text-indigo-600 dark:text-indigo-400" />
+                      <h3 className="font-semibold text-slate-900 dark:text-white">
                         Payment History
                       </h3>
                     </div>
@@ -491,28 +496,28 @@ const VoucherModal = ({ isOpen, onClose, fee, onDownloadPDF, onPay }) => {
                           feeData.paymentHistory.map((payment, index) => (
                             <div
                               key={index}
-                              className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg"
+                              className="flex items-center justify-between p-4 bg-slate-50 dark:bg-[#111827] rounded-xl border border-slate-100 dark:border-slate-800"
                             >
                               <div>
-                                <p className="font-medium text-gray-800 dark:text-white">
+                                <p className="font-semibold text-slate-900 dark:text-white">
                                   {formatCurrency(payment.amount)}
                                 </p>
-                                <p className="text-xs text-gray-500 dark:text-gray-400">
+                                <p className="text-xs text-slate-500 dark:text-slate-400 capitalize mt-0.5">
                                   {payment.method}
                                 </p>
                               </div>
                               <div className="text-right">
-                                <p className="text-sm text-gray-600 dark:text-gray-400">
+                                <p className="text-sm font-medium text-slate-700 dark:text-slate-300">
                                   {formatDate(payment.date)}
                                 </p>
-                                <p className="text-xs text-gray-500 dark:text-gray-400">
+                                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                                   {payment.transactionId}
                                 </p>
                               </div>
                             </div>
                           ))
                         ) : (
-                          <p className="text-center text-gray-500 dark:text-gray-400 py-8">
+                          <p className="text-center text-slate-500 dark:text-slate-400 py-8">
                             No payment history available
                           </p>
                         )}
@@ -521,24 +526,24 @@ const VoucherModal = ({ isOpen, onClose, fee, onDownloadPDF, onPay }) => {
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-xl p-4 border border-blue-200 dark:border-blue-800">
-                      <p className="text-xs text-gray-600 dark:text-gray-400">
+                    <div className="bg-indigo-50/50 dark:bg-indigo-950/20 rounded-xl p-5 border border-indigo-200/80 dark:border-indigo-900/50">
+                      <p className="text-xs font-medium text-slate-600 dark:text-slate-400">
                         Total Payments
                       </p>
-                      <p className="text-2xl font-bold text-blue-700 dark:text-blue-300 mt-1">
+                      <p className="text-2xl font-bold text-indigo-700 dark:text-indigo-300 mt-1">
                         {formatCurrency(paidAmount)}
                       </p>
                     </div>
-                    <div className="bg-gradient-to-br from-yellow-50 to-orange-50 dark:from-yellow-900/20 dark:to-orange-900/20 rounded-xl p-4 border border-yellow-200 dark:border-yellow-800">
-                      <p className="text-xs text-gray-600 dark:text-gray-400">
+                    <div className="bg-amber-50/50 dark:bg-amber-950/20 rounded-xl p-5 border border-amber-200/80 dark:border-amber-900/50">
+                      <p className="text-xs font-medium text-slate-600 dark:text-slate-400">
                         Pending
                       </p>
-                      <p className="text-2xl font-bold text-yellow-700 dark:text-yellow-300 mt-1">
+                      <p className="text-2xl font-bold text-amber-700 dark:text-amber-300 mt-1">
                         {formatCurrency(remainingAmount)}
                       </p>
                     </div>
-                    <div className="bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-xl p-4 border border-purple-200 dark:border-purple-800">
-                      <p className="text-xs text-gray-600 dark:text-gray-400">
+                    <div className="bg-purple-50/50 dark:bg-purple-950/20 rounded-xl p-5 border border-purple-200/80 dark:border-purple-900/50">
+                      <p className="text-xs font-medium text-slate-600 dark:text-slate-400">
                         Payment Status
                       </p>
                       <p className="text-2xl font-bold text-purple-700 dark:text-purple-300 mt-1 capitalize">
@@ -550,29 +555,29 @@ const VoucherModal = ({ isOpen, onClose, fee, onDownloadPDF, onPay }) => {
               )}
 
               {/* Action Buttons */}
-              <div className="sticky bottom-0 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700 rounded-b-2xl p-4 md:p-6 mt-6 flex flex-wrap gap-3 justify-end">
+              <div className="sticky bottom-0 bg-white/95 dark:bg-[#162033]/95 backdrop-blur-md border-t border-slate-200 dark:border-slate-800 rounded-b-2xl p-4 md:p-6 mt-6 flex flex-wrap gap-3 justify-end">
                 <button
                   onClick={onClose}
-                  className="px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                  className="px-4 py-2.5 text-sm font-medium text-slate-700 dark:text-slate-300 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 rounded-xl transition-colors"
                 >
                   Close
                 </button>
                 <button
                   onClick={() => window.print()}
-                  className="px-4 py-2 text-sm font-medium bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg transition-colors flex items-center gap-2"
+                  className="px-4 py-2.5 text-sm font-medium bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl transition-colors flex items-center gap-2"
                 >
                   <FiPrinter /> Print
                 </button>
                 <button
                   onClick={onDownloadPDF}
-                  className="px-4 py-2 text-sm font-medium bg-blue-600 text-white hover:bg-blue-700 rounded-lg transition-colors flex items-center gap-2"
+                  className="px-4 py-2.5 text-sm font-medium bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl transition-colors flex items-center gap-2 shadow-sm"
                 >
                   <FiDownload /> Download PDF
                 </button>
                 {feeData.status !== 'paid' && onPay && (
                   <button
                     onClick={() => onPay(feeData)}
-                    className="px-4 py-2 text-sm font-medium bg-green-600 text-white hover:bg-green-700 rounded-lg transition-colors flex items-center gap-2"
+                    className="px-4 py-2.5 text-sm font-medium bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl transition-colors flex items-center gap-2 shadow-sm"
                   >
                     <FiDollarSign /> Pay Now
                   </button>

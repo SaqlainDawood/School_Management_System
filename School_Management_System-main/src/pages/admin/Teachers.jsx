@@ -140,8 +140,7 @@ const Teachers = () => {
       } else {
         const response = await api.post('/api/teachers', data);
         toast.success(
-          `Teacher added successfully! Password: ${
-            response.data.temporaryPassword || 'Check email'
+          `Teacher added successfully! Password: ${response.data.temporaryPassword || 'Check email'
           }`
         );
       }
@@ -258,7 +257,8 @@ const Teachers = () => {
                       </td>
                       <td className="px-4 py-3.5 whitespace-nowrap">
                         <StatusBadge
-                          variant={teacher.status === 'active' ? 'success' : 'neutral'}
+                          status={teacher.status}
+                          variant={teacher.status === 'active' ? 'success' : 'secondary'}
                           dot
                         >
                           {getStatusLabel(teacher.status)}

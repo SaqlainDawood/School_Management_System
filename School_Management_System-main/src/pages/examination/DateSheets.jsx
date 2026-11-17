@@ -3,6 +3,8 @@ import {
   FiCalendar,
   FiPlus,
   FiClock,
+  FiBook,
+  FiAward,
 } from 'react-icons/fi';
 import { toast } from 'react-toastify';
 import PageHeader from '../../components/common/PageHeader';
@@ -22,37 +24,27 @@ const DateSheets = () => {
   const [filters, setFilters] = useState({ classId: '' });
 
   useEffect(() => {
-    let ignore = false;
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        const [examsRes, classesRes] = await Promise.all([
-          api.get('/api/exams', {
-            params: { status: 'published', ...filters },
-          }),
-          api.get('/api/classes'),
-        ]);
-        if (ignore) return;
-        setExams(examsRes.data?.exams || []);
-        setClasses(classesRes.data?.classes || []);
-      } catch (error) {
-        if (!ignore) {
-          console.error('Error fetching date sheets:', error);
-          setExams([]);
-        }
-      } finally {
-        if (!ignore) {
-          setLoading(false);
-        }
-      }
-    };
-
     fetchData();
-
-    return () => {
-      ignore = true;
-    };
   }, [filters]);
+
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      const [examsRes, classesRes] = await Promise.all([
+        api.get('/api/exams', {
+          params: { status: 'published', ...filters },
+        }),
+        api.get('/api/classes'),
+      ]);
+      setExams(examsRes.data?.exams || []);
+      setClasses(classesRes.data?.classes || []);
+    } catch (error) {
+      console.error('Error fetching date sheets:', error);
+      setExams([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   if (loading) return <Loader />;
 

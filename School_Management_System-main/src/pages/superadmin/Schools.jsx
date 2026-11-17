@@ -1,7 +1,13 @@
 import React, { useState } from 'react';
 import {
+  FiBook,
   FiPlus,
   FiSearch,
+  FiMapPin,
+  FiUsers,
+  FiPhone,
+  FiMail,
+  FiInfo,
 } from 'react-icons/fi';
 import { toast } from 'react-toastify';
 import PageHeader from '../../components/common/PageHeader';
@@ -81,7 +87,7 @@ const Schools = () => {
           {filtered.map((school) => (
             <div
               key={school.id}
-              className="card p-6 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm hover:shadow-md transition-all flex flex-col justify-between"
+              className="card p-6 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm hover:shadow-md transition-all h-full flex flex-col justify-between bg-white dark:bg-[#162033]"
             >
               <div>
                 <div className="flex items-start justify-between mb-4">

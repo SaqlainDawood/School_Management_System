@@ -1,12 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import {
   FiPlus,
+  FiEdit2,
+  FiTrash2,
   FiUsers,
   FiBookOpen,
   FiLayers,
 } from 'react-icons/fi';
 import { toast } from 'react-toastify';
 import PageHeader from '../../components/common/PageHeader';
+import SectionCard from '../../components/common/SectionCard';
 import StatusBadge from '../../components/common/StatusBadge';
 import Loader from '../../components/common/Loader';
 import EmptyState from '../../components/common/EmptyState';
@@ -18,30 +21,21 @@ const Departments = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    let ignore = false;
-    const fetchDepartments = async () => {
-      try {
-        const response = await api.get('/api/coordinator/departments');
-        if (ignore) return;
-        setDepartments(response.data?.departments || []);
-      } catch (error) {
-        if (!ignore) {
-          console.error('Error fetching departments:', error);
-          setDepartments([]);
-        }
-      } finally {
-        if (!ignore) {
-          setLoading(false);
-        }
-      }
-    };
-
     fetchDepartments();
-
-    return () => {
-      ignore = true;
-    };
   }, []);
+
+  const fetchDepartments = async () => {
+    try {
+      setLoading(true);
+      const response = await api.get('/api/coordinator/departments');
+      setDepartments(response.data?.departments || []);
+    } catch (error) {
+      console.error('Error fetching departments:', error);
+      setDepartments([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   if (loading) return <Loader />;
 
@@ -76,7 +70,7 @@ const Departments = () => {
           {departments.map((dept) => (
             <div
               key={dept._id}
-              className="card p-6 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm hover:shadow-md transition-all flex flex-col justify-between"
+              className="card p-6 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm hover:shadow-md transition-all h-full flex flex-col justify-between bg-white dark:bg-[#162033]"
             >
               <div>
                 <div className="flex items-start justify-between mb-4">

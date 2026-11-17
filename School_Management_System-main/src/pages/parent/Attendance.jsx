@@ -17,10 +17,6 @@ import EmptyState from '../../components/common/EmptyState';
 import api from '../../utils/api';
 import { formatDate } from '../../utils/helpers';
 
-const CURRENT_DATE = new Date();
-const INITIAL_MONTH = CURRENT_DATE.getMonth() + 1;
-const INITIAL_YEAR = CURRENT_DATE.getFullYear();
-
 const ParentAttendance = () => {
   const [children, setChildren] = useState([]);
   const [selectedChild, setSelectedChild] = useState('');
@@ -28,69 +24,48 @@ const ParentAttendance = () => {
   const [statistics, setStatistics] = useState({});
   const [loading, setLoading] = useState(true);
   const [fetchingRecords, setFetchingRecords] = useState(false);
-  const [month, setMonth] = useState(INITIAL_MONTH);
-  const [year, setYear] = useState(INITIAL_YEAR);
+  const [month, setMonth] = useState(new Date().getMonth() + 1);
+  const [year, setYear] = useState(new Date().getFullYear());
 
   useEffect(() => {
-    let ignore = false;
-    const fetchChildren = async () => {
-      try {
-        const response = await api.get('/api/parents/dashboard');
-        if (ignore) return;
-        const kids = response.data?.dashboard?.parent?.children || [];
-        setChildren(kids);
-        if (kids.length > 0) setSelectedChild(kids[0]._id);
-      } catch (error) {
-        if (!ignore) {
-          console.error('Error fetching children:', error);
-        }
-      } finally {
-        if (!ignore) {
-          setLoading(false);
-        }
-      }
-    };
-
     fetchChildren();
-
-    return () => {
-      ignore = true;
-    };
   }, []);
 
   useEffect(() => {
-    if (!selectedChild) return;
-    let ignore = false;
-
-    const fetchAttendance = async () => {
-      try {
-        setFetchingRecords(true);
-        const response = await api.get(
-          `/api/parents/child/${selectedChild}/attendance`,
-          { params: { month, year } }
-        );
-        if (ignore) return;
-        setAttendance(response.data?.attendance || []);
-        setStatistics(response.data?.statistics || {});
-      } catch (error) {
-        if (!ignore) {
-          console.error('Error fetching attendance:', error);
-          setAttendance([]);
-          setStatistics({});
-        }
-      } finally {
-        if (!ignore) {
-          setFetchingRecords(false);
-        }
-      }
-    };
-
-    fetchAttendance();
-
-    return () => {
-      ignore = true;
-    };
+    if (selectedChild) fetchAttendance();
   }, [selectedChild, month, year]);
+
+  const fetchChildren = async () => {
+    try {
+      setLoading(true);
+      const response = await api.get('/api/parents/dashboard');
+      const kids = response.data?.dashboard?.parent?.children || [];
+      setChildren(kids);
+      if (kids.length > 0) setSelectedChild(kids[0]._id);
+    } catch (error) {
+      console.error('Error fetching children:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchAttendance = async () => {
+    try {
+      setFetchingRecords(true);
+      const response = await api.get(
+        `/api/parents/child/${selectedChild}/attendance`,
+        { params: { month, year } }
+      );
+      setAttendance(response.data?.attendance || []);
+      setStatistics(response.data?.statistics || {});
+    } catch (error) {
+      console.error('Error fetching attendance:', error);
+      setAttendance([]);
+      setStatistics({});
+    } finally {
+      setFetchingRecords(false);
+    }
+  };
 
   const monthOptions = [
     { value: 1, label: 'January' },

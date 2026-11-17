@@ -8,15 +8,15 @@ export default {
       colors: {
         // Enterprise Education Theme
         primary: {
-          50: '#EEF2FF',
+          50: '#EEF2FF',   // Subtle BG
           100: '#E0E7FF',
           200: '#C7D2FE',
           300: '#A5B4FC',
-          400: '#818CF8', // accent
+          400: '#818CF8',  // Soft Accent
           500: '#6366F1',
-          600: '#4F46E5', // brand primary
-          700: '#4338CA', // brand hover
-          800: '#3730A3',
+          600: '#4F46E5',  // Brand Primary
+          700: '#4338CA',  // Primary Hover
+          800: '#3730A3',  // Primary Active
           900: '#312E81',
           950: '#1E1B4B',
         },
@@ -38,22 +38,36 @@ export default {
           dark: '#162033',
           elevatedLight: '#F1F5F9',
           elevatedDark: '#1E293B',
+          hoverLight: '#F8FAFC',
+          hoverDark: '#243247',
+          inputDark: '#111827',
         },
         border: {
           light: '#E2E8F0',
+          strongLight: '#CBD5E1',
           dark: '#334155',
         },
         text: {
           primaryLight: '#0F172A',
-          secondaryLight: '#64748B',
+          secondaryLight: '#475569',
+          mutedLight: '#64748B',
           primaryDark: '#F1F5F9',
-          secondaryDark: '#94A3B8',
+          secondaryDark: '#CBD5E1',
+          mutedDark: '#94A3B8',
         },
-        status: {
+        semantic: {
           success: '#059669',
-          warning: '#D97706',
+          successBg: '#ECFDF5',
+          successDark: '#6EE7B7',
+          warning: '#B45309',
+          warningBg: '#FFFBEB',
+          warningDark: '#FCD34D',
           danger: '#DC2626',
-          info: '#0284C7',
+          dangerBg: '#FEF2F2',
+          dangerDark: '#FCA5A5',
+          info: '#0369A1',
+          infoBg: '#E0F2FE',
+          infoDark: '#7DD3FC',
         },
       },
 
@@ -74,6 +88,7 @@ export default {
         card: '14px',
         panel: '16px',
         button: '10px',
+        modal: '18px',
       },
 
       boxShadow: {

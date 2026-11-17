@@ -41,7 +41,7 @@ const StatsCard = ({
 
   if (loading) {
     return (
-      <div className={`card p-5 ${className}`}>
+      <div className={`card p-5 h-full flex flex-col justify-between ${className}`}>
         <div className="flex items-start justify-between">
           <div className="space-y-2 flex-1">
             <Skeleton className="h-3.5 w-24" />
@@ -49,7 +49,7 @@ const StatsCard = ({
           </div>
           <Skeleton variant="circular" className="w-10 h-10" />
         </div>
-        <div className="mt-3 pt-3 border-t border-slate-100 dark:border-slate-800">
+        <div className="mt-auto pt-3 border-t border-slate-100 dark:border-slate-800">
           <Skeleton className="h-3 w-32" />
         </div>
       </div>
@@ -62,48 +62,54 @@ const StatsCard = ({
     <motion.div
       whileHover={onClick ? { y: -2 } : undefined}
       onClick={onClick}
-      className={`card p-5 ${onClick ? 'cursor-pointer hover:border-indigo-300 dark:hover:border-indigo-700' : ''} ${className}`}
+      className={`card p-5 h-full flex flex-col justify-between transition-all duration-200 ${onClick ? 'cursor-pointer hover:border-indigo-300 dark:hover:border-indigo-700 hover:shadow-md' : ''} ${className}`}
     >
-      <div className="flex items-start justify-between gap-3">
-        <div className="flex-1 min-w-0">
-          <p className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 truncate">
-            {title}
-          </p>
-          <div className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-slate-100 mt-1 truncate">
-            {displayValue}
+      <div>
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex-1 min-w-0">
+            <p className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 truncate">
+              {title}
+            </p>
+            <div className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-slate-100 mt-1 truncate">
+              {displayValue}
+            </div>
           </div>
+          {Icon && (
+            <div className={`p-2.5 rounded-xl border flex-shrink-0 ${scheme.bg}`}>
+              <Icon className="text-xl" aria-hidden="true" />
+            </div>
+          )}
+        </div>
+      </div>
+
+      {(subtitle || (trend !== undefined && trend !== null)) && (
+        <div className="mt-auto pt-3 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between text-xs">
           {subtitle && (
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 truncate">
+            <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
               {subtitle}
             </p>
           )}
-        </div>
-        {Icon && (
-          <div className={`p-2.5 rounded-xl border flex-shrink-0 ${scheme.bg}`}>
-            <Icon className="text-xl" aria-hidden="true" />
-          </div>
-        )}
-      </div>
-
-      {trend !== undefined && trend !== null && (
-        <div className="flex items-center gap-1.5 mt-3 pt-3 border-t border-slate-100 dark:border-slate-800/80 text-xs">
-          <span
-            className={`font-semibold inline-flex items-center ${
-              trendDirection === 'up'
-                ? 'text-emerald-600 dark:text-emerald-400'
-                : trendDirection === 'down'
-                ? 'text-rose-600 dark:text-rose-400'
-                : 'text-slate-500 dark:text-slate-400'
-            }`}
-          >
-            {trendDirection === 'up' && <FiTrendingUp className="mr-0.5" />}
-            {trendDirection === 'down' && <FiTrendingDown className="mr-0.5" />}
-            {trendDirection === 'neutral' && <FiMinus className="mr-0.5" />}
-            {Math.abs(trend)}%
-          </span>
-          <span className="text-slate-400 dark:text-slate-500 truncate">
-            {trendLabel}
-          </span>
+          {trend !== undefined && trend !== null && (
+            <div className="flex items-center gap-1.5 ml-auto">
+              <span
+                className={`font-semibold inline-flex items-center ${
+                  trendDirection === 'up'
+                    ? 'text-emerald-600 dark:text-emerald-400'
+                    : trendDirection === 'down'
+                    ? 'text-rose-600 dark:text-rose-400'
+                    : 'text-slate-500 dark:text-slate-400'
+                }`}
+              >
+                {trendDirection === 'up' && <FiTrendingUp className="mr-0.5" />}
+                {trendDirection === 'down' && <FiTrendingDown className="mr-0.5" />}
+                {trendDirection === 'neutral' && <FiMinus className="mr-0.5" />}
+                {Math.abs(trend)}%
+              </span>
+              <span className="text-slate-400 dark:text-slate-500 truncate hidden sm:inline">
+                {trendLabel}
+              </span>
+            </div>
+          )}
         </div>
       )}
     </motion.div>

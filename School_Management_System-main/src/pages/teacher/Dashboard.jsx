@@ -9,6 +9,10 @@ import {
   FiCheckSquare,
   FiAward,
   FiCalendar,
+  FiRefreshCw,
+  FiAlertCircle,
+  FiArrowRight,
+  FiShield,
 } from 'react-icons/fi';
 import {
   AreaChart,
@@ -24,7 +28,7 @@ import StatsCard from '../../components/dashboard/StatsCard';
 import ChartCard from '../../components/dashboard/ChartCard';
 import RecentActivity from '../../components/dashboard/RecentActivity';
 import Loader from '../../components/common/Loader';
-import ErrorState from '../../components/common/ErrorState';
+import Button from '../../components/forms/Button';
 import api from '../../utils/api';
 import { useAuth } from '../../context/AuthContext';
 
@@ -34,79 +38,174 @@ const TeacherDashboard = () => {
   const [attendanceData, setAttendanceData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
-  const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const [errorMessage, setErrorMessage] = useState('');
+  const [retrying, setRetrying] = useState(false);
 
   useEffect(() => {
-    let ignore = false;
-    const fetchDashboard = async () => {
-      try {
-        setLoading(true);
-        const response = await api.get('/api/teachers/dashboard');
-        if (ignore) return;
-        const data = response.data?.dashboard?.stats || response.data?.stats || {};
-        setStats({
-          classes: data.classes ?? null,
-          students: data.students ?? null,
-          assignments: data.pendingAssignments ?? data.assignments ?? null,
-          attendance: data.todayAttendance ?? null,
-        });
-
-        if (Array.isArray(data.attendanceHistory) && data.attendanceHistory.length > 0) {
-          setAttendanceData(data.attendanceHistory);
-        } else {
-          setAttendanceData([]);
-        }
-        setError(false);
-      } catch (err) {
-        if (!ignore) {
-          console.error('Error fetching teacher dashboard:', err);
-          setError(true);
-          setStats(null);
-          setAttendanceData([]);
-        }
-      } finally {
-        if (!ignore) {
-          setLoading(false);
-        }
-      }
-    };
-
     fetchDashboard();
+  }, []);
 
-    return () => {
-      ignore = true;
-    };
-  }, [refreshTrigger]);
+  const fetchDashboard = async () => {
+    setLoading(true);
+    setError(false);
+    setErrorMessage('');
+    try {
+      const response = await api.get('/api/teachers/dashboard');
+      const data = response.data?.dashboard?.stats || response.data?.stats || {};
+      setStats({
+        classes: data.classes ?? null,
+        students: data.students ?? null,
+        assignments: data.pendingAssignments ?? data.assignments ?? null,
+        attendance: data.todayAttendance ?? null,
+      });
 
-  if (loading) return <Loader />;
+      if (Array.isArray(data.attendanceHistory) && data.attendanceHistory.length > 0) {
+        setAttendanceData(data.attendanceHistory);
+      } else {
+        setAttendanceData([]);
+      }
+    } catch (err) {
+      console.error('Error fetching teacher dashboard:', err);
+      setError(true);
+      setErrorMessage(
+        err.response?.data?.message ||
+        'Unable to retrieve real-time teacher statistics from the server.'
+      );
+      setStats(null);
+      setAttendanceData([]);
+    } finally {
+      setLoading(false);
+      setRetrying(false);
+    }
+  };
+
+  const handleRetry = () => {
+    setRetrying(true);
+    fetchDashboard();
+  };
+
+  if (loading && !retrying) return <Loader />;
 
   const teacherName = user?.name || 'Faculty Member';
+  const departmentName = user?.department || 'Academic Division';
 
   const quickActions = [
-    { label: 'Mark Class Attendance', icon: FiCheckSquare, to: '/teacher/attendance' },
-    { label: 'New Assignment', icon: FiFileText, to: '/teacher/assignments' },
-    { label: 'Enter Exam Grades', icon: FiAward, to: '/teacher/results' },
-    { label: 'My Enrolled Classes', icon: FiBook, to: '/teacher/classes' },
+    {
+      label: 'Mark Class Attendance',
+      sublabel: 'Daily student roll call',
+      icon: FiCheckSquare,
+      to: '/teacher/attendance',
+      color: 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border-emerald-100 dark:border-emerald-900/40',
+    },
+    {
+      label: 'New Coursework Assignment',
+      sublabel: 'Create & publish tasks',
+      icon: FiFileText,
+      to: '/teacher/assignments',
+      color: 'bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 border-indigo-100 dark:border-indigo-900/40',
+    },
+    {
+      label: 'Enter Assessment Grades',
+      sublabel: 'Input marks & exam results',
+      icon: FiAward,
+      to: '/teacher/results',
+      color: 'bg-purple-50 dark:bg-purple-950/40 text-purple-600 dark:text-purple-400 border-purple-100 dark:border-purple-900/40',
+    },
+    {
+      label: 'My Enrolled Classes',
+      sublabel: 'Cohorts & student rosters',
+      icon: FiBook,
+      to: '/teacher/classes',
+      color: 'bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 border-amber-100 dark:border-amber-900/40',
+    },
   ];
 
   return (
     <div className="space-y-6">
+      {/* ── Refined Dashboard Header ── */}
       <PageHeader
         title={`Welcome back, ${teacherName}`}
-        subtitle="Overview of your active teaching classes, student attendance, and assignments"
-        breadcrumbs={[{ label: 'Faculty Dashboard' }]}
+        subtitle={`Faculty Teaching Workspace • ${departmentName} • Real-time overview of active classes, students, and tasks`}
+        breadcrumbs={[{ label: 'Teacher' }, { label: 'Dashboard' }]}
+        actions={
+          <div className="flex items-center gap-2">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 border border-indigo-200/60 dark:border-indigo-800/60">
+              <FiShield className="text-xs" /> Verified Educator
+            </span>
+          </div>
+        }
       />
 
+      {/* ── Faculty Workflows / Primary Actions (Always accessible) ── */}
+      <div className="card p-5 border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#162033] shadow-sm">
+        <div className="flex items-center justify-between mb-3.5">
+          <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+            Faculty Teaching Workflows
+          </h3>
+          <span className="text-[11px] text-slate-400">Quick Navigation</span>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          {quickActions.map(({ label, sublabel, icon: Icon, to, color }) => (
+            <Link
+              key={to}
+              to={to}
+              className="flex items-center gap-3.5 p-3.5 rounded-xl border border-slate-200/90 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/20 hover:border-indigo-400 dark:hover:border-indigo-500 hover:bg-white dark:hover:bg-slate-800/60 transition-all group"
+            >
+              <div className={`w-11 h-11 rounded-xl flex items-center justify-center border shrink-0 group-hover:scale-105 transition-transform ${color}`}>
+                <Icon className="text-xl" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-xs font-bold text-slate-900 dark:text-white truncate group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
+                  {label}
+                </p>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
+                  {sublabel}
+                </p>
+              </div>
+              <FiArrowRight className="text-slate-300 group-hover:text-indigo-500 group-hover:translate-x-0.5 transition-all text-sm shrink-0" />
+            </Link>
+          ))}
+        </div>
+      </div>
+
+      {/* ── Analytics & Live Statistics Section ── */}
       {error ? (
-        <ErrorState
-          title="Failed to load faculty overview"
-          message="Unable to retrieve real-time teacher statistics from the server."
-          onRetry={() => setRefreshTrigger((prev) => prev + 1)}
-        />
+        /* Localized, proportional, and informative Error Panel */
+        <div className="card p-6 sm:p-8 border border-amber-200/70 dark:border-amber-900/40 bg-amber-50/30 dark:bg-amber-950/10 rounded-2xl shadow-sm">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="flex items-start gap-4">
+              <div className="w-12 h-12 rounded-2xl bg-amber-100 dark:bg-amber-900/40 text-amber-600 dark:text-amber-400 flex items-center justify-center text-2xl shrink-0 border border-amber-200 dark:border-amber-800">
+                <FiAlertCircle />
+              </div>
+              <div className="space-y-1">
+                <h4 className="text-base font-bold text-slate-900 dark:text-white">
+                  Failed to load faculty overview
+                </h4>
+                <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 max-w-xl">
+                  {errorMessage}
+                </p>
+                <p className="text-[11px] text-slate-400">
+                  Direct module links above remain operational while analytics are reconnected.
+                </p>
+              </div>
+            </div>
+
+            <Button
+              variant="secondary"
+              size="sm"
+              icon={FiRefreshCw}
+              loading={retrying}
+              onClick={handleRetry}
+              className="shrink-0 self-start sm:self-auto"
+            >
+              Retry Request
+            </Button>
+          </div>
+        </div>
       ) : (
         <>
           {/* KPI Metrics */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
             <StatsCard
               title="Assigned Classes"
               value={stats?.classes != null ? stats.classes : '—'}
@@ -134,7 +233,7 @@ const TeacherDashboard = () => {
           </div>
 
           {/* Charts and Recent Stream */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 sm:gap-6">
             <ChartCard title="Classroom Attendance History" icon={FiTrendingUp}>
               {attendanceData.length > 0 ? (
                 <ResponsiveContainer width="100%" height={260}>
@@ -175,29 +274,6 @@ const TeacherDashboard = () => {
             <ChartCard title="Instructional Activity Stream" icon={FiClock}>
               <RecentActivity />
             </ChartCard>
-          </div>
-
-          {/* Quick Shortcuts */}
-          <div className="card p-5">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-4">
-              Faculty Workflows
-            </h3>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              {quickActions.map(({ label, icon: Icon, to }) => (
-                <Link
-                  key={to}
-                  to={to}
-                  className="flex flex-col items-center gap-2.5 p-4 rounded-xl border border-slate-200 dark:border-slate-800 hover:border-indigo-400 dark:hover:border-indigo-600 hover:bg-indigo-50/50 dark:hover:bg-indigo-950/20 transition-all text-center group"
-                >
-                  <span className="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 flex items-center justify-center group-hover:scale-105 transition-transform">
-                    <Icon className="text-lg" />
-                  </span>
-                  <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                    {label}
-                  </span>
-                </Link>
-              ))}
-            </div>
           </div>
         </>
       )}

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 
 const TextArea = ({
@@ -18,9 +18,15 @@ const TextArea = ({
   ...props
 }) => {
   const [isFocused, setIsFocused] = useState(false);
-  const charCount = value?.length || 0;
+  const [charCount, setCharCount] = useState(value?.length || 0);
+
+  useEffect(() => {
+    setCharCount(value?.length || 0);
+  }, [value]);
 
   const handleChange = (e) => {
+    const newValue = e.target.value;
+    setCharCount(newValue.length);
     if (onChange) onChange(e);
   };
 
@@ -76,7 +82,7 @@ const TextArea = ({
           ${
             disabled
               ? 'bg-slate-100 dark:bg-slate-800 cursor-not-allowed opacity-60'
-              : 'bg-white dark:bg-[#1E293B]'
+              : 'bg-white dark:bg-[#111827]'
           }
           placeholder:text-slate-400 dark:placeholder:text-slate-500
         `}

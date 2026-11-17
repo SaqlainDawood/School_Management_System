@@ -55,14 +55,22 @@ const Select = ({
             ${
               disabled
                 ? 'bg-slate-100 dark:bg-slate-800 cursor-not-allowed opacity-60'
-                : 'bg-white dark:bg-[#1E293B]'
+                : 'bg-white dark:bg-[#111827]'
             }
           `}
           {...props}
         >
-          {placeholder && <option value="">{placeholder}</option>}
+          {placeholder && (
+            <option value="" className="bg-white dark:bg-[#111827] text-slate-500 dark:text-slate-400">
+              {placeholder}
+            </option>
+          )}
           {options.map((option) => (
-            <option key={option.value} value={option.value}>
+            <option
+              key={option.value}
+              value={option.value}
+              className="bg-white dark:bg-[#111827] text-slate-900 dark:text-slate-100"
+            >
               {option.label}
             </option>
           ))}

@@ -4,7 +4,13 @@ import {
   FiEdit2,
   FiTrash2,
   FiCalendar,
+  FiClock,
+  FiBook,
   FiUser,
+  FiMapPin,
+  FiLayers,
+  FiCheckCircle,
+  FiFilter,
 } from 'react-icons/fi';
 import { toast } from 'react-toastify';
 import PageHeader from '../../components/common/PageHeader';
@@ -16,17 +22,6 @@ import Loader from '../../components/common/Loader';
 import EmptyState from '../../components/common/EmptyState';
 import ConfirmDialog from '../../components/common/ConfirmDialog';
 import api from '../../utils/api';
-
-const PERIOD_TIMES = [
-  { number: 1, start: '08:00', end: '08:45' },
-  { number: 2, start: '08:45', end: '09:30' },
-  { number: 3, start: '09:30', end: '10:15' },
-  { number: 4, start: '10:30', end: '11:15' },
-  { number: 5, start: '11:15', end: '12:00' },
-  { number: 6, start: '12:00', end: '12:45' },
-  { number: 7, start: '13:30', end: '14:15' },
-  { number: 8, start: '14:15', end: '15:00' },
-];
 
 const Timetable = () => {
   const [timetables, setTimetables] = useState([]);
@@ -40,7 +35,6 @@ const Timetable = () => {
   const [selectedClass, setSelectedClass] = useState('');
   const [deleteTargetId, setDeleteTargetId] = useState(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
-  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   const [formData, setFormData] = useState({
     class: '',
@@ -61,100 +55,100 @@ const Timetable = () => {
   const [editingPeriodIndex, setEditingPeriodIndex] = useState(null);
   const [errors, setErrors] = useState({});
 
-  useEffect(() => {
-    let ignore = false;
-    const fetchTimetables = async () => {
-      setLoading(true);
-      try {
-        const params = {};
-        if (selectedClass) params.classId = selectedClass;
-        const response = await api.get('/api/timetable', { params });
-        if (ignore) return;
-        setTimetables(response.data.timetables || []);
-      } catch (err) {
-        if (!ignore) {
-          console.error('Error fetching timetables:', err);
-          toast.error('Failed to fetch timetables');
-        }
-      } finally {
-        if (!ignore) {
-          setLoading(false);
-        }
-      }
-    };
+  const periodTimes = [
+    { number: 1, start: '08:00', end: '08:45' },
+    { number: 2, start: '08:45', end: '09:30' },
+    { number: 3, start: '09:30', end: '10:15' },
+    { number: 4, start: '10:30', end: '11:15' },
+    { number: 5, start: '11:15', end: '12:00' },
+    { number: 6, start: '12:00', end: '12:45' },
+    { number: 7, start: '13:30', end: '14:15' },
+    { number: 8, start: '14:15', end: '15:00' },
+  ];
 
+  useEffect(() => {
     fetchTimetables();
-
-    return () => {
-      ignore = true;
-    };
-  }, [selectedClass, refreshTrigger]);
-
-  useEffect(() => {
-    let ignore = false;
-    const fetchPrerequisites = async () => {
-      try {
-        const [classesRes, teachersRes, subjectsRes] = await Promise.all([
-          api.get('/api/classes'),
-          api.get('/api/teachers', { params: { limit: 100 } }),
-          api.get('/api/subjects'),
-        ]);
-        if (ignore) return;
-        setClasses(classesRes.data.classes || []);
-        setTeachers(teachersRes.data.teachers || []);
-        setSubjects(subjectsRes.data.subjects || []);
-      } catch (err) {
-        if (!ignore) {
-          console.error('Error fetching timetable prerequisites:', err);
-        }
-      }
-    };
-
-    fetchPrerequisites();
-
-    return () => {
-      ignore = true;
-    };
+    fetchClasses();
+    fetchTeachers();
+    fetchSubjects();
   }, []);
 
-  const getSubjectName = (subjectData) => {
-    if (!subjectData) return 'Not Assigned';
-    if (typeof subjectData === 'object' && subjectData.name)
-      return subjectData.name;
-    if (typeof subjectData === 'string') {
-      const subject = subjects.find((s) => s._id === subjectData);
-      return subject?.name || 'Unknown';
+  useEffect(() => {
+    if (selectedClass) fetchTimetables();
+  }, [selectedClass]);
+
+  const fetchTimetables = async () => {
+    setLoading(true);
+    try {
+      const params = {};
+      if (selectedClass) params.classId = selectedClass;
+      const response = await api.get('/api/timetable', { params });
+      setTimetables(response.data.timetables || []);
+    } catch (err) {
+      console.error('Error fetching timetables:', err);
+      toast.error('Failed to fetch timetables');
+    } finally {
+      setLoading(false);
     }
-    return 'Unknown';
   };
 
-  const getTeacherName = (teacherData) => {
-    if (!teacherData) return 'Not Assigned';
-    if (typeof teacherData === 'object' && teacherData.user?.name)
-      return teacherData.user.name;
-    if (typeof teacherData === 'object' && teacherData.name)
-      return teacherData.name;
-    if (typeof teacherData === 'string') {
-      const teacher = teachers.find((t) => t._id === teacherData);
-      return teacher?.user?.name || 'Unknown';
+  const fetchClasses = async () => {
+    try {
+      const response = await api.get('/api/classes');
+      setClasses(response.data.classes || []);
+    } catch (err) {
+      console.error('Error fetching classes:', err);
     }
-    return 'Unknown';
+  };
+
+  const fetchTeachers = async () => {
+    try {
+      const response = await api.get('/api/teachers');
+      setTeachers(response.data.teachers || []);
+    } catch (err) {
+      console.error('Error fetching teachers:', err);
+    }
+  };
+
+  const fetchSubjects = async () => {
+    try {
+      const response = await api.get('/api/subjects');
+      setSubjects(response.data.subjects || []);
+    } catch (err) {
+      console.error('Error fetching subjects:', err);
+    }
+  };
+
+  const getSubjectName = (subjectId) => {
+    if (!subjectId) return 'Unassigned';
+    if (typeof subjectId === 'object' && subjectId.name) return subjectId.name;
+    const found = subjects.find((s) => s._id === subjectId);
+    return found ? found.name : 'Lecture Session';
+  };
+
+  const getTeacherName = (teacherId) => {
+    if (!teacherId) return 'Unassigned Faculty';
+    if (typeof teacherId === 'object') {
+      return teacherId.user?.name || teacherId.name || 'Faculty Member';
+    }
+    const found = teachers.find((t) => t._id === teacherId);
+    return found ? found.user?.name || found.name || 'Faculty Member' : 'Faculty Member';
   };
 
   const handleAddTimetable = () => {
     setEditingTimetable(null);
     setFormData({
-      class: selectedClass || '',
+      class: selectedClass || (classes[0]?._id || ''),
       section: '',
       day: 'monday',
-      academicYear: '2026-2027',
+      academicYear: new Date().getFullYear().toString(),
       semester: 'annual',
       periods: [],
     });
     setPeriodForm({
       periodNumber: 1,
-      startTime: '08:00',
-      endTime: '08:45',
+      startTime: periodTimes[0].start,
+      endTime: periodTimes[0].end,
       subject: '',
       teacher: '',
       room: '',
@@ -167,17 +161,19 @@ const Timetable = () => {
   const handleEditTimetable = (timetable) => {
     setEditingTimetable(timetable);
     setFormData({
-      class: timetable.class?._id || '',
-      section: timetable.section?._id || '',
+      class: timetable.class?._id || timetable.class || '',
+      section: timetable.section || '',
       day: timetable.day || 'monday',
       academicYear: timetable.academicYear || '',
       semester: timetable.semester || 'annual',
       periods: timetable.periods || [],
     });
+    const nextPeriodNum = (timetable.periods?.length || 0) + 1;
+    const nextTime = periodTimes.find((p) => p.number === nextPeriodNum) || periodTimes[0];
     setPeriodForm({
-      periodNumber: 1,
-      startTime: '08:00',
-      endTime: '08:45',
+      periodNumber: nextPeriodNum,
+      startTime: nextTime.start,
+      endTime: nextTime.end,
       subject: '',
       teacher: '',
       room: '',
@@ -193,26 +189,24 @@ const Timetable = () => {
   };
 
   const handlePeriodChange = (e) => {
-    setPeriodForm({ ...periodForm, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    if (name === 'periodNumber') {
+      const num = parseInt(value);
+      const timeSlot = periodTimes.find((p) => p.number === num);
+      setPeriodForm({
+        ...periodForm,
+        periodNumber: num,
+        startTime: timeSlot ? timeSlot.start : periodForm.startTime,
+        endTime: timeSlot ? timeSlot.end : periodForm.endTime,
+      });
+    } else {
+      setPeriodForm({ ...periodForm, [name]: value });
+    }
   };
 
   const addPeriod = () => {
     if (!periodForm.subject) {
-      toast.error('Please select a subject');
-      return;
-    }
-    if (!periodForm.teacher) {
-      toast.error('Please select an instructor');
-      return;
-    }
-
-    const existingPeriod = formData.periods.find(
-      (p) => p.periodNumber === parseInt(periodForm.periodNumber)
-    );
-    if (existingPeriod) {
-      toast.error(
-        `Period ${periodForm.periodNumber} is already scheduled on this day.`
-      );
+      toast.error('Please select a subject for this period');
       return;
     }
 
@@ -221,8 +215,8 @@ const Timetable = () => {
       startTime: periodForm.startTime,
       endTime: periodForm.endTime,
       subject: periodForm.subject,
-      teacher: periodForm.teacher,
-      room: periodForm.room || '',
+      teacher: periodForm.teacher || undefined,
+      room: periodForm.room || undefined,
     };
 
     setFormData({
@@ -234,7 +228,7 @@ const Timetable = () => {
 
     const nextPeriodNumber = formData.periods.length + 2;
     const nextTime =
-      PERIOD_TIMES.find((p) => p.number === nextPeriodNumber) || PERIOD_TIMES[0];
+      periodTimes.find((p) => p.number === nextPeriodNumber) || periodTimes[0];
     setPeriodForm({
       periodNumber: nextPeriodNumber,
       startTime: nextTime.start,
@@ -283,7 +277,7 @@ const Timetable = () => {
         toast.success('Timetable registered successfully');
       }
       setShowModal(false);
-      setRefreshTrigger((prev) => prev + 1);
+      fetchTimetables();
     } catch (err) {
       console.error('Error saving timetable:', err);
       toast.error(err.response?.data?.message || 'Failed to save timetable');
@@ -299,7 +293,7 @@ const Timetable = () => {
       await api.delete(`/api/timetable/${deleteTargetId}`);
       toast.success('Timetable schedule deleted');
       setDeleteTargetId(null);
-      setRefreshTrigger((prev) => prev + 1);
+      fetchTimetables();
     } catch (err) {
       console.error('Error deleting timetable:', err);
       toast.error('Failed to delete timetable');
@@ -313,8 +307,13 @@ const Timetable = () => {
 
   if (loading && timetables.length === 0) return <Loader />;
 
+  // Compute live operational summary metrics from loaded timetables
+  const totalPeriodsCount = timetables.reduce((acc, t) => acc + (t.periods?.length || 0), 0);
+  const uniqueClassesCount = new Set(timetables.map((t) => t.class?._id || t.class)).size;
+
   return (
     <div className="space-y-6">
+      {/* ── Page Header ── */}
       <PageHeader
         title="Class Timetables & Schedules"
         subtitle="Orchestrate daily lecture periods, room assignments, and faculty rotation"
@@ -329,40 +328,93 @@ const Timetable = () => {
         }
       />
 
-      <div className="card overflow-hidden">
-        {/* Class Filter Bar */}
-        <div className="p-4 sm:p-5 border-b border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30 flex items-center gap-3">
-          <div className="w-56">
-            <select
-              value={selectedClass}
-              onChange={(e) => setSelectedClass(e.target.value)}
-              className="select-field text-xs py-2 w-full"
-            >
-              <option value="">All Academic Classes</option>
-              {classes.map((c) => (
-                <option key={c._id} value={c._id}>
-                  {c.name}
-                </option>
-              ))}
-            </select>
+      {/* ── Operational Metric Summary Cards ── */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="card p-4.5 border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#162033] flex items-center gap-4">
+          <div className="w-11 h-11 rounded-xl bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 flex items-center justify-center text-xl shrink-0 border border-indigo-100 dark:border-indigo-900/40">
+            <FiCalendar />
           </div>
+          <div>
+            <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+              Active Day Schedules
+            </p>
+            <p className="text-xl font-bold text-slate-900 dark:text-white mt-0.5">
+              {timetables.length}
+            </p>
+          </div>
+        </div>
+
+        <div className="card p-4.5 border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#162033] flex items-center gap-4">
+          <div className="w-11 h-11 rounded-xl bg-purple-50 dark:bg-purple-950/40 text-purple-600 dark:text-purple-400 flex items-center justify-center text-xl shrink-0 border border-purple-100 dark:border-purple-900/40">
+            <FiClock />
+          </div>
+          <div>
+            <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+              Total Lecture Periods
+            </p>
+            <p className="text-xl font-bold text-slate-900 dark:text-white mt-0.5">
+              {totalPeriodsCount}
+            </p>
+          </div>
+        </div>
+
+        <div className="card p-4.5 border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#162033] flex items-center gap-4">
+          <div className="w-11 h-11 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 flex items-center justify-center text-xl shrink-0 border border-emerald-100 dark:border-emerald-900/40">
+            <FiLayers />
+          </div>
+          <div>
+            <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+              Classes Scheduled
+            </p>
+            <p className="text-xl font-bold text-slate-900 dark:text-white mt-0.5">
+              {uniqueClassesCount}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Main Schedule Workspace ── */}
+      <div className="card overflow-hidden border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#162033] shadow-sm">
+        {/* Class Filter Bar */}
+        <div className="p-4 sm:p-5 border-b border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-800/30 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 flex items-center justify-center text-sm shrink-0">
+              <FiFilter />
+            </div>
+            <div className="w-64">
+              <select
+                value={selectedClass}
+                onChange={(e) => setSelectedClass(e.target.value)}
+                className="select-field text-xs py-2 w-full"
+                aria-label="Filter schedule by academic class"
+              >
+                <option value="">All Academic Classes</option>
+                {classes.map((c) => (
+                  <option key={c._id} value={c._id}>
+                    {c.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
           {selectedClass && (
             <button
               onClick={() => setSelectedClass('')}
-              className="text-xs text-indigo-600 dark:text-indigo-400 hover:underline font-medium"
+              className="text-xs text-indigo-600 dark:text-indigo-400 hover:underline font-semibold self-start sm:self-auto"
             >
-              Show all classes
+              Reset to view all class schedules
             </button>
           )}
         </div>
 
         {/* Timetables Container */}
         {timetables.length === 0 ? (
-          <div className="p-8">
+          <div className="p-12">
             <EmptyState
               icon={FiCalendar}
-              title="No timetable schedules found"
-              description="No weekly class periods configured for the selected cohort."
+              title="No timetable schedules configured"
+              description="No weekly class periods have been set up yet for the selected cohort."
               actionLabel="Create Schedule"
               onAction={handleAddTimetable}
             />
@@ -372,71 +424,136 @@ const Timetable = () => {
             {timetables.map((timetable) => (
               <div
                 key={timetable._id}
-                className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/40 p-5 space-y-4 shadow-sm"
+                className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#1a263e] overflow-hidden shadow-xs"
               >
-                <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-700/60 pb-3">
+                {/* Schedule Day Header */}
+                <div className="px-5 py-4 bg-slate-50/80 dark:bg-slate-800/60 border-b border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 flex items-center justify-center font-bold text-xs shadow-sm">
+                    <div className="w-10 h-10 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-bold text-sm shadow-sm shrink-0">
                       <FiCalendar />
                     </div>
                     <div>
-                      <h4 className="text-base font-bold text-slate-900 dark:text-white">
-                        {timetable.class?.name || 'Class'} — {getDayLabel(timetable.day)}
-                      </h4>
-                      <p className="text-xs text-slate-400">
-                        Academic Term: {timetable.academicYear || 'Current'} ({timetable.periods?.length || 0} Periods)
+                      <div className="flex items-center gap-2">
+                        <h4 className="text-base font-bold text-slate-900 dark:text-white">
+                          {timetable.class?.name || 'Class'} — {getDayLabel(timetable.day)}
+                        </h4>
+                        <span className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-indigo-50 dark:bg-indigo-950/70 text-indigo-600 dark:text-indigo-400 border border-indigo-200/50 dark:border-indigo-800/50">
+                          {timetable.periods?.length || 0} Periods
+                        </span>
+                      </div>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                        Academic Term: <strong className="text-slate-700 dark:text-slate-300">{timetable.academicYear || 'Current Year'}</strong> • {timetable.semester?.toUpperCase() || 'ANNUAL'}
                       </p>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-1.5">
+                  <div className="flex items-center gap-2 self-end sm:self-auto">
                     <button
                       onClick={() => handleEditTimetable(timetable)}
-                      className="p-1.5 rounded-lg text-slate-500 hover:text-indigo-600 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 transition-colors shadow-xs"
                       title="Edit Schedule"
                     >
-                      <FiEdit2 className="text-sm" />
+                      <FiEdit2 className="text-xs text-indigo-500" />
+                      <span>Edit</span>
                     </button>
                     <button
                       onClick={() => setDeleteTargetId(timetable._id)}
-                      className="p-1.5 rounded-lg text-slate-500 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-slate-700 transition-colors"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/40 hover:bg-rose-100 dark:hover:bg-rose-900/40 border border-rose-200 dark:border-rose-900/50 transition-colors shadow-xs"
                       title="Delete Schedule"
                     >
-                      <FiTrash2 className="text-sm" />
+                      <FiTrash2 className="text-xs" />
+                      <span>Delete</span>
                     </button>
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
-                  {timetable.periods.map((period) => (
-                    <div
-                      key={period.periodNumber}
-                      className="p-3.5 rounded-xl bg-white dark:bg-[#162033] border border-slate-200 dark:border-slate-800 shadow-xs space-y-1.5"
-                    >
-                      <div className="flex items-center justify-between">
-                        <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400">
-                          Period {period.periodNumber}
-                        </span>
-                        <span className="text-[10px] font-mono text-slate-400">
-                          {period.startTime} – {period.endTime}
-                        </span>
-                      </div>
-                      <h5 className="font-bold text-xs text-slate-900 dark:text-white truncate pt-1">
-                        {getSubjectName(period.subject)}
-                      </h5>
-                      <div className="text-[11px] text-slate-500 flex items-center justify-between">
-                        <span className="truncate flex items-center gap-1">
-                          <FiUser className="text-[10px]" />
-                          {getTeacherName(period.teacher)}
-                        </span>
-                        {period.room && (
-                          <span className="font-mono text-[10px] bg-slate-100 dark:bg-slate-800 px-1 rounded">
-                            {period.room}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  ))}
+                {/* ── Full-Width Structured Period Directory ── */}
+                <div className="overflow-x-auto">
+                  <table className="w-full text-xs text-left">
+                    <thead className="bg-slate-50/50 dark:bg-slate-800/30 text-[11px] font-bold text-slate-500 uppercase tracking-wider border-b border-slate-200/80 dark:border-slate-800">
+                      <tr>
+                        <th className="px-5 py-3 w-32">Slot / Period</th>
+                        <th className="px-5 py-3 w-48">Time Range</th>
+                        <th className="px-5 py-3">Subject / Course</th>
+                        <th className="px-5 py-3">Assigned Faculty</th>
+                        <th className="px-5 py-3 w-36">Lecture Room</th>
+                        <th className="px-5 py-3 w-28 text-right">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 dark:divide-slate-800/80">
+                      {timetable.periods && timetable.periods.length > 0 ? (
+                        timetable.periods.map((period) => (
+                          <tr
+                            key={period.periodNumber}
+                            className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors"
+                          >
+                            {/* Slot / Period */}
+                            <td className="px-5 py-3.5">
+                              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 border border-indigo-200/50 dark:border-indigo-800/50">
+                                <FiClock className="text-xs" /> Period {period.periodNumber}
+                              </span>
+                            </td>
+
+                            {/* Timing */}
+                            <td className="px-5 py-3.5">
+                              <span className="font-mono text-xs font-semibold text-slate-800 dark:text-slate-200">
+                                {period.startTime} – {period.endTime}
+                              </span>
+                            </td>
+
+                            {/* Subject */}
+                            <td className="px-5 py-3.5">
+                              <div className="flex items-center gap-2.5">
+                                <div className="w-7 h-7 rounded-lg bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
+                                  <FiBook className="text-xs" />
+                                </div>
+                                <span className="font-bold text-slate-900 dark:text-white">
+                                  {getSubjectName(period.subject)}
+                                </span>
+                              </div>
+                            </td>
+
+                            {/* Faculty */}
+                            <td className="px-5 py-3.5">
+                              <div className="flex items-center gap-2 text-slate-700 dark:text-slate-300">
+                                <FiUser className="text-slate-400 shrink-0" />
+                                <span className="font-medium truncate max-w-[200px]">
+                                  {getTeacherName(period.teacher)}
+                                </span>
+                              </div>
+                            </td>
+
+                            {/* Room */}
+                            <td className="px-5 py-3.5">
+                              {period.room ? (
+                                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md text-xs font-mono bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+                                  <FiMapPin className="text-xs text-indigo-500" />
+                                  {period.room}
+                                </span>
+                              ) : (
+                                <span className="text-slate-400 text-xs italic">
+                                  Campus Hall
+                                </span>
+                              )}
+                            </td>
+
+                            {/* Status */}
+                            <td className="px-5 py-3.5 text-right">
+                              <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">
+                                <FiCheckCircle className="text-xs" /> Scheduled
+                              </span>
+                            </td>
+                          </tr>
+                        ))
+                      ) : (
+                        <tr>
+                          <td colSpan={6} className="px-5 py-6 text-center text-slate-400 italic">
+                            No periods assigned to this day schedule.
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
                 </div>
               </div>
             ))}
@@ -444,7 +561,7 @@ const Timetable = () => {
         )}
       </div>
 
-      {/* Add / Edit Timetable Modal */}
+      {/* ── Add / Edit Timetable Modal ── */}
       <Modal
         isOpen={showModal}
         onClose={() => setShowModal(false)}
@@ -678,7 +795,7 @@ const Timetable = () => {
         </form>
       </Modal>
 
-      {/* Confirm Deletion */}
+      {/* ── Confirm Deletion Modal ── */}
       <ConfirmDialog
         isOpen={Boolean(deleteTargetId)}
         onClose={() => setDeleteTargetId(null)}

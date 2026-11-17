@@ -3,13 +3,13 @@ import { FiClock, FiArrowRight } from 'react-icons/fi';
 import EmptyState from '../common/EmptyState';
 
 const typeColors = {
-  student:    'bg-blue-500',
-  assignment: 'bg-green-500',
-  fee:        'bg-yellow-500',
+  student:    'bg-indigo-500',
+  assignment: 'bg-emerald-500',
+  fee:        'bg-amber-500',
   result:     'bg-purple-500',
-  attendance: 'bg-indigo-500',
+  attendance: 'bg-indigo-600',
   exam:       'bg-rose-500',
-  notice:     'bg-orange-500',
+  notice:     'bg-amber-500',
   default:    'bg-slate-400',
 };
 

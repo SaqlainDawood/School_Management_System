@@ -27,32 +27,22 @@ const StudentFees = () => {
   const [downloadingId, setDownloadingId] = useState(null);
 
   useEffect(() => {
-    let ignore = false;
-    const fetchFees = async () => {
-      try {
-        setLoading(true);
-        const response = await api.get('/api/fees/my-fees');
-        if (ignore) return;
-        setFees(response.data?.fees || []);
-        setSummary(response.data?.summary || {});
-      } catch (error) {
-        if (!ignore) {
-          console.error('Error fetching fees:', error);
-          toast.error('Failed to load fee ledger');
-        }
-      } finally {
-        if (!ignore) {
-          setLoading(false);
-        }
-      }
-    };
-
     fetchFees();
-
-    return () => {
-      ignore = true;
-    };
   }, []);
+
+  const fetchFees = async () => {
+    setLoading(true);
+    try {
+      const response = await api.get('/api/fees/my-fees');
+      setFees(response.data?.fees || []);
+      setSummary(response.data?.summary || {});
+    } catch (error) {
+      console.error('Error fetching fees:', error);
+      toast.error('Failed to load fee ledger');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleViewVoucher = (fee) => {
     setSelectedVoucherFee(fee);

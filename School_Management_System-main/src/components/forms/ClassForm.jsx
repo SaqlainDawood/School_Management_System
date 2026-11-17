@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Input from './Input';
 import Button from './Button';
 import {
@@ -8,24 +8,30 @@ import {
   FiUsers,
 } from 'react-icons/fi';
 
-const getInitialClassForm = (data) => ({
-  name: data?.name || '',
-  code: data?.code || '',
-  description: data?.description || '',
-  academicYear: data?.academicYear || '',
-  capacity: data?.capacity || '',
-  roomNumber: data?.roomNumber || '',
-});
-
 const ClassForm = ({ initialData, onSubmit, onCancel, loading }) => {
-  const [formData, setFormData] = useState(() => getInitialClassForm(initialData));
-  const [prevInitialData, setPrevInitialData] = useState(initialData);
+  const [formData, setFormData] = useState({
+    name: '',
+    code: '',
+    description: '',
+    academicYear: '',
+    capacity: '',
+    roomNumber: '',
+  });
+
   const [errors, setErrors] = useState({});
 
-  if (initialData !== prevInitialData) {
-    setPrevInitialData(initialData);
-    setFormData(getInitialClassForm(initialData));
-  }
+  useEffect(() => {
+    if (initialData) {
+      setFormData({
+        name: initialData.name || '',
+        code: initialData.code || '',
+        description: initialData.description || '',
+        academicYear: initialData.academicYear || '',
+        capacity: initialData.capacity || '',
+        roomNumber: initialData.roomNumber || '',
+      });
+    }
+  }, [initialData]);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -115,7 +121,7 @@ const ClassForm = ({ initialData, onSubmit, onCancel, loading }) => {
         />
       </div>
 
-      <div className="flex flex-col-reverse sm:flex-row justify-end gap-3 pt-6 border-t border-gray-200 dark:border-gray-700">
+      <div className="flex flex-col-reverse sm:flex-row justify-end gap-3 pt-6 border-t border-slate-200 dark:border-slate-800">
         <Button
           type="button"
           variant="secondary"

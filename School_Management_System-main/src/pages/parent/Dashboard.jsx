@@ -5,43 +5,38 @@ import {
   FiClock,
   FiDollarSign,
   FiAward,
+  FiBook,
+  FiArrowRight,
+  FiCheckCircle,
 } from 'react-icons/fi';
 import PageHeader from '../../components/common/PageHeader';
+import SectionCard from '../../components/common/SectionCard';
 import StatusBadge from '../../components/common/StatusBadge';
 import Loader from '../../components/common/Loader';
 import EmptyState from '../../components/common/EmptyState';
 import api from '../../utils/api';
+import { formatDate } from '../../utils/helpers';
 
 const ParentDashboard = () => {
   const [children, setChildren] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    let ignore = false;
-    const fetchDashboard = async () => {
-      try {
-        setLoading(true);
-        const response = await api.get('/api/parents/dashboard');
-        if (ignore) return;
-        setChildren(response.data?.dashboard?.parent?.children || []);
-      } catch (error) {
-        if (!ignore) {
-          console.error('Error fetching parent dashboard:', error);
-          setChildren([]);
-        }
-      } finally {
-        if (!ignore) {
-          setLoading(false);
-        }
-      }
-    };
-
     fetchDashboard();
-
-    return () => {
-      ignore = true;
-    };
   }, []);
+
+  const fetchDashboard = async () => {
+    try {
+      setLoading(true);
+      const response = await api.get('/api/parents/dashboard');
+      setChildren(response.data?.dashboard?.parent?.children || []);
+    } catch (error) {
+      console.error('Error fetching parent dashboard:', error);
+      setChildren([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   if (loading) return <Loader />;
 

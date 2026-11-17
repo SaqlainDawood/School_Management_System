@@ -13,7 +13,7 @@ import {
 } from 'react-icons/fi';
 import { useAuth } from '../../context/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useTheme } from '../../context/ThemeContext';
 import { ROLE_LABELS } from '../../utils/constants';
 
@@ -67,7 +67,7 @@ const ROUTE_DIRECTORY = [
   { path: '/profile', title: 'User Profile', roles: ['admin', 'teacher', 'student', 'parent', 'coordinator', 'examination', 'superadmin'] },
 ];
 
-const Navbar = ({ toggleSidebar, onMenuClick }) => {
+const Navbar = ({ toggleSidebar, mobileOpen, onMenuClick }) => {
   const [showProfile, setShowProfile] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -75,6 +75,7 @@ const Navbar = ({ toggleSidebar, onMenuClick }) => {
   const { user, logout } = useAuth();
   const { isDark, toggleTheme } = useTheme();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const profileRef = useRef(null);
   const notifRef = useRef(null);
@@ -240,7 +241,13 @@ const Navbar = ({ toggleSidebar, onMenuClick }) => {
                 <div className="space-y-0.5 pt-1">
                   <button
                     onClick={() => {
-                      navigate('/profile');
+                      const profilePath =
+                        userRole === 'teacher'
+                          ? '/teacher/profile'
+                          : userRole === 'student'
+                          ? '/student/profile'
+                          : '/profile';
+                      navigate(profilePath);
                       setShowProfile(false);
                     }}
                     className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
@@ -293,13 +300,12 @@ const Navbar = ({ toggleSidebar, onMenuClick }) => {
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Jump to module (e.g. students, fees, results)..."
-                  className="w-full bg-transparent border-none outline-none text-sm text-slate-900 dark:text-white placeholder:text-slate-400"
+                  className="w-full bg-transparent border-none outline-none focus:ring-0 text-sm text-slate-900 dark:text-white placeholder:text-slate-400"
                 />
                 <button
                   onClick={() => setShowSearchModal(false)}
-                  className="p-1 text-slate-400 hover:text-slate-600 rounded"
-                  type="button"
-                  aria-label="Close search modal"
+                  aria-label="Close search"
+                  className="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded transition-colors"
                 >
                   <FiX className="text-base" />
                 </button>

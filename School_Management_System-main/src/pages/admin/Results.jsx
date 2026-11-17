@@ -4,10 +4,14 @@ import {
   FiEdit2,
   FiTrash2,
   FiAward,
+  FiUser,
+  FiBook,
+  FiCheckCircle,
 } from 'react-icons/fi';
 import { toast } from 'react-toastify';
 import PageHeader from '../../components/common/PageHeader';
 import Button from '../../components/forms/Button';
+import Input from '../../components/forms/Input';
 import Select from '../../components/forms/Select';
 import Modal from '../../components/modals/Modal';
 import Loader from '../../components/common/Loader';
@@ -43,61 +47,53 @@ const Results = () => {
   });
   const [marksData, setMarksData] = useState([]);
   const [errors, setErrors] = useState({});
-  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   useEffect(() => {
-    let ignore = false;
-    const fetchResults = async () => {
-      setLoading(true);
-      try {
-        const response = await api.get('/api/results', { params: filters });
-        if (ignore) return;
-        setResults(response.data.results || []);
-      } catch (err) {
-        if (!ignore) {
-          console.error('Error fetching results:', err);
-          toast.error('Failed to fetch results');
-        }
-      } finally {
-        if (!ignore) {
-          setLoading(false);
-        }
-      }
-    };
-
     fetchResults();
+    fetchClasses();
+    fetchExams();
+    fetchSubjects();
+  }, [filters]);
 
-    return () => {
-      ignore = true;
-    };
-  }, [filters, refreshTrigger]);
+  const fetchResults = async () => {
+    setLoading(true);
+    try {
+      const response = await api.get('/api/results', { params: filters });
+      setResults(response.data.results || []);
+    } catch (err) {
+      console.error('Error fetching results:', err);
+      toast.error('Failed to fetch results');
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  useEffect(() => {
-    let ignore = false;
-    const fetchPrerequisites = async () => {
-      try {
-        const [classesRes, examsRes, subjectsRes] = await Promise.all([
-          api.get('/api/classes'),
-          api.get('/api/exams'),
-          api.get('/api/subjects'),
-        ]);
-        if (ignore) return;
-        setClasses(classesRes.data.classes || []);
-        setExams(examsRes.data.exams || []);
-        setSubjects(subjectsRes.data.subjects || []);
-      } catch (err) {
-        if (!ignore) {
-          console.error('Error fetching prerequisite data:', err);
-        }
-      }
-    };
+  const fetchClasses = async () => {
+    try {
+      const response = await api.get('/api/classes');
+      setClasses(response.data.classes || []);
+    } catch (err) {
+      console.error('Error fetching classes:', err);
+    }
+  };
 
-    fetchPrerequisites();
+  const fetchExams = async () => {
+    try {
+      const response = await api.get('/api/exams');
+      setExams(response.data.exams || []);
+    } catch (err) {
+      console.error('Error fetching exams:', err);
+    }
+  };
 
-    return () => {
-      ignore = true;
-    };
-  }, []);
+  const fetchSubjects = async () => {
+    try {
+      const response = await api.get('/api/subjects');
+      setSubjects(response.data.subjects || []);
+    } catch (err) {
+      console.error('Error fetching subjects:', err);
+    }
+  };
 
   const fetchStudentsByClass = async (classId) => {
     try {
@@ -239,7 +235,7 @@ const Results = () => {
         toast.success('Gradebook result recorded successfully');
       }
       setShowModal(false);
-      setRefreshTrigger((prev) => prev + 1);
+      fetchResults();
     } catch (err) {
       console.error('Error saving result:', err);
       toast.error(err.response?.data?.message || 'Failed to save result');
@@ -255,7 +251,7 @@ const Results = () => {
       await api.delete(`/api/results/${deleteTargetId}`);
       toast.success('Grade entry removed');
       setDeleteTargetId(null);
-      setRefreshTrigger((prev) => prev + 1);
+      fetchResults();
     } catch (err) {
       console.error('Error deleting result:', err);
       toast.error('Failed to delete result');

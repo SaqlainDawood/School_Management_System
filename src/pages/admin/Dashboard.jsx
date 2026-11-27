@@ -1,13 +1,16 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import {
   FiUsers,
   FiUser,
   FiBook,
   FiDollarSign,
-  FiTrendingUp,
   FiCalendar,
   FiBarChart2,
   FiClock,
+  FiUserPlus,
+  FiBookOpen,
+  FiCheckSquare,
 } from 'react-icons/fi';
 import {
   AreaChart,
@@ -17,57 +20,23 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  BarChart,
-  Bar,
-  PieChart,
-  Pie,
-  Cell,
-  Legend,
 } from 'recharts';
 import StatsCard from '../../components/dashboard/StatsCard';
 import ChartCard from '../../components/dashboard/ChartCard';
 import RecentActivity from '../../components/dashboard/RecentActivity';
-import DashboardHeader from '../../components/dashboard/DashboardHeader';
-import Button from '../../components/forms/Button';
+import PageHeader from '../../components/common/PageHeader';
+import ErrorState from '../../components/common/ErrorState';
 import Loader from '../../components/common/Loader';
+import Button from '../../components/forms/Button';
 import api from '../../utils/api';
+import { useAuth } from '../../context/AuthContext';
 
 const AdminDashboard = () => {
-  const [stats, setStats] = useState({
-    totalStudents: 0,
-    totalTeachers: 0,
-    totalClasses: 0,
-    totalRevenue: 0,
-    attendancePercentage: 0,
-  });
+  const { user } = useAuth();
+  const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
-
-  const attendanceData = [
-    { month: 'Jan', present: 85, absent: 15 },
-    { month: 'Feb', present: 88, absent: 12 },
-    { month: 'Mar', present: 92, absent: 8 },
-    { month: 'Apr', present: 78, absent: 22 },
-    { month: 'May', present: 90, absent: 10 },
-    { month: 'Jun', present: 95, absent: 5 },
-  ];
-
-  const feeData = [
-    { month: 'Jan', paid: 40000, pending: 10000 },
-    { month: 'Feb', paid: 45000, pending: 8000 },
-    { month: 'Mar', paid: 38000, pending: 12000 },
-    { month: 'Apr', paid: 50000, pending: 5000 },
-    { month: 'May', paid: 42000, pending: 9000 },
-    { month: 'Jun', paid: 48000, pending: 7000 },
-  ];
-
-  const performanceData = [
-    { name: 'A Grade', value: 30 },
-    { name: 'B Grade', value: 45 },
-    { name: 'C Grade', value: 15 },
-    { name: 'D Grade', value: 10 },
-  ];
-
-  const COLORS = ['#22C55E', '#60A5FA', '#F59E0B', '#EF4444'];
+  const [error, setError] = useState(false);
+  const [attendanceData, setAttendanceData] = useState([]);
 
   useEffect(() => {
     fetchStats();
@@ -75,28 +44,33 @@ const AdminDashboard = () => {
 
   const fetchStats = async () => {
     setLoading(true);
+    setError(false);
     try {
       const response = await api.get('/api/admin/stats');
       const data = response.data;
       const statsData = data.stats || data;
 
       setStats({
-        totalStudents: statsData.students || statsData.totalStudents || 0,
-        totalTeachers: statsData.teachers || statsData.totalTeachers || 0,
-        totalClasses: statsData.classes || statsData.totalClasses || 0,
-        totalRevenue: statsData.totalRevenue || statsData.revenue || 0,
+        totalStudents: statsData.students ?? statsData.totalStudents ?? null,
+        totalTeachers: statsData.teachers ?? statsData.totalTeachers ?? null,
+        totalClasses: statsData.classes ?? statsData.totalClasses ?? null,
+        totalRevenue: statsData.totalRevenue ?? statsData.revenue ?? null,
         attendancePercentage:
-          statsData.attendance?.percentage || statsData.attendancePercentage || 0,
+          statsData.attendance?.percentage ?? statsData.attendancePercentage ?? null,
+        attendanceHistory: statsData.attendanceHistory || [],
       });
-    } catch (error) {
-      console.error('❌ Error fetching stats:', error);
-      setStats({
-        totalStudents: 1234,
-        totalTeachers: 56,
-        totalClasses: 32,
-        totalRevenue: 245000,
-        attendancePercentage: 92,
-      });
+
+      // Build attendance chart data only from real API data
+      if (statsData.attendanceHistory && statsData.attendanceHistory.length > 0) {
+        setAttendanceData(statsData.attendanceHistory);
+      } else {
+        setAttendanceData([]);
+      }
+    } catch (err) {
+      console.error('Error fetching stats:', err);
+      setError(true);
+      setStats(null);
+      setAttendanceData([]);
     } finally {
       setLoading(false);
     }
@@ -104,161 +78,174 @@ const AdminDashboard = () => {
 
   if (loading) return <Loader />;
 
+  const schoolName = user?.schoolName || user?.school?.name || 'Your School';
+  const greeting = () => {
+    const h = new Date().getHours();
+    if (h < 12) return 'Good morning';
+    if (h < 17) return 'Good afternoon';
+    return 'Good evening';
+  };
+
+  const quickActions = [
+    { label: 'Add Student', icon: FiUserPlus, to: '/admin/students' },
+    { label: 'Add Teacher', icon: FiUser, to: '/admin/teachers' },
+    { label: 'Manage Classes', icon: FiBook, to: '/admin/classes' },
+    { label: 'Attendance', icon: FiCheckSquare, to: '/admin/attendance' },
+    { label: 'Subjects', icon: FiBookOpen, to: '/admin/subjects' },
+    { label: 'Fees', icon: FiDollarSign, to: '/admin/fees' },
+  ];
+
   return (
-    <div>
-      <DashboardHeader
-        title="School Dashboard"
-        subtitle="Overview of your school's performance"
-        actions={
-          <>
-            <Button variant="primary">Generate Report</Button>
-            <Button variant="secondary">Export Data</Button>
-          </>
-        }
+    <div className="space-y-6">
+      <PageHeader
+        title={`${greeting()}, Admin`}
+        subtitle={`Welcome back to ${schoolName} dashboard`}
+        breadcrumbs={[{ label: 'Dashboard' }]}
       />
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-        <StatsCard
-          title="Total Students"
-          value={stats.totalStudents.toLocaleString()}
-          icon={FiUsers}
-          trend={12}
-          trendDirection="up"
-          color="primary"
+      {error ? (
+        <ErrorState
+          title="Failed to load dashboard statistics"
+          message="Unable to reach the server. Check your connection and try again."
+          onRetry={fetchStats}
         />
-        <StatsCard
-          title="Total Teachers"
-          value={stats.totalTeachers.toLocaleString()}
-          icon={FiUser}
-          trend={5}
-          trendDirection="up"
-          color="secondary"
-        />
-        <StatsCard
-          title="Total Classes"
-          value={stats.totalClasses.toLocaleString()}
-          icon={FiBook}
-          trend={2}
-          trendDirection="down"
-          color="success"
-        />
-        <StatsCard
-          title="Revenue"
-          value={`Rs. ${stats.totalRevenue.toLocaleString()}`}
-          icon={FiDollarSign}
-          trend={18}
-          trendDirection="up"
-          color="warning"
-        />
-      </div>
+      ) : (
+        <>
+          {/* KPI Cards — Dynamic Responsive Row-Wise Layout */}
+          <div className={`grid grid-cols-1 sm:grid-cols-2 ${stats?.attendancePercentage != null ? 'lg:grid-cols-3 xl:grid-cols-5' : 'lg:grid-cols-4'} gap-4 xl:gap-5`}>
+            <StatsCard
+              title="Total Students"
+              value={stats?.totalStudents != null ? stats.totalStudents.toLocaleString() : null}
+              icon={FiUsers}
+              color="primary"
+              subtitle="Enrolled learners"
+            />
+            <StatsCard
+              title="Total Teachers"
+              value={stats?.totalTeachers != null ? stats.totalTeachers.toLocaleString() : null}
+              icon={FiUser}
+              color="info"
+              subtitle="Active educators"
+            />
+            <StatsCard
+              title="Total Classes"
+              value={stats?.totalClasses != null ? stats.totalClasses.toLocaleString() : null}
+              icon={FiBook}
+              color="success"
+              subtitle="Academic cohorts"
+            />
+            <StatsCard
+              title="Total Revenue"
+              value={
+                stats?.totalRevenue != null
+                  ? `Rs. ${Number(stats.totalRevenue).toLocaleString()}`
+                  : null
+              }
+              icon={FiDollarSign}
+              color="warning"
+              subtitle="Gross billing"
+            />
+            {stats?.attendancePercentage != null && (
+              <StatsCard
+                title="Attendance Rate"
+                value={`${stats.attendancePercentage}%`}
+                icon={FiCalendar}
+                color="success"
+                subtitle="School-wide average"
+              />
+            )}
+          </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-        <ChartCard title="Attendance Overview" icon={FiCalendar}>
-          <ResponsiveContainer width="100%" height={300}>
-            <AreaChart data={attendanceData}>
-              <defs>
-                <linearGradient id="colorPresent" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#2563EB" stopOpacity={0.8} />
-                  <stop offset="95%" stopColor="#2563EB" stopOpacity={0} />
-                </linearGradient>
-                <linearGradient id="colorAbsent" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#EF4444" stopOpacity={0.8} />
-                  <stop offset="95%" stopColor="#EF4444" stopOpacity={0} />
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-              <XAxis dataKey="month" stroke="#9ca3af" />
-              <YAxis stroke="#9ca3af" />
-              <Tooltip
-                contentStyle={{
-                  backgroundColor: 'white',
-                  border: '1px solid #e5e7eb',
-                  borderRadius: '8px',
-                }}
-              />
-              <Area
-                type="monotone"
-                dataKey="present"
-                stroke="#2563EB"
-                fillOpacity={1}
-                fill="url(#colorPresent)"
-                name="Present"
-              />
-              <Area
-                type="monotone"
-                dataKey="absent"
-                stroke="#EF4444"
-                fillOpacity={1}
-                fill="url(#colorAbsent)"
-                name="Absent"
-              />
-            </AreaChart>
-          </ResponsiveContainer>
-        </ChartCard>
+          {/* Attendance Chart — only when real data exists */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-2">
+              <ChartCard title="Attendance Overview" icon={FiBarChart2}>
+                {attendanceData.length > 0 ? (
+                  <ResponsiveContainer width="100%" height={280}>
+                    <AreaChart data={attendanceData}>
+                      <defs>
+                        <linearGradient id="colorPresent" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#4F46E5" stopOpacity={0.3} />
+                          <stop offset="95%" stopColor="#4F46E5" stopOpacity={0} />
+                        </linearGradient>
+                        <linearGradient id="colorAbsent" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#EF4444" stopOpacity={0.3} />
+                          <stop offset="95%" stopColor="#EF4444" stopOpacity={0} />
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                      <XAxis dataKey="month" stroke="#94a3b8" tick={{ fontSize: 12 }} />
+                      <YAxis stroke="#94a3b8" tick={{ fontSize: 12 }} />
+                      <Tooltip
+                        contentStyle={{
+                          backgroundColor: 'white',
+                          border: '1px solid #e2e8f0',
+                          borderRadius: '10px',
+                          boxShadow: '0 4px 16px rgba(0,0,0,0.08)',
+                        }}
+                      />
+                      <Area
+                        type="monotone"
+                        dataKey="present"
+                        stroke="#4F46E5"
+                        strokeWidth={2}
+                        fillOpacity={1}
+                        fill="url(#colorPresent)"
+                        name="Present %"
+                      />
+                      <Area
+                        type="monotone"
+                        dataKey="absent"
+                        stroke="#EF4444"
+                        strokeWidth={2}
+                        fillOpacity={1}
+                        fill="url(#colorAbsent)"
+                        name="Absent %"
+                      />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="flex flex-col items-center justify-center h-[280px] text-slate-400 dark:text-slate-600 space-y-2">
+                    <FiCalendar className="text-4xl" />
+                    <p className="text-sm font-medium">Attendance chart unavailable</p>
+                    <p className="text-xs">No historical data returned by the server</p>
+                  </div>
+                )}
+              </ChartCard>
+            </div>
 
-        <ChartCard title="Fee Collection" icon={FiDollarSign}>
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={feeData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-              <XAxis dataKey="month" stroke="#9ca3af" />
-              <YAxis stroke="#9ca3af" />
-              <Tooltip
-                contentStyle={{
-                  backgroundColor: 'white',
-                  border: '1px solid #e5e7eb',
-                  borderRadius: '8px',
-                }}
-              />
-              <Legend />
-              <Bar dataKey="paid" fill="#22C55E" name="Paid" />
-              <Bar dataKey="pending" fill="#F59E0B" name="Pending" />
-            </BarChart>
-          </ResponsiveContainer>
-        </ChartCard>
-      </div>
+            {/* Recent Activity */}
+            <div>
+              <ChartCard title="Recent Activity" icon={FiClock}>
+                <RecentActivity />
+              </ChartCard>
+            </div>
+          </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2">
-          <ChartCard title="Performance Distribution" icon={FiBarChart2}>
-            <ResponsiveContainer width="100%" height={300}>
-              <PieChart>
-                <Pie
-                  data={performanceData}
-                  cx="50%"
-                  cy="50%"
-                  labelLine={false}
-                  label={({ name, percent }) =>
-                    `${name} ${(percent * 100).toFixed(0)}%`
-                  }
-                  outerRadius={80}
-                  fill="#8884d8"
-                  dataKey="value"
+          {/* Quick Actions */}
+          <div className="card p-5">
+            <h2 className="text-sm font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-4">
+              Quick Actions
+            </h2>
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+              {quickActions.map(({ label, icon: Icon, to }) => (
+                <Link
+                  key={to}
+                  to={to}
+                  className="flex flex-col items-center gap-2 p-4 rounded-xl border border-slate-200 dark:border-slate-700 hover:border-indigo-400 dark:hover:border-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-950/30 transition-all group"
                 >
-                  {performanceData.map((entry, index) => (
-                    <Cell
-                      key={`cell-${index}`}
-                      fill={COLORS[index % COLORS.length]}
-                    />
-                  ))}
-                </Pie>
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: 'white',
-                    border: '1px solid #e5e7eb',
-                    borderRadius: '8px',
-                  }}
-                />
-                <Legend />
-              </PieChart>
-            </ResponsiveContainer>
-          </ChartCard>
-        </div>
-        <div>
-          <ChartCard title="Recent Activities" icon={FiClock}>
-            <RecentActivity />
-          </ChartCard>
-        </div>
-      </div>
+                  <span className="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 flex items-center justify-center group-hover:scale-110 transition-transform">
+                    <Icon className="text-lg" />
+                  </span>
+                  <span className="text-xs font-medium text-slate-600 dark:text-slate-300 text-center leading-tight">
+                    {label}
+                  </span>
+                </Link>
+              ))}
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 };

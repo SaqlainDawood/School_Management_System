@@ -16,8 +16,9 @@ import Button from './Button';
 import Input from './Input';
 import Select from './Select';
 import { GENDER_OPTIONS, STUDENT_STATUS } from '../../utils/constants';
+import { formatAddress } from '../../utils/helpers';
 
-const StudentForm = ({ initialData, onSubmit, onCancel, loading, classes }) => {
+const StudentForm = ({ initialData, onSubmit, onCancel, loading, classes = [] }) => {
   const [formData, setFormData] = useState({
     // Student Personal Info
     name: '',
@@ -52,10 +53,12 @@ const StudentForm = ({ initialData, onSubmit, onCancel, loading, classes }) => {
         rollNumber: initialData.rollNumber || '',
         class: initialData.class || '',
         section: initialData.section || '',
-        dateOfBirth: initialData.dateOfBirth || '',
+        dateOfBirth: initialData.dateOfBirth
+          ? initialData.dateOfBirth.split('T')[0]
+          : '',
         gender: initialData.gender || '',
         phone: initialData.phone || '',
-        address: initialData.address || '',
+        address: formatAddress(initialData.address || initialData.user?.address),
         status: initialData.status || 'active',
         fatherName: initialData.fatherName || '',
         fatherPhone: initialData.fatherPhone || '',
@@ -71,20 +74,17 @@ const StudentForm = ({ initialData, onSubmit, onCancel, loading, classes }) => {
     const newErrors = {};
 
     // Student Required Fields
-    if (!formData.name) newErrors.name = 'Student name is required';
-    if (!formData.email) newErrors.email = 'Email is required';
-    if (!formData.studentId) newErrors.studentId = 'Student ID is required';
-    if (!formData.rollNumber) newErrors.rollNumber = 'Roll number is required';
+    if (!formData.name?.trim()) newErrors.name = 'Student name is required';
+    if (!formData.email?.trim()) newErrors.email = 'Email is required';
+    if (!formData.studentId?.trim()) newErrors.studentId = 'Student ID is required';
+    if (!formData.rollNumber?.trim()) newErrors.rollNumber = 'Roll number is required';
     if (!formData.class) newErrors.class = 'Class is required';
-    if (!formData.dateOfBirth)
-      newErrors.dateOfBirth = 'Date of birth is required';
+    if (!formData.dateOfBirth) newErrors.dateOfBirth = 'Date of birth is required';
     if (!formData.gender) newErrors.gender = 'Gender is required';
 
     // Parent Required Fields
-    if (!formData.fatherName)
-      newErrors.fatherName = 'Father name is required';
-    if (!formData.fatherPhone)
-      newErrors.fatherPhone = 'Father phone is required';
+    if (!formData.fatherName?.trim()) newErrors.fatherName = 'Father name is required';
+    if (!formData.fatherPhone?.trim()) newErrors.fatherPhone = 'Father phone is required';
 
     // Optional Field Validation
     if (
@@ -131,28 +131,29 @@ const StudentForm = ({ initialData, onSubmit, onCancel, loading, classes }) => {
   const isEditMode = !!initialData?.name;
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      {/* ============================================ */}
-      {/* STUDENT PERSONAL INFORMATION */}
-      {/* ============================================ */}
-      <div className="bg-gray-50 dark:bg-gray-700/30 rounded-lg p-4">
-        <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4 flex items-center gap-2">
-          <FiUser className="text-blue-600" />
-          Student Personal Information
-        </h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <form onSubmit={handleSubmit} className="space-y-5">
+      {/* 1. Student Personal Information */}
+      <div className="rounded-xl p-4 bg-slate-50 dark:bg-[#111827]/60 border border-slate-200 dark:border-slate-800">
+        <div className="flex items-center gap-2 pb-2.5 mb-3.5 border-b border-slate-200 dark:border-slate-800">
+          <FiUser className="text-indigo-600 dark:text-indigo-400 text-sm" />
+          <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200">
+            Student Personal Details
+          </h3>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
           <Input
-            label="Student Name"
+            label="Student Full Name"
             name="name"
             value={formData.name}
             onChange={handleChange}
             error={errors.name}
-            placeholder="Enter student full name"
+            placeholder="e.g. John Doe"
             required
             icon={FiUser}
           />
           <Input
-            label="Email"
+            label="Email Address"
             name="email"
             type="email"
             value={formData.email}
@@ -168,7 +169,7 @@ const StudentForm = ({ initialData, onSubmit, onCancel, loading, classes }) => {
             value={formData.studentId}
             onChange={handleChange}
             error={errors.studentId}
-            placeholder="e.g., STU001"
+            placeholder="e.g. STU-001"
             required
             icon={FiHash}
           />
@@ -178,12 +179,12 @@ const StudentForm = ({ initialData, onSubmit, onCancel, loading, classes }) => {
             value={formData.rollNumber}
             onChange={handleChange}
             error={errors.rollNumber}
-            placeholder="e.g., 01"
+            placeholder="e.g. 01"
             required
             icon={FiHash}
           />
           <Select
-            label="Class"
+            label="Academic Class"
             name="class"
             value={formData.class}
             onChange={handleChange}
@@ -198,7 +199,7 @@ const StudentForm = ({ initialData, onSubmit, onCancel, loading, classes }) => {
             name="section"
             value={formData.section}
             onChange={handleChange}
-            placeholder="e.g., A, B, C"
+            placeholder="e.g. A, B, C"
             icon={FiBook}
           />
           <Input
@@ -223,71 +224,67 @@ const StudentForm = ({ initialData, onSubmit, onCancel, loading, classes }) => {
             icon={FiUser}
           />
           <Input
-            label="Phone"
+            label="Direct Phone Number"
             name="phone"
+            type="tel"
             value={formData.phone}
             onChange={handleChange}
             error={errors.phone}
-            placeholder="+92 300 1234567"
+            placeholder="+1 (555) 000-0000"
             icon={FiPhone}
           />
           <Input
-            label="Address"
+            label="Residential Address"
             name="address"
             value={formData.address}
             onChange={handleChange}
-            placeholder="Student's address"
+            placeholder="Street address, City, State"
             icon={FiHome}
           />
         </div>
       </div>
 
-      {/* ============================================ */}
-      {/* PARENT / GUARDIAN INFORMATION */}
-      {/* ============================================ */}
-      <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 border border-blue-200 dark:border-blue-800">
-        <h3 className="text-sm font-semibold text-blue-700 dark:text-blue-400 mb-4 flex items-center gap-2">
-          <FiUsers className="text-blue-600" />
-          Parent / Guardian Information
-        </h3>
+      {/* 2. Parent / Guardian Information */}
+      <div className="rounded-xl p-4 bg-slate-50 dark:bg-[#111827]/60 border border-slate-200 dark:border-slate-800">
+        <div className="flex items-center gap-2 pb-2.5 mb-3.5 border-b border-slate-200 dark:border-slate-800">
+          <FiUsers className="text-indigo-600 dark:text-indigo-400 text-sm" />
+          <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200">
+            Parent & Guardian Information
+          </h3>
+        </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* Father Info */}
-          <div className="md:col-span-2">
-            <h4 className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-2">
-              Father's Information
-            </h4>
-          </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
           <Input
-            label="Father Name"
+            label="Father's Full Name"
             name="fatherName"
             value={formData.fatherName}
             onChange={handleChange}
             error={errors.fatherName}
-            placeholder="Enter father's full name"
+            placeholder="Enter father's name"
             required
             icon={FiUserCheck}
           />
           <Input
-            label="Father Phone"
+            label="Father's Phone Number"
             name="fatherPhone"
+            type="tel"
             value={formData.fatherPhone}
             onChange={handleChange}
             error={errors.fatherPhone}
-            placeholder="+92 300 1234567"
+            placeholder="+1 (555) 000-0000"
             required
             icon={FiPhone}
           />
           <Input
-            label="Father Occupation"
+            label="Father's Occupation"
             name="fatherOccupation"
             value={formData.fatherOccupation}
             onChange={handleChange}
-            placeholder="e.g., Businessman, Doctor"
+            placeholder="e.g. Engineer, Business"
             icon={FiBriefcase}
           />
           <Input
-            label="Father CNIC"
+            label="Father's CNIC / ID"
             name="fatherCnic"
             value={formData.fatherCnic}
             onChange={handleChange}
@@ -295,41 +292,36 @@ const StudentForm = ({ initialData, onSubmit, onCancel, loading, classes }) => {
             placeholder="12345-6789012-3"
             icon={FiCreditCard}
           />
-
-          {/* Mother Info */}
-          <div className="md:col-span-2 mt-2">
-            <h4 className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-2">
-              Mother's Information
-            </h4>
-          </div>
           <Input
-            label="Mother Name"
+            label="Mother's Full Name"
             name="motherName"
             value={formData.motherName}
             onChange={handleChange}
-            placeholder="Enter mother's full name"
+            placeholder="Enter mother's name"
             icon={FiUser}
           />
           <Input
-            label="Mother Phone"
+            label="Mother's Phone Number"
             name="motherPhone"
+            type="tel"
             value={formData.motherPhone}
             onChange={handleChange}
-            placeholder="+92 300 1234567"
+            placeholder="+1 (555) 000-0000"
             icon={FiPhone}
           />
         </div>
       </div>
 
-      {/* ============================================ */}
-      {/* STATUS */}
-      {/* ============================================ */}
-      <div className="bg-gray-50 dark:bg-gray-700/30 rounded-lg p-4">
-        <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4 flex items-center gap-2">
-          <FiBook className="text-blue-600" />
-          Status
-        </h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      {/* 3. Enrollment Status */}
+      <div className="rounded-xl p-4 bg-slate-50 dark:bg-[#111827]/60 border border-slate-200 dark:border-slate-800">
+        <div className="flex items-center gap-2 pb-2.5 mb-3.5 border-b border-slate-200 dark:border-slate-800">
+          <FiBook className="text-indigo-600 dark:text-indigo-400 text-sm" />
+          <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200">
+            Enrollment Status
+          </h3>
+        </div>
+
+        <div className="max-w-xs">
           <Select
             label="Status"
             name="status"
@@ -344,10 +336,8 @@ const StudentForm = ({ initialData, onSubmit, onCancel, loading, classes }) => {
         </div>
       </div>
 
-      {/* ============================================ */}
-      {/* FORM ACTIONS */}
-      {/* ============================================ */}
-      <div className="flex flex-col sm:flex-row justify-end gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
+      {/* Form Action Buttons */}
+      <div className="sticky bottom-0 -mx-5 -mb-5 sm:-mx-6 sm:-mb-6 px-5 sm:px-6 py-3.5 bg-white/95 dark:bg-[#162033]/95 backdrop-blur-md border-t border-slate-200 dark:border-slate-800 flex justify-end gap-2.5 z-10 rounded-b-[16px]">
         <Button
           type="button"
           variant="secondary"
@@ -361,7 +351,7 @@ const StudentForm = ({ initialData, onSubmit, onCancel, loading, classes }) => {
             ? 'Saving...'
             : isEditMode
             ? 'Update Student'
-            : 'Add Student'}
+            : 'Enroll Student'}
         </Button>
       </div>
     </form>

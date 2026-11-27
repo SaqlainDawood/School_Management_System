@@ -1,17 +1,19 @@
 import React, { useState, useEffect } from 'react';
-import { FiUser } from 'react-icons/fi';
 import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-} from 'recharts';
-import DashboardHeader from '../../components/dashboard/DashboardHeader';
+  FiClock,
+  FiCalendar,
+  FiUser,
+  FiCheckCircle,
+  FiXCircle,
+  FiBarChart2,
+} from 'react-icons/fi';
+import PageHeader from '../../components/common/PageHeader';
+import StatsCard from '../../components/dashboard/StatsCard';
+import SectionCard from '../../components/common/SectionCard';
+import StatusBadge from '../../components/common/StatusBadge';
 import Select from '../../components/forms/Select';
 import Loader from '../../components/common/Loader';
+import EmptyState from '../../components/common/EmptyState';
 import api from '../../utils/api';
 import { formatDate } from '../../utils/helpers';
 
@@ -21,6 +23,7 @@ const ParentAttendance = () => {
   const [attendance, setAttendance] = useState([]);
   const [statistics, setStatistics] = useState({});
   const [loading, setLoading] = useState(true);
+  const [fetchingRecords, setFetchingRecords] = useState(false);
   const [month, setMonth] = useState(new Date().getMonth() + 1);
   const [year, setYear] = useState(new Date().getFullYear());
 
@@ -34,8 +37,9 @@ const ParentAttendance = () => {
 
   const fetchChildren = async () => {
     try {
+      setLoading(true);
       const response = await api.get('/api/parents/dashboard');
-      const kids = response.data.dashboard?.parent?.children || [];
+      const kids = response.data?.dashboard?.parent?.children || [];
       setChildren(kids);
       if (kids.length > 0) setSelectedChild(kids[0]._id);
     } catch (error) {
@@ -47,124 +51,168 @@ const ParentAttendance = () => {
 
   const fetchAttendance = async () => {
     try {
+      setFetchingRecords(true);
       const response = await api.get(
         `/api/parents/child/${selectedChild}/attendance`,
         { params: { month, year } }
       );
-      setAttendance(response.data.attendance || []);
-      setStatistics(response.data.statistics || {});
+      setAttendance(response.data?.attendance || []);
+      setStatistics(response.data?.statistics || {});
     } catch (error) {
       console.error('Error fetching attendance:', error);
+      setAttendance([]);
+      setStatistics({});
+    } finally {
+      setFetchingRecords(false);
     }
   };
 
-  const chartData = attendance.slice(0, 10).map((record) => ({
-    date: formatDate(record.date),
-    status: record.status === 'present' ? 1 : 0,
-    label: record.status,
-  }));
+  const monthOptions = [
+    { value: 1, label: 'January' },
+    { value: 2, label: 'February' },
+    { value: 3, label: 'March' },
+    { value: 4, label: 'April' },
+    { value: 5, label: 'May' },
+    { value: 6, label: 'June' },
+    { value: 7, label: 'July' },
+    { value: 8, label: 'August' },
+    { value: 9, label: 'September' },
+    { value: 10, label: 'October' },
+    { value: 11, label: 'November' },
+    { value: 12, label: 'December' },
+  ];
+
+  const yearOptions = [
+    { value: 2025, label: '2025' },
+    { value: 2026, label: '2026' },
+    { value: 2027, label: '2027' },
+  ];
 
   if (loading) return <Loader />;
 
   return (
-    <div>
-      <DashboardHeader
+    <div className="space-y-6">
+      <PageHeader
         title="Children Attendance"
-        subtitle="View your children's attendance"
+        subtitle="Track classroom presence and monthly roll call records"
+        breadcrumbs={[
+          { label: 'Parent', href: '/parent/dashboard' },
+          { label: 'Attendance' },
+        ]}
       />
 
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-card p-6 border border-gray-200 dark:border-gray-700">
-        <div className="flex flex-wrap gap-4 mb-6">
-          <Select
-            label="Select Child"
-            name="child"
-            value={selectedChild}
-            onChange={(e) => setSelectedChild(e.target.value)}
-            options={children.map((c) => ({
-              value: c._id,
-              label: c.user?.name || 'Child',
-            }))}
-            className="w-64"
-            icon={FiUser}
-          />
-          <Select
-            label="Month"
-            name="month"
-            value={month}
-            onChange={(e) => setMonth(parseInt(e.target.value))}
-            options={[
-              { value: 1, label: 'January' },
-              { value: 2, label: 'February' },
-              { value: 3, label: 'March' },
-              { value: 4, label: 'April' },
-              { value: 5, label: 'May' },
-              { value: 6, label: 'June' },
-              { value: 7, label: 'July' },
-              { value: 8, label: 'August' },
-              { value: 9, label: 'September' },
-              { value: 10, label: 'October' },
-              { value: 11, label: 'November' },
-              { value: 12, label: 'December' },
-            ]}
-            className="w-40"
-          />
-          <Select
-            label="Year"
-            name="year"
-            value={year}
-            onChange={(e) => setYear(parseInt(e.target.value))}
-            options={[
-              { value: 2025, label: '2025' },
-              { value: 2026, label: '2026' },
-              { value: 2027, label: '2027' },
-            ]}
-            className="w-32"
-          />
-        </div>
+      {children.length === 0 ? (
+        <EmptyState
+          icon={FiUser}
+          title="No Students Linked"
+          description="No students are associated with this guardian profile."
+        />
+      ) : (
+        <>
+          {/* Filters Bar */}
+          <div className="card p-4 border border-slate-200 dark:border-slate-800 rounded-2xl flex flex-wrap items-center gap-4">
+            <Select
+              label="Select Student"
+              name="child"
+              value={selectedChild}
+              onChange={(e) => setSelectedChild(e.target.value)}
+              options={children.map((c) => ({
+                value: c._id,
+                label: `${c.user?.name || 'Student'} (${c.class?.name || 'Class'})`,
+              }))}
+              className="w-64"
+              icon={FiUser}
+            />
+            <Select
+              label="Month"
+              name="month"
+              value={month}
+              onChange={(e) => setMonth(parseInt(e.target.value, 10))}
+              options={monthOptions}
+              className="w-40"
+            />
+            <Select
+              label="Year"
+              name="year"
+              value={year}
+              onChange={(e) => setYear(parseInt(e.target.value, 10))}
+              options={yearOptions}
+              className="w-32"
+            />
+          </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-          <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-3 text-center">
-            <p className="text-xs text-gray-500 dark:text-gray-400">
-              Total Days
-            </p>
-            <p className="text-xl font-bold text-gray-800 dark:text-white">
-              {statistics.totalDays || 0}
-            </p>
+          {/* Stats Cards */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <StatsCard
+              title="Total Days"
+              value={statistics.totalDays || 0}
+              icon={FiClock}
+              color="primary"
+            />
+            <StatsCard
+              title="Present Days"
+              value={statistics.presentDays || 0}
+              icon={FiCheckCircle}
+              color="success"
+            />
+            <StatsCard
+              title="Absences"
+              value={statistics.absentDays || 0}
+              icon={FiXCircle}
+              color="danger"
+            />
+            <StatsCard
+              title="Attendance Rate"
+              value={`${statistics.attendancePercentage || 0}%`}
+              icon={FiBarChart2}
+              color={statistics.attendancePercentage >= 75 ? 'success' : 'warning'}
+            />
           </div>
-          <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-3 text-center">
-            <p className="text-xs text-gray-500 dark:text-gray-400">Present</p>
-            <p className="text-xl font-bold text-green-600">
-              {statistics.presentDays || 0}
-            </p>
-          </div>
-          <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-3 text-center">
-            <p className="text-xs text-gray-500 dark:text-gray-400">Absent</p>
-            <p className="text-xl font-bold text-red-600">
-              {statistics.absentDays || 0}
-            </p>
-          </div>
-          <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-3 text-center">
-            <p className="text-xs text-gray-500 dark:text-gray-400">
-              Attendance %
-            </p>
-            <p className="text-xl font-bold text-primary-600">
-              {statistics.attendancePercentage || 0}%
-            </p>
-          </div>
-        </div>
 
-        {chartData.length > 0 && (
-          <ResponsiveContainer width="100%" height={400}>
-            <BarChart data={chartData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-              <XAxis dataKey="date" stroke="#9ca3af" />
-              <YAxis stroke="#9ca3af" domain={[0, 1]} />
-              <Tooltip />
-              <Bar dataKey="status" fill="#2563EB" />
-            </BarChart>
-          </ResponsiveContainer>
-        )}
-      </div>
+          {/* Attendance Table */}
+          <SectionCard
+            title="Attendance Log"
+            subtitle={`Monthly register for ${children.find((c) => c._id === selectedChild)?.user?.name || 'Selected Student'}`}
+          >
+            {fetchingRecords ? (
+              <Loader />
+            ) : attendance.length === 0 ? (
+              <EmptyState
+                icon={FiCalendar}
+                title="No attendance entries"
+                description="No roll-call sessions recorded for this student in the chosen month."
+              />
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-slate-200 dark:border-slate-800 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                      <th className="py-3 px-4">Date</th>
+                      <th className="py-3 px-4">Session / Subject</th>
+                      <th className="py-3 px-4">Roll Call Status</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
+                    {attendance.map((record, index) => (
+                      <tr key={index} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30">
+                        <td className="py-3 px-4 font-medium text-slate-900 dark:text-slate-100">
+                          {formatDate(record.date)}
+                        </td>
+                        <td className="py-3 px-4 text-slate-600 dark:text-slate-400">
+                          {record.subject?.name || 'Daily Roll Call'}
+                        </td>
+                        <td className="py-3 px-4">
+                          <StatusBadge status={record.status || 'present'} />
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </SectionCard>
+        </>
+      )}
     </div>
   );
 };

@@ -7,20 +7,23 @@ import {
   FiUsers,
   FiBookOpen,
   FiUserCheck,
-  FiBook,
   FiArchive,
   FiRefreshCw,
   FiUserMinus,
   FiTrash,
   FiEye,
+  FiLayers,
 } from 'react-icons/fi';
 import { toast } from 'react-toastify';
-import DashboardHeader from '../../components/dashboard/DashboardHeader';
+import PageHeader from '../../components/common/PageHeader';
 import Button from '../../components/forms/Button';
 import Modal from '../../components/modals/Modal';
 import ClassForm from '../../components/forms/ClassForm';
 import ClassDetailModal from '../../components/modals/ClassDetailModal';
 import Loader from '../../components/common/Loader';
+import EmptyState from '../../components/common/EmptyState';
+import StatusBadge from '../../components/common/StatusBadge';
+import ConfirmDialog from '../../components/common/ConfirmDialog';
 import api from '../../utils/api';
 
 const Classes = () => {
@@ -36,6 +39,17 @@ const Classes = () => {
   const [selectedClassId, setSelectedClassId] = useState(null);
   const [selectedTeacher, setSelectedTeacher] = useState('');
   const [error, setError] = useState('');
+  
+  // Structured confirm dialog state
+  const [confirmConfig, setConfirmConfig] = useState({
+    isOpen: false,
+    title: '',
+    message: '',
+    confirmText: '',
+    variant: 'danger',
+    action: null,
+  });
+
   const [formData, setFormData] = useState({
     name: '',
     code: '',
@@ -56,8 +70,8 @@ const Classes = () => {
     try {
       const response = await api.get('/api/classes');
       setClasses(response.data.classes || []);
-    } catch (error) {
-      console.error('Error fetching classes:', error);
+    } catch (err) {
+      console.error('Error fetching classes:', err);
       setError('Failed to fetch classes');
       toast.error('Failed to fetch classes');
     } finally {
@@ -71,8 +85,8 @@ const Classes = () => {
         params: { limit: 100 },
       });
       setTeachers(response.data.teachers || []);
-    } catch (error) {
-      console.error('Error fetching teachers:', error);
+    } catch (err) {
+      console.error('Error fetching teachers:', err);
     }
   };
 
@@ -119,231 +133,189 @@ const Classes = () => {
       }
       setShowModal(false);
       fetchClasses();
-    } catch (error) {
-      console.error('Error saving class:', error);
-      toast.error(error.response?.data?.message || 'Failed to save class');
+    } catch (err) {
+      console.error('Error saving class:', err);
+      toast.error(err.response?.data?.message || 'Failed to save class');
     } finally {
       setFormLoading(false);
     }
   };
 
-  const handleDelete = async (id) => {
+  const handleDelete = (id) => {
     const classData = classes.find((c) => c._id === id);
     const studentCount = classData?.students?.length || 0;
     const subjectCount = classData?.subjects?.length || 0;
 
-    let confirmMessage = 'Are you sure you want to delete this class?';
+    const message = studentCount > 0 || subjectCount > 0
+      ? `This class currently has ${studentCount} student(s) and ${subjectCount} subject(s) enrolled. You should remove dependencies first, or use Clean Delete / Force Delete.`
+      : `Are you sure you want to delete class "${classData?.name}"? This action cannot be undone.`;
 
-    if (studentCount > 0 || subjectCount > 0) {
-      confirmMessage =
-        `⚠️ WARNING: This class has:\n` +
-        `• ${studentCount} student(s)\n` +
-        `• ${subjectCount} subject(s)\n\n` +
-        `You must remove all students and subjects first.\n` +
-        `Or use "Clean Delete" or "Force Delete".\n\n` +
-        `Do you want to proceed with normal delete?`;
-    }
-
-    if (!window.confirm(confirmMessage)) return;
-
-    try {
-      const response = await api.delete(`/api/classes/${id}`);
-      if (response.data.success) {
-        toast.success('Class deleted successfully');
-        fetchClasses();
-      }
-    } catch (error) {
-      console.error('❌ Error deleting class:', error);
-
-      if (
-        error.response?.status === 400 &&
-        error.response?.data?.dependencies
-      ) {
-        const dependencies = error.response.data.dependencies;
-        const dependencyMessages = dependencies
-          .map((d) => `• ${d.message}`)
-          .join('\n');
-
-        toast.error(
-          `❌ Cannot delete class!\n\n${dependencyMessages}\n\n` +
-            `💡 Use "Clean Delete" or "Force Delete" from the admin panel.`,
-          { autoClose: false }
-        );
-        setError(error.response.data.message);
-      } else {
-        const errorMsg =
-          error.response?.data?.message || 'Failed to delete class';
-        toast.error(errorMsg);
-        setError(errorMsg);
-      }
-    }
+    setConfirmConfig({
+      isOpen: true,
+      title: 'Delete Class',
+      message,
+      confirmText: 'Delete Class',
+      variant: 'danger',
+      action: async () => {
+        try {
+          const response = await api.delete(`/api/classes/${id}`);
+          if (response.data.success) {
+            toast.success('Class deleted successfully');
+            fetchClasses();
+          }
+        } catch (err) {
+          console.error('Error deleting class:', err);
+          if (err.response?.status === 400 && err.response?.data?.dependencies) {
+            const messages = err.response.data.dependencies.map((d) => `• ${d.message}`).join('\n');
+            toast.error(`Cannot delete class:\n${messages}\nUse "Clean Delete" or "Force Delete".`);
+          } else {
+            toast.error(err.response?.data?.message || 'Failed to delete class');
+          }
+        }
+      },
+    });
   };
 
-  const handleCleanDelete = async (id) => {
+  const handleCleanDelete = (id) => {
     const classData = classes.find((c) => c._id === id);
-
-    if (
-      !window.confirm(
-        `🧹 Clean Delete "${classData?.name}"?\n\n` +
-          `This will:\n` +
-          `✅ Remove all students (unassign them)\n` +
-          `✅ Remove all subjects and teacher assignments\n` +
-          `✅ Then delete the class\n\n` +
-          `All other data (attendance, fees, results) will remain.`
-      )
-    )
-      return;
-
-    try {
-      const response = await api.delete(`/api/classes/${id}/clean-delete`);
-      if (response.data.success) {
-        toast.success(response.data.message);
-        fetchClasses();
-      }
-    } catch (error) {
-      console.error('Error in clean delete:', error);
-      toast.error(
-        error.response?.data?.message || 'Failed to clean delete class'
-      );
-    }
+    setConfirmConfig({
+      isOpen: true,
+      title: `Clean Delete: ${classData?.name}`,
+      message: 'This will unassign all students and remove subject mappings, then safely delete this class. Academic history records will be preserved.',
+      confirmText: 'Execute Clean Delete',
+      variant: 'warning',
+      action: async () => {
+        try {
+          const response = await api.delete(`/api/classes/${id}/clean-delete`);
+          if (response.data.success) {
+            toast.success(response.data.message || 'Clean delete completed');
+            fetchClasses();
+          }
+        } catch (err) {
+          console.error('Error in clean delete:', err);
+          toast.error(err.response?.data?.message || 'Failed to clean delete class');
+        }
+      },
+    });
   };
 
-  const handleForceDelete = async (id) => {
+  const handleForceDelete = (id) => {
     const classData = classes.find((c) => c._id === id);
-
-    if (
-      !window.confirm(
-        `🗑️ FORCE DELETE "${classData?.name}"?\n\n` +
-          `⚠️ THIS WILL DELETE:\n` +
-          `• ALL students in this class\n` +
-          `• ALL attendance records\n` +
-          `• ALL fee records\n` +
-          `• ALL results\n` +
-          `• ALL exams\n` +
-          `• ALL timetables\n\n` +
-          `This action CANNOT be undone!\n\n` +
-          `Are you absolutely sure?`
-      )
-    )
-      return;
-
-    try {
-      const response = await api.delete(`/api/classes/${id}/force-delete`);
-      if (response.data.success) {
-        toast.success(response.data.message);
-        fetchClasses();
-      }
-    } catch (error) {
-      console.error('Error in force delete:', error);
-      toast.error(
-        error.response?.data?.message || 'Failed to force delete class'
-      );
-    }
+    setConfirmConfig({
+      isOpen: true,
+      title: `FORCE DELETE: ${classData?.name}`,
+      message: 'CRITICAL: This permanently removes this class, enrolled students, attendance logs, exam schedules, and fee invoices linked to this class. This is non-reversible.',
+      confirmText: 'Permanently Erase Everything',
+      variant: 'danger',
+      action: async () => {
+        try {
+          const response = await api.delete(`/api/classes/${id}/force-delete`);
+          if (response.data.success) {
+            toast.success(response.data.message || 'Force delete completed');
+            fetchClasses();
+          }
+        } catch (err) {
+          console.error('Error in force delete:', err);
+          toast.error(err.response?.data?.message || 'Failed to force delete class');
+        }
+      },
+    });
   };
 
-  const handleArchive = async (id) => {
-    const confirm = window.confirm(
-      '📦 Archive this class?\n\n' +
-        'Archiving will:\n' +
-        '✅ Mark the class as inactive\n' +
-        '✅ Archive all students in this class\n' +
-        '✅ You can restore it later\n\n' +
-        'Continue?'
-    );
-
-    if (!confirm) return;
-
-    try {
-      const response = await api.put(`/api/classes/${id}/archive`);
-      if (response.data.success) {
-        toast.success('Class archived successfully');
-        fetchClasses();
-      }
-    } catch (error) {
-      console.error('Error archiving class:', error);
-      toast.error(error.response?.data?.message || 'Failed to archive class');
-    }
+  const handleArchive = (id) => {
+    setConfirmConfig({
+      isOpen: true,
+      title: 'Archive Academic Class',
+      message: 'Archiving marks this class and its roster as inactive. You can restore this class at any time without data loss.',
+      confirmText: 'Archive Class',
+      variant: 'warning',
+      action: async () => {
+        try {
+          const response = await api.put(`/api/classes/${id}/archive`);
+          if (response.data.success) {
+            toast.success('Class archived successfully');
+            fetchClasses();
+          }
+        } catch (err) {
+          console.error('Error archiving class:', err);
+          toast.error(err.response?.data?.message || 'Failed to archive class');
+        }
+      },
+    });
   };
 
-  const handleRestore = async (id) => {
-    const confirm = window.confirm(
-      '🔄 Restore this class?\n\n' +
-        'Restoring will:\n' +
-        '✅ Mark the class as active\n' +
-        '✅ Restore all students in this class\n\n' +
-        'Continue?'
-    );
-
-    if (!confirm) return;
-
-    try {
-      const response = await api.put(`/api/classes/${id}/restore`);
-      if (response.data.success) {
-        toast.success('Class restored successfully');
-        fetchClasses();
-      }
-    } catch (error) {
-      console.error('Error restoring class:', error);
-      toast.error(error.response?.data?.message || 'Failed to restore class');
-    }
+  const handleRestore = (id) => {
+    setConfirmConfig({
+      isOpen: true,
+      title: 'Restore Class',
+      message: 'Restoring will reactivate this class and reinstate student cohort status.',
+      confirmText: 'Restore Class',
+      variant: 'primary',
+      action: async () => {
+        try {
+          const response = await api.put(`/api/classes/${id}/restore`);
+          if (response.data.success) {
+            toast.success('Class restored successfully');
+            fetchClasses();
+          }
+        } catch (err) {
+          console.error('Error restoring class:', err);
+          toast.error(err.response?.data?.message || 'Failed to restore class');
+        }
+      },
+    });
   };
 
-  const handleRemoveAllStudents = async (classId) => {
+  const handleRemoveAllStudents = (classId) => {
     const classData = classes.find((c) => c._id === classId);
     const studentCount = classData?.students?.length || 0;
-
     if (studentCount === 0) {
       toast.info('No students in this class to remove');
       return;
     }
-
-    if (
-      !window.confirm(
-        `⚠️ Remove ALL ${studentCount} students from "${classData?.name}"?\n\n` +
-          `Students will be unassigned from this class but will remain in the system.`
-      )
-    )
-      return;
-
-    try {
-      await api.delete(`/api/classes/${classId}/students`);
-      toast.success(
-        `All ${studentCount} students removed from class successfully`
-      );
-      fetchClasses();
-    } catch (error) {
-      console.error('Error removing all students:', error);
-      toast.error(error.response?.data?.message || 'Failed to remove students');
-    }
+    setConfirmConfig({
+      isOpen: true,
+      title: 'Unassign All Students',
+      message: `Unassign all ${studentCount} students from "${classData?.name}"? Students will remain registered in the system but unlinked from this class.`,
+      confirmText: 'Unassign Students',
+      variant: 'warning',
+      action: async () => {
+        try {
+          await api.delete(`/api/classes/${classId}/students`);
+          toast.success(`Removed ${studentCount} students from class`);
+          fetchClasses();
+        } catch (err) {
+          console.error('Error removing students:', err);
+          toast.error(err.response?.data?.message || 'Failed to remove students');
+        }
+      },
+    });
   };
 
-  const handleRemoveAllSubjects = async (classId) => {
+  const handleRemoveAllSubjects = (classId) => {
     const classData = classes.find((c) => c._id === classId);
     const subjectCount = classData?.subjects?.length || 0;
-
     if (subjectCount === 0) {
       toast.info('No subjects assigned to this class');
       return;
     }
-
-    if (
-      !window.confirm(
-        `⚠️ Remove ALL ${subjectCount} subjects from "${classData?.name}"?\n\n` +
-          `All subject assignments and teacher associations will be removed.`
-      )
-    )
-      return;
-
-    try {
-      await api.delete(`/api/classes/${classId}/subjects`);
-      toast.success(
-        `All ${subjectCount} subjects removed from class successfully`
-      );
-      fetchClasses();
-    } catch (error) {
-      console.error('Error removing all subjects:', error);
-      toast.error(error.response?.data?.message || 'Failed to remove subjects');
-    }
+    setConfirmConfig({
+      isOpen: true,
+      title: 'Remove All Subjects',
+      message: `Remove all ${subjectCount} subjects from "${classData?.name}"? Teaching assignments for this class will also be cleared.`,
+      confirmText: 'Remove Subjects',
+      variant: 'warning',
+      action: async () => {
+        try {
+          await api.delete(`/api/classes/${classId}/subjects`);
+          toast.success(`Removed ${subjectCount} subjects from class`);
+          fetchClasses();
+        } catch (err) {
+          console.error('Error removing subjects:', err);
+          toast.error(err.response?.data?.message || 'Failed to remove subjects');
+        }
+      },
+    });
   };
 
   const handleAssignTeacher = async () => {
@@ -357,14 +329,14 @@ const Classes = () => {
       await api.put(`/api/classes/${selectedClass}/assign-teacher`, {
         teacherId: selectedTeacher,
       });
-      toast.success('Teacher assigned successfully');
+      toast.success('Class teacher assigned successfully');
       setShowAssignTeacherModal(false);
       setSelectedClass(null);
       setSelectedTeacher('');
       fetchClasses();
-    } catch (error) {
-      console.error('Error assigning teacher:', error);
-      toast.error(error.response?.data?.message || 'Failed to assign teacher');
+    } catch (err) {
+      console.error('Error assigning teacher:', err);
+      toast.error(err.response?.data?.message || 'Failed to assign teacher');
     } finally {
       setFormLoading(false);
     }
@@ -379,197 +351,196 @@ const Classes = () => {
   const getStudentCount = (cls) => cls.students?.length || 0;
   const getSubjectCount = (cls) => cls.subjects?.length || 0;
 
-  const getStatusBadge = (status) => {
-    if (status === 'archived') {
-      return (
-        <span className="px-2 py-1 text-xs font-medium bg-yellow-100 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-300 rounded-full">
-          Archived
-        </span>
-      );
-    } else if (status === 'active') {
-      return (
-        <span className="px-2 py-1 text-xs font-medium bg-green-100 dark:bg-green-900/20 text-green-700 dark:text-green-300 rounded-full">
-          Active
-        </span>
-      );
-    }
-    return (
-      <span className="px-2 py-1 text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 rounded-full">
-        {status || 'N/A'}
-      </span>
-    );
-  };
-
   if (loading) return <Loader />;
 
   return (
-    <div>
-      <DashboardHeader
-        title="Classes Management"
-        subtitle="Manage all classes and sections"
+    <div className="space-y-6">
+      <PageHeader
+        title="Academic Classes & Cohorts"
+        subtitle="Manage student sections, curriculum mappings, and class faculty leads"
+        breadcrumbs={[
+          { label: 'Dashboard', path: '/admin/dashboard' },
+          { label: 'Classes' },
+        ]}
         actions={
           <Button variant="primary" icon={FiPlus} onClick={handleAddClass}>
-            Add Class
+            Create Class
           </Button>
         }
       />
 
       {error && (
-        <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg text-red-600 dark:text-red-400">
-          {error}
-          <button
-            onClick={() => setError('')}
-            className="ml-2 text-red-800 dark:text-red-300 hover:text-red-600 font-bold"
-          >
-            ×
+        <div className="p-4 rounded-xl bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900/50 text-rose-700 dark:text-rose-400 text-xs flex justify-between items-center">
+          <span>{error}</span>
+          <button onClick={() => setError('')} className="font-bold hover:underline">
+            Dismiss
           </button>
         </div>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {classes.map((cls) => (
-          <div
-            key={cls._id}
-            className={`bg-white dark:bg-gray-800 rounded-xl shadow-card hover:shadow-card-hover transition-all duration-200 p-6 border ${
-              cls.status === 'archived'
-                ? 'border-yellow-200 dark:border-yellow-800 opacity-70'
-                : 'border-gray-200 dark:border-gray-700'
-            }`}
-          >
-            <div className="flex items-start justify-between">
-              <div className="flex-1">
-                <div className="flex items-center gap-2">
-                  <h3 className="text-lg font-semibold text-gray-800 dark:text-white">
-                    {cls.name}
-                  </h3>
-                  {getStatusBadge(cls.status)}
-                </div>
-                <p className="text-sm text-gray-500 dark:text-gray-400">
-                  Code: {cls.code}
-                </p>
-                {cls.classTeacher && (
-                  <p className="text-sm text-primary-600 dark:text-primary-400">
-                    Teacher:{' '}
-                    {cls.classTeacher.user?.name ||
-                      cls.classTeacher.name ||
-                      'Assigned'}
-                  </p>
-                )}
-              </div>
-              <div className="flex flex-col gap-1">
-                <button
-                  onClick={() => handleViewClass(cls._id)}
-                  className="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors text-blue-600"
-                  title="View Class Details"
-                >
-                  <FiEye className="text-sm" />
-                </button>
-                {cls.status !== 'archived' && (
-                  <>
-                    <button
-                      onClick={() => handleEditClass(cls)}
-                      className="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors text-yellow-600"
-                      title="Edit Class"
+      {classes.length === 0 ? (
+        <div className="card p-12">
+          <EmptyState
+            icon={FiLayers}
+            title="No classes established"
+            description="Create your first academic class cohort to organize students and faculty."
+            actionLabel="Create Class"
+            onAction={handleAddClass}
+          />
+        </div>
+      ) : (
+        <div className="card overflow-hidden border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm bg-white dark:bg-[#162033]">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-sm">
+              <thead className="bg-slate-50 dark:bg-slate-900/60 border-b border-slate-200 dark:border-slate-800 text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                <tr>
+                  <th className="px-6 py-3.5">Class & Code</th>
+                  <th className="px-6 py-3.5">Assigned Teacher</th>
+                  <th className="px-6 py-3.5 text-center">Students</th>
+                  <th className="px-6 py-3.5 text-center">Subjects</th>
+                  <th className="px-6 py-3.5">Status</th>
+                  <th className="px-6 py-3.5 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-800/80">
+                {classes.map((cls) => {
+                  const isArchived = cls.status === 'archived';
+                  const studentCount = getStudentCount(cls);
+                  const subjectCount = getSubjectCount(cls);
+                  const teacherName = cls.classTeacher?.user?.name || cls.classTeacher?.name;
+
+                  return (
+                    <tr
+                      key={cls._id}
+                      className={`hover:bg-slate-50/70 dark:hover:bg-slate-800/50 transition-colors ${
+                        isArchived ? 'opacity-70 bg-slate-50/30 dark:bg-slate-900/30' : ''
+                      }`}
                     >
-                      <FiEdit2 className="text-sm" />
-                    </button>
-                    {getStudentCount(cls) === 0 && getSubjectCount(cls) === 0 ? (
-                      <button
-                        onClick={() => handleDelete(cls._id)}
-                        className="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors text-red-600"
-                        title="Delete Class"
-                      >
-                        <FiTrash2 className="text-sm" />
-                      </button>
-                    ) : (
-                      <button
-                        onClick={() => handleArchive(cls._id)}
-                        className="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors text-blue-600"
-                        title="Archive Class"
-                      >
-                        <FiArchive className="text-sm" />
-                      </button>
-                    )}
-                  </>
-                )}
-                {cls.status === 'archived' && (
-                  <button
-                    onClick={() => handleRestore(cls._id)}
-                    className="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors text-green-600"
-                    title="Restore Class"
-                  >
-                    <FiRefreshCw className="text-sm" />
-                  </button>
-                )}
-              </div>
-            </div>
+                      {/* Class & Code */}
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-9 h-9 rounded-xl bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 flex items-center justify-center font-bold text-sm border border-indigo-100 dark:border-indigo-900/50 flex-shrink-0">
+                            <FiLayers />
+                          </div>
+                          <div>
+                            <div className="font-bold text-slate-900 dark:text-white">
+                              {cls.name}
+                            </div>
+                            <div className="text-xs font-mono text-slate-400">
+                              Code: {cls.code || '—'}
+                            </div>
+                          </div>
+                        </div>
+                      </td>
 
-            <div className="mt-4 flex items-center gap-4 text-sm">
-              <div className="flex items-center gap-1 text-gray-600 dark:text-gray-300">
-                <FiUsers className="text-gray-400" />
-                <span>{getStudentCount(cls)} Students</span>
-              </div>
-              <div className="flex items-center gap-1 text-gray-600 dark:text-gray-300">
-                <FiBookOpen className="text-gray-400" />
-                <span>{getSubjectCount(cls)} Subjects</span>
-              </div>
-            </div>
+                      {/* Assigned Teacher */}
+                      <td className="px-6 py-4">
+                        {teacherName ? (
+                          <span className="font-medium text-slate-800 dark:text-slate-200">
+                            {teacherName}
+                          </span>
+                        ) : (
+                          <button
+                            onClick={() => openAssignTeacherModal(cls._id)}
+                            className="text-xs font-medium text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1"
+                          >
+                            <FiUserCheck className="text-xs" /> Assign Faculty
+                          </button>
+                        )}
+                      </td>
 
-            {cls.status !== 'archived' && (
-              <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700 flex flex-wrap gap-2">
-                <button
-                  onClick={() => openAssignTeacherModal(cls._id)}
-                  className="px-3 py-1.5 text-xs bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400 rounded-lg hover:bg-primary-100 dark:hover:bg-primary-900/40 transition-colors flex items-center gap-1"
-                >
-                  <FiUserCheck className="text-xs" /> Assign Teacher
-                </button>
+                      {/* Students */}
+                      <td className="px-6 py-4 text-center">
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 border border-indigo-100 dark:border-indigo-900/50">
+                          <FiUsers className="text-indigo-500 text-xs" />
+                          {studentCount}
+                        </span>
+                      </td>
 
-                {getStudentCount(cls) > 0 && (
-                  <button
-                    onClick={() => handleRemoveAllStudents(cls._id)}
-                    className="px-3 py-1.5 text-xs bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors flex items-center gap-1"
-                  >
-                    <FiUserMinus className="text-xs" /> Remove All Students
-                  </button>
-                )}
+                      {/* Subjects */}
+                      <td className="px-6 py-4 text-center">
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-100 dark:border-emerald-900/50">
+                          <FiBookOpen className="text-emerald-500 text-xs" />
+                          {subjectCount}
+                        </span>
+                      </td>
 
-                {getSubjectCount(cls) > 0 && (
-                  <button
-                    onClick={() => handleRemoveAllSubjects(cls._id)}
-                    className="px-3 py-1.5 text-xs bg-orange-50 dark:bg-orange-900/20 text-orange-600 dark:text-orange-400 rounded-lg hover:bg-orange-100 dark:hover:bg-orange-900/40 transition-colors flex items-center gap-1"
-                  >
-                    <FiBookOpen className="text-xs" /> Remove All Subjects
-                  </button>
-                )}
+                      {/* Status */}
+                      <td className="px-6 py-4">
+                        <StatusBadge status={isArchived ? 'archived' : 'active'} />
+                      </td>
 
-                {(getStudentCount(cls) > 0 || getSubjectCount(cls) > 0) && (
-                  <div className="flex gap-1">
-                    <button
-                      onClick={() => handleCleanDelete(cls._id)}
-                      className="px-3 py-1.5 text-xs bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors flex items-center gap-1"
-                      title="Remove all dependencies then delete"
-                    >
-                      <FiTrash className="text-xs" /> Clean Delete
-                    </button>
-                    <button
-                      onClick={() => handleForceDelete(cls._id)}
-                      className="px-3 py-1.5 text-xs bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400 rounded-lg hover:bg-purple-100 dark:hover:bg-purple-900/40 transition-colors flex items-center gap-1"
-                      title="Delete everything including all data"
-                    >
-                      <FiTrash className="text-xs" /> Force Delete
-                    </button>
-                  </div>
-                )}
-              </div>
-            )}
+                      {/* Actions */}
+                      <td className="px-6 py-4 text-right">
+                        <div className="inline-flex items-center justify-end gap-1">
+                          <button
+                            onClick={() => handleViewClass(cls._id)}
+                            className="p-1.5 rounded-lg text-slate-500 hover:text-indigo-600 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                            title="View Class Details"
+                          >
+                            <FiEye className="text-base" />
+                          </button>
+
+                          {!isArchived ? (
+                            <>
+                              <button
+                                onClick={() => openAssignTeacherModal(cls._id)}
+                                className="p-1.5 rounded-lg text-slate-500 hover:text-indigo-600 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                                title={teacherName ? 'Change Assigned Teacher' : 'Assign Faculty'}
+                              >
+                                <FiUserCheck className="text-base" />
+                              </button>
+                              <button
+                                onClick={() => handleEditClass(cls)}
+                                className="p-1.5 rounded-lg text-slate-500 hover:text-amber-600 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                                title="Edit Class"
+                              >
+                                <FiEdit2 className="text-base" />
+                              </button>
+
+                              {studentCount === 0 && subjectCount === 0 ? (
+                                <button
+                                  onClick={() => handleDelete(cls._id)}
+                                  className="p-1.5 rounded-lg text-slate-500 hover:text-rose-600 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                                  title="Delete Empty Class"
+                                >
+                                  <FiTrash2 className="text-base" />
+                                </button>
+                              ) : (
+                                <button
+                                  onClick={() => handleArchive(cls._id)}
+                                  className="p-1.5 rounded-lg text-slate-500 hover:text-amber-600 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                                  title="Archive Class"
+                                >
+                                  <FiArchive className="text-base" />
+                                </button>
+                              )}
+                            </>
+                          ) : (
+                            <button
+                              onClick={() => handleRestore(cls._id)}
+                              className="p-1.5 rounded-lg text-emerald-600 hover:bg-emerald-50 dark:hover:bg-slate-800 transition-colors"
+                              title="Restore Class"
+                            >
+                              <FiRefreshCw className="text-base" />
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
           </div>
-        ))}
-      </div>
+        </div>
+      )}
 
+      {/* Add / Edit Modal */}
       <Modal
         isOpen={showModal}
         onClose={() => setShowModal(false)}
-        title={editingClass ? 'Edit Class' : 'Add Class'}
+        title={editingClass ? 'Edit Academic Class' : 'Create New Academic Class'}
         size="lg"
       >
         <ClassForm
@@ -580,31 +551,32 @@ const Classes = () => {
         />
       </Modal>
 
+      {/* Assign Teacher Modal */}
       <Modal
         isOpen={showAssignTeacherModal}
         onClose={() => setShowAssignTeacherModal(false)}
-        title="Assign Class Teacher"
+        title="Assign Faculty Lead"
         size="md"
       >
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Select Teacher
+            <label className="label">
+              Select Class Teacher
             </label>
             <select
               value={selectedTeacher}
               onChange={(e) => setSelectedTeacher(e.target.value)}
-              className="input-field"
+              className="select-field text-xs py-2 w-full"
             >
-              <option value="">Select a teacher</option>
-              {teachers.map((teacher) => (
-                <option key={teacher._id} value={teacher._id}>
-                  {teacher.user?.name} ({teacher.teacherId})
+              <option value="">Select a faculty member...</option>
+              {teachers.map((t) => (
+                <option key={t._id} value={t._id}>
+                  {t.user?.name} ({t.teacherId || 'No ID'}) — {t.department || 'Faculty'}
                 </option>
               ))}
             </select>
           </div>
-          <div className="flex justify-end gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
+          <div className="flex justify-end gap-2 pt-4 border-t border-slate-200 dark:border-slate-800">
             <Button
               type="button"
               variant="secondary"
@@ -618,12 +590,13 @@ const Classes = () => {
               loading={formLoading}
               onClick={handleAssignTeacher}
             >
-              Assign Teacher
+              Confirm Assignment
             </Button>
           </div>
         </div>
       </Modal>
 
+      {/* Class Detail Modal */}
       <ClassDetailModal
         isOpen={showDetailModal}
         onClose={() => {
@@ -631,6 +604,22 @@ const Classes = () => {
           setSelectedClassId(null);
         }}
         classId={selectedClassId}
+      />
+
+      {/* Master Confirm Dialog */}
+      <ConfirmDialog
+        isOpen={confirmConfig.isOpen}
+        onClose={() => setConfirmConfig((prev) => ({ ...prev, isOpen: false }))}
+        onConfirm={async () => {
+          if (confirmConfig.action) {
+            await confirmConfig.action();
+          }
+          setConfirmConfig((prev) => ({ ...prev, isOpen: false }));
+        }}
+        title={confirmConfig.title}
+        message={confirmConfig.message}
+        confirmText={confirmConfig.confirmText}
+        confirmVariant={confirmConfig.variant}
       />
     </div>
   );

@@ -121,7 +121,7 @@ const ClassForm = ({ initialData, onSubmit, onCancel, loading }) => {
         />
       </div>
 
-      <div className="flex flex-col-reverse sm:flex-row justify-end gap-3 pt-6 border-t border-gray-200 dark:border-gray-700">
+      <div className="flex flex-col-reverse sm:flex-row justify-end gap-3 pt-6 border-t border-slate-200 dark:border-slate-800">
         <Button
           type="button"
           variant="secondary"

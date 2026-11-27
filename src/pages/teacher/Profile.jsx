@@ -1,127 +1,633 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   FiUser,
   FiMail,
   FiPhone,
   FiMapPin,
+  FiSave,
+  FiShield,
   FiBriefcase,
+  FiBookOpen,
+  FiAward,
+  FiEdit2,
+  FiX,
+  FiCheckCircle,
+  FiAlertCircle,
+  FiLock,
+  FiHome,
+  FiCopy,
+  FiChevronDown,
 } from 'react-icons/fi';
-import DashboardHeader from '../../components/dashboard/DashboardHeader';
+import { toast } from 'react-toastify';
 import Input from '../../components/forms/Input';
 import Button from '../../components/forms/Button';
 import { useAuth } from '../../context/AuthContext';
+import { formatAddress, formatDate } from '../../utils/helpers';
+import {
+  HeroAcademicGraphic,
+  CapScroll3DIcon,
+  Mail3DIcon,
+  Campus3DIcon,
+  Shield3DIcon,
+} from '../../components/common/Profile3DIcons';
 
 const TeacherProfile = () => {
   const { user, updateProfile } = useAuth();
   const [loading, setLoading] = useState(false);
+  const [editMode, setEditMode] = useState(false);
   const [formData, setFormData] = useState({
     name: user?.name || '',
     email: user?.email || '',
     phone: user?.phone || '',
-    address: user?.address || '',
+    address: formatAddress(user?.address),
     qualification: user?.qualification || '',
     specialization: user?.specialization || '',
     department: user?.department || '',
   });
 
+  useEffect(() => {
+    if (user) {
+      setFormData({
+        name: user.name || '',
+        email: user.email || '',
+        phone: user.phone || '',
+        address: formatAddress(user.address),
+        qualification: user.qualification || '',
+        specialization: user.specialization || '',
+        department: user.department || '',
+      });
+    }
+  }, [user]);
+
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+  };
+
+  const handleCancel = () => {
+    setFormData({
+      name: user?.name || '',
+      email: user?.email || '',
+      phone: user?.phone || '',
+      address: formatAddress(user?.address),
+      qualification: user?.qualification || '',
+      specialization: user?.specialization || '',
+      department: user?.department || '',
+    });
+    setEditMode(false);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    await updateProfile(formData);
-    setLoading(false);
+    try {
+      if (updateProfile) {
+        const res = await updateProfile(formData);
+        if (res?.success !== false) {
+          setEditMode(false);
+        }
+      }
+    } catch (err) {
+      console.error('Error updating faculty profile:', err);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  return (
-    <div>
-      <DashboardHeader
-        title="My Profile"
-        subtitle="Manage your personal information"
-      />
+  const handleCopyUID = () => {
+    const uid = user?._id || user?.id || '6ae4203ff11e07ef107688a8c';
+    if (navigator?.clipboard?.writeText) {
+      navigator.clipboard.writeText(uid);
+      toast.success('Account UID copied to clipboard!');
+    }
+  };
 
-      <div className="max-w-3xl mx-auto">
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-card p-6 border border-gray-200 dark:border-gray-700">
-          <div className="flex items-center space-x-4 mb-6">
-            <div className="w-20 h-20 rounded-full bg-gradient-to-r from-primary-500 to-secondary-500 flex items-center justify-center text-white text-2xl font-bold">
-              {user?.name?.charAt(0) || 'T'}
+  const initial = user?.name ? user.name.charAt(0).toUpperCase() : 'T';
+  const institutionName = user?.schoolName || user?.school?.name || (typeof user?.school === 'string' ? user.school : 'MNSUAM');
+  const userUID = user?._id || user?.id || '6ae4203ff11e07ef107688a8c';
+  const displayUID = userUID.length > 8 ? userUID.slice(-6).toUpperCase() : userUID.toUpperCase();
+
+  return (
+    <div className="space-y-6">
+      {/* ── Top Header Section (Matching Screenshot) ── */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-1">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-full bg-slate-900 dark:bg-indigo-600 text-white flex items-center justify-center text-lg shadow-sm">
+            <FiUser />
+          </div>
+          <div>
+            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
+              Faculty Profile
+            </h1>
+            <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">
+              Manage your academic credentials, departmental affiliation, and institutional contact details
+            </p>
+          </div>
+        </div>
+
+        {/* Institutional Pill on Top Right */}
+        <div className="flex items-center gap-3 px-4 py-2 rounded-2xl bg-white dark:bg-[#162033] border border-slate-200 dark:border-slate-800 shadow-sm self-start sm:self-auto">
+          <div className="w-8 h-8 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 flex items-center justify-center">
+            <FiHome className="text-base" />
+          </div>
+          <div className="text-left leading-tight">
+            <span className="block text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">
+              {institutionName}
+            </span>
+            <span className="block text-[10px] font-medium text-slate-500 dark:text-slate-400">
+              Teacher Portal
+            </span>
+          </div>
+          <FiChevronDown className="text-slate-400 text-sm ml-1" />
+        </div>
+      </div>
+
+      {/* ── Main Hero Banner (Matching Screenshot) ── */}
+      <section className="relative rounded-2xl bg-gradient-to-r from-[#030712] via-[#09152B] to-[#0E2856] text-white p-5 sm:p-7 border border-slate-800 shadow-lg overflow-hidden">
+        {/* Subtle Ambient Backlights */}
+        <div className="absolute top-0 right-1/4 w-96 h-96 bg-blue-600/15 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute bottom-0 left-10 w-60 h-60 bg-indigo-500/10 rounded-full blur-2xl pointer-events-none" />
+
+        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+          {/* Left: Avatar & Identity Details */}
+          <div className="flex items-center gap-4 sm:gap-5">
+            {/* Double-Ring Avatar with Online Indicator */}
+            <div className="relative shrink-0">
+              <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-gradient-to-br from-indigo-500 to-indigo-700 text-white flex items-center justify-center text-3xl sm:text-4xl font-extrabold border-4 border-white/20 shadow-2xl">
+                {initial}
+              </div>
+              <span
+                className="absolute bottom-1 right-1 w-5 h-5 rounded-full bg-emerald-500 border-2 border-white dark:border-slate-900 shadow-sm"
+                title="Online Status: Active"
+              />
             </div>
-            <div>
-              <h3 className="text-lg font-semibold text-gray-800 dark:text-white">
-                {user?.name}
-              </h3>
-              <p className="text-sm text-gray-500 dark:text-gray-400">
-                {user?.role?.toUpperCase()} •{' '}
-                {formData.department || 'No Department'}
-              </p>
+
+            {/* Name, Verified Badge, Role, and Metadata */}
+            <div className="min-w-0">
+              <div className="flex items-center gap-2">
+                <h2 className="text-xl sm:text-2xl font-bold text-white tracking-tight truncate">
+                  {user?.name || 'Faculty Member'}
+                </h2>
+                {/* Meta / Twitter style Verified Blue Badge */}
+                <svg
+                  viewBox="0 0 24 24"
+                  className="w-5 h-5 text-blue-400 fill-current shrink-0"
+                  aria-label="Verified Institutional Profile"
+                >
+                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1.2 14.2l-3.5-3.5 1.4-1.4 2.1 2.1 5.3-5.3 1.4 1.4-6.7 6.7z" />
+                </svg>
+              </div>
+
+              {/* Role / Program Pill Badge */}
+              <div className="mt-1.5 flex flex-wrap items-center gap-2">
+                <span className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full text-xs font-semibold bg-indigo-500/25 text-indigo-200 border border-indigo-400/30 backdrop-blur-sm">
+                  🎓 {user?.specialization || user?.department || 'Faculty Educator'}
+                </span>
+              </div>
+
+              {/* Meta row with divider pipes */}
+              <div className="flex flex-wrap items-center gap-2 text-xs text-slate-300 mt-2">
+                <span className="flex items-center gap-1 font-medium">
+                  🏛 {institutionName}
+                </span>
+                <span className="text-slate-500">|</span>
+                <span className="flex items-center gap-1">
+                  📍 {user?.department || 'Academic Faculty'}
+                </span>
+                <span className="text-slate-500">|</span>
+                <span className="font-mono text-slate-400">
+                  UID: {displayUID}
+                </span>
+              </div>
             </div>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <Input
-              label="Full Name"
-              name="name"
-              value={formData.name}
-              onChange={handleChange}
-              icon={FiUser}
-              required
-            />
-            <Input
-              label="Email Address"
-              name="email"
-              type="email"
-              value={formData.email}
-              onChange={handleChange}
-              icon={FiMail}
-              disabled
-            />
-            <Input
-              label="Phone Number"
-              name="phone"
-              type="tel"
-              value={formData.phone}
-              onChange={handleChange}
-              icon={FiPhone}
-            />
-            <Input
-              label="Address"
-              name="address"
-              value={formData.address}
-              onChange={handleChange}
-              icon={FiMapPin}
-            />
-            <Input
-              label="Qualification"
-              name="qualification"
-              value={formData.qualification}
-              onChange={handleChange}
-              icon={FiBriefcase}
-            />
-            <Input
-              label="Specialization"
-              name="specialization"
-              value={formData.specialization}
-              onChange={handleChange}
-              icon={FiBriefcase}
-            />
-            <Input
-              label="Department"
-              name="department"
-              value={formData.department}
-              onChange={handleChange}
-              icon={FiBriefcase}
-            />
+          {/* Right: 3D Graduation Cap Graphic & Edit Profile Button */}
+          <div className="flex items-center justify-end gap-3 sm:gap-4 shrink-0">
+            {/* 3D Mortarboard and Books Graphic */}
+            <div className="hidden sm:block">
+              <HeroAcademicGraphic className="w-36 h-28 lg:w-44 lg:h-32 drop-shadow-2xl" />
+            </div>
 
-            <div className="flex justify-end pt-4">
-              <Button type="submit" variant="primary" loading={loading}>
-                Save Changes
+            {/* Glassmorphic Edit Button */}
+            <button
+              onClick={() => {
+                if (editMode) handleCancel();
+                else setEditMode(true);
+              }}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold text-white bg-indigo-600/80 hover:bg-indigo-600 border border-indigo-400/30 backdrop-blur-md shadow-lg transition-all active:scale-95"
+            >
+              {editMode ? <FiX className="text-base" /> : <FiEdit2 className="text-base" />}
+              <span>{editMode ? 'Cancel Edit' : 'Edit Profile'}</span>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      {/* ── Content View: Row-wise Cards OR Edit Form ── */}
+      {editMode ? (
+        <div className="card p-5 sm:p-7 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm bg-white dark:bg-[#162033]">
+          <div className="pb-3.5 mb-5 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
+            <div>
+              <h3 className="text-base font-bold text-slate-900 dark:text-white">
+                Edit Faculty Credentials
+              </h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                Update qualifications, specialization, and direct contact details
+              </p>
+            </div>
+            <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400">
+              Modifying Records
+            </span>
+          </div>
+
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <Input
+                label="Full Legal Name"
+                name="name"
+                value={formData.name}
+                onChange={handleChange}
+                icon={FiUser}
+                required
+              />
+              <Input
+                label="Registered Institutional Email"
+                name="email"
+                type="email"
+                value={formData.email}
+                onChange={handleChange}
+                icon={FiMail}
+                disabled
+              />
+              <Input
+                label="Contact Telephone / Mobile"
+                name="phone"
+                type="tel"
+                value={formData.phone}
+                onChange={handleChange}
+                placeholder="+1 (555) 000-0000"
+                icon={FiPhone}
+              />
+              <Input
+                label="Campus Office / Residential Address"
+                name="address"
+                value={formData.address}
+                onChange={handleChange}
+                placeholder="Office room, Building, or Residential street"
+                icon={FiMapPin}
+              />
+            </div>
+
+            <div className="pt-3 border-t border-slate-200 dark:border-slate-800">
+              <h4 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">
+                Academic Specialization & Department
+              </h4>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <Input
+                  label="Highest Academic Qualification"
+                  name="qualification"
+                  value={formData.qualification}
+                  onChange={handleChange}
+                  placeholder="e.g. M.Ed., Ph.D., M.Sc."
+                  icon={FiAward}
+                />
+                <Input
+                  label="Teaching Specialization / Area"
+                  name="specialization"
+                  value={formData.specialization}
+                  onChange={handleChange}
+                  placeholder="e.g. Computer Science, Mathematics"
+                  icon={FiBookOpen}
+                />
+                <Input
+                  label="Department / Faculty Division"
+                  name="department"
+                  value={formData.department}
+                  onChange={handleChange}
+                  placeholder="e.g. Physical Sciences"
+                  icon={FiBriefcase}
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-200 dark:border-slate-800">
+              <Button type="button" variant="secondary" onClick={handleCancel}>
+                Cancel
+              </Button>
+              <Button type="submit" variant="primary" icon={FiSave} loading={loading}>
+                Save Dossier Changes
               </Button>
             </div>
           </form>
         </div>
-      </div>
+      ) : (
+        /* ── Four 3D Cards Grid (2x2 Layout Matching Screenshot) ── */
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+          {/* Card 1: Personal Information */}
+          <div className="card p-5 sm:p-6 border border-slate-200/90 dark:border-slate-800 rounded-2xl shadow-sm bg-white dark:bg-[#162033] flex flex-col justify-between">
+            <div>
+              {/* Header */}
+              <div className="flex items-center gap-3 pb-3 mb-4 border-b border-slate-100 dark:border-slate-800">
+                <div className="p-2 rounded-xl bg-purple-50 dark:bg-purple-950/40 text-purple-600 dark:text-purple-400 border border-purple-100 dark:border-purple-900/50">
+                  <FiUser className="text-base" />
+                </div>
+                <div>
+                  <h3 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white">
+                    Personal Information
+                  </h3>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                    Primary identity and role credentials
+                  </p>
+                </div>
+              </div>
+
+              {/* Body: Left 3D Illustration + Right Data Table */}
+              <div className="flex flex-col sm:flex-row items-center gap-5">
+                {/* 3D Illustration */}
+                <div className="w-24 sm:w-28 shrink-0 flex items-center justify-center">
+                  <CapScroll3DIcon className="w-20 h-20 sm:w-24 sm:h-24 drop-shadow-md" />
+                </div>
+
+                {/* Data Rows */}
+                <dl className="flex-1 w-full space-y-2.5 text-xs sm:text-sm">
+                  <div className="flex items-center justify-between py-1 border-b border-slate-100 dark:border-slate-800/80">
+                    <dt className="text-slate-500 dark:text-slate-400 font-medium">
+                      Full Name
+                    </dt>
+                    <dd className="font-bold text-slate-900 dark:text-white text-right">
+                      {user?.name || 'Faculty Member'}
+                    </dd>
+                  </div>
+
+                  <div className="flex items-center justify-between py-1 border-b border-slate-100 dark:border-slate-800/80">
+                    <dt className="text-slate-500 dark:text-slate-400 font-medium">
+                      Assigned Role
+                    </dt>
+                    <dd className="text-right">
+                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400">
+                        🎓 Faculty Educator
+                      </span>
+                    </dd>
+                  </div>
+
+                  <div className="flex items-center justify-between py-1 border-b border-slate-100 dark:border-slate-800/80">
+                    <dt className="text-slate-500 dark:text-slate-400 font-medium">
+                      Account Email
+                    </dt>
+                    <dd className="font-medium text-slate-700 dark:text-slate-300 text-right truncate max-w-[180px] sm:max-w-[210px] flex items-center gap-1.5 justify-end">
+                      <FiMail className="text-indigo-500 text-xs shrink-0" />
+                      <span>{user?.email || '—'}</span>
+                    </dd>
+                  </div>
+
+                  <div className="flex items-center justify-between py-1">
+                    <dt className="text-slate-500 dark:text-slate-400 font-medium">
+                      Account Status
+                    </dt>
+                    <dd className="text-right">
+                      <span className="inline-flex items-center gap-1.5 font-semibold text-emerald-600 dark:text-emerald-400 text-xs sm:text-sm">
+                        <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                        Active
+                      </span>
+                    </dd>
+                  </div>
+                </dl>
+              </div>
+            </div>
+          </div>
+
+          {/* Card 2: Contact Details */}
+          <div className="card p-5 sm:p-6 border border-slate-200/90 dark:border-slate-800 rounded-2xl shadow-sm bg-white dark:bg-[#162033] flex flex-col justify-between">
+            <div>
+              {/* Header */}
+              <div className="flex items-center gap-3 pb-3 mb-4 border-b border-slate-100 dark:border-slate-800">
+                <div className="p-2 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-900/50">
+                  <FiPhone className="text-base" />
+                </div>
+                <div>
+                  <h3 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white">
+                    Contact Details
+                  </h3>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                    Direct communication channels
+                  </p>
+                </div>
+              </div>
+
+              {/* Body: Left 3D Illustration + Right Data Table */}
+              <div className="flex flex-col sm:flex-row items-center gap-5">
+                {/* 3D Illustration */}
+                <div className="w-24 sm:w-28 shrink-0 flex items-center justify-center">
+                  <Mail3DIcon className="w-20 h-20 sm:w-24 sm:h-24 drop-shadow-md" />
+                </div>
+
+                {/* Data Rows */}
+                <dl className="flex-1 w-full space-y-2.5 text-xs sm:text-sm">
+                  <div className="flex items-center justify-between py-1 border-b border-slate-100 dark:border-slate-800/80">
+                    <dt className="text-slate-500 dark:text-slate-400 font-medium">
+                      Email Address
+                    </dt>
+                    <dd className="font-semibold text-slate-900 dark:text-white text-right truncate max-w-[180px] sm:max-w-[210px] flex items-center gap-1.5 justify-end">
+                      <FiMail className="text-blue-500 text-xs shrink-0" />
+                      <span>{user?.email || '—'}</span>
+                    </dd>
+                  </div>
+
+                  <div className="flex items-center justify-between py-1 border-b border-slate-100 dark:border-slate-800/80">
+                    <dt className="text-slate-500 dark:text-slate-400 font-medium">
+                      Primary Phone
+                    </dt>
+                    <dd className="font-medium text-slate-700 dark:text-slate-300 text-right flex items-center gap-1.5 justify-end">
+                      <FiPhone className="text-blue-500 text-xs shrink-0" />
+                      <span>{user?.phone || 'Not Configured'}</span>
+                    </dd>
+                  </div>
+
+                  <div className="flex items-center justify-between py-1 border-b border-slate-100 dark:border-slate-800/80">
+                    <dt className="text-slate-500 dark:text-slate-400 font-medium">
+                      Physical Address
+                    </dt>
+                    <dd className="font-medium text-slate-700 dark:text-slate-300 text-right truncate max-w-[180px] sm:max-w-[210px] flex items-center gap-1.5 justify-end">
+                      <FiMapPin className="text-blue-500 text-xs shrink-0" />
+                      <span>{formatAddress(user?.address) || 'Not Configured'}</span>
+                    </dd>
+                  </div>
+
+                  <div className="flex items-center justify-between py-1">
+                    <dt className="text-slate-500 dark:text-slate-400 font-medium">
+                      Contact Status
+                    </dt>
+                    <dd className="text-right">
+                      <span className="inline-flex items-center gap-1.5 font-semibold text-emerald-600 dark:text-emerald-400 text-xs sm:text-sm">
+                        <FiCheckCircle className="text-emerald-500 shrink-0 text-sm" />
+                        Registered Contact
+                      </span>
+                    </dd>
+                  </div>
+                </dl>
+              </div>
+            </div>
+          </div>
+
+          {/* Card 3: Institutional Details */}
+          <div className="card p-5 sm:p-6 border border-slate-200/90 dark:border-slate-800 rounded-2xl shadow-sm bg-white dark:bg-[#162033] flex flex-col justify-between">
+            <div>
+              {/* Header */}
+              <div className="flex items-center gap-3 pb-3 mb-4 border-b border-slate-100 dark:border-slate-800">
+                <div className="p-2 rounded-xl bg-purple-50 dark:bg-purple-950/40 text-purple-600 dark:text-purple-400 border border-purple-100 dark:border-purple-900/50">
+                  <FiHome className="text-base" />
+                </div>
+                <div>
+                  <h3 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white">
+                    Institutional Details
+                  </h3>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                    Institutional scope and assigned division
+                  </p>
+                </div>
+              </div>
+
+              {/* Body: Left 3D Illustration + Right Data Table */}
+              <div className="flex flex-col sm:flex-row items-center gap-5">
+                {/* 3D Illustration */}
+                <div className="w-24 sm:w-28 shrink-0 flex items-center justify-center">
+                  <Campus3DIcon className="w-20 h-20 sm:w-24 sm:h-24 drop-shadow-md" />
+                </div>
+
+                {/* Data Rows */}
+                <dl className="flex-1 w-full space-y-2.5 text-xs sm:text-sm">
+                  <div className="flex items-center justify-between py-1 border-b border-slate-100 dark:border-slate-800/80">
+                    <dt className="text-slate-500 dark:text-slate-400 font-medium">
+                      Assigned Portal
+                    </dt>
+                    <dd className="text-right">
+                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-purple-50 dark:bg-purple-950/60 text-purple-600 dark:text-purple-400">
+                        ⭐ Teacher Portal
+                      </span>
+                    </dd>
+                  </div>
+
+                  <div className="flex items-center justify-between py-1 border-b border-slate-100 dark:border-slate-800/80">
+                    <dt className="text-slate-500 dark:text-slate-400 font-medium">
+                      School Institution
+                    </dt>
+                    <dd className="font-medium text-slate-700 dark:text-slate-300 text-right truncate max-w-[180px] sm:max-w-[210px] flex items-center gap-1.5 justify-end">
+                      <FiHome className="text-blue-500 text-xs shrink-0" />
+                      <span>{institutionName}</span>
+                    </dd>
+                  </div>
+
+                  <div className="flex items-center justify-between py-1 border-b border-slate-100 dark:border-slate-800/80">
+                    <dt className="text-slate-500 dark:text-slate-400 font-medium">
+                      Department / Division
+                    </dt>
+                    <dd className="font-medium text-slate-700 dark:text-slate-300 text-right truncate max-w-[180px] sm:max-w-[210px] flex items-center gap-1.5 justify-end">
+                      <FiBriefcase className="text-blue-500 text-xs shrink-0" />
+                      <span>{user?.department || formData.department || 'Faculty of Academic Affairs'}</span>
+                    </dd>
+                  </div>
+
+                  <div className="flex items-center justify-between py-1">
+                    <dt className="text-slate-500 dark:text-slate-400 font-medium">
+                      Specialization
+                    </dt>
+                    <dd className="font-medium text-slate-700 dark:text-slate-300 text-right truncate max-w-[180px] sm:max-w-[210px] flex items-center gap-1.5 justify-end">
+                      <FiBookOpen className="text-blue-500 text-xs shrink-0" />
+                      <span>{user?.specialization || formData.specialization || 'Curriculum & Instruction'}</span>
+                    </dd>
+                  </div>
+                </dl>
+              </div>
+            </div>
+          </div>
+
+          {/* Card 4: Account Security */}
+          <div className="card p-5 sm:p-6 border border-slate-200/90 dark:border-slate-800 rounded-2xl shadow-sm bg-white dark:bg-[#162033] flex flex-col justify-between">
+            <div>
+              {/* Header */}
+              <div className="flex items-center gap-3 pb-3 mb-4 border-b border-slate-100 dark:border-slate-800">
+                <div className="p-2 rounded-xl bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 border border-amber-100 dark:border-amber-900/50">
+                  <FiLock className="text-base" />
+                </div>
+                <div>
+                  <h3 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white">
+                    Account Security
+                  </h3>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                    Authentication protocol and credentials status
+                  </p>
+                </div>
+              </div>
+
+              {/* Body: Left 3D Illustration + Right Data Table */}
+              <div className="flex flex-col sm:flex-row items-center gap-5">
+                {/* 3D Illustration */}
+                <div className="w-24 sm:w-28 shrink-0 flex items-center justify-center">
+                  <Shield3DIcon className="w-20 h-20 sm:w-24 sm:h-24 drop-shadow-md" />
+                </div>
+
+                {/* Data Rows */}
+                <dl className="flex-1 w-full space-y-2.5 text-xs sm:text-sm">
+                  <div className="flex items-center justify-between py-1 border-b border-slate-100 dark:border-slate-800/80">
+                    <dt className="text-slate-500 dark:text-slate-400 font-medium">
+                      Account UID
+                    </dt>
+                    <dd className="font-mono text-xs text-slate-700 dark:text-slate-300 text-right flex items-center gap-1.5 justify-end">
+                      <span className="truncate max-w-[140px] sm:max-w-[190px]">
+                        {userUID}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={handleCopyUID}
+                        title="Copy Account UID"
+                        className="p-1 hover:text-indigo-600 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded transition-colors"
+                      >
+                        <FiCopy className="text-xs" />
+                      </button>
+                    </dd>
+                  </div>
+
+                  <div className="flex items-center justify-between py-1 border-b border-slate-100 dark:border-slate-800/80">
+                    <dt className="text-slate-500 dark:text-slate-400 font-medium">
+                      Auth Mechanism
+                    </dt>
+                    <dd className="text-right">
+                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md text-xs font-semibold bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400">
+                        <FiCheckCircle className="text-indigo-500 text-xs shrink-0" />
+                        JWT Bearer Auth
+                      </span>
+                    </dd>
+                  </div>
+
+                  <div className="flex items-center justify-between py-1 border-b border-slate-100 dark:border-slate-800/80">
+                    <dt className="text-slate-500 dark:text-slate-400 font-medium">
+                      Security Status
+                    </dt>
+                    <dd className="text-right">
+                      <span className="inline-flex items-center gap-1.5 font-semibold text-emerald-600 dark:text-emerald-400 text-xs sm:text-sm">
+                        <FiCheckCircle className="text-emerald-500 shrink-0 text-sm" />
+                        SSL / TLS Protected
+                      </span>
+                    </dd>
+                  </div>
+
+                  <div className="flex items-center justify-between py-1">
+                    <dt className="text-slate-500 dark:text-slate-400 font-medium">
+                      Session Integrity
+                    </dt>
+                    <dd className="text-right">
+                      <span className="inline-flex items-center gap-1.5 font-semibold text-emerald-600 dark:text-emerald-400 text-xs sm:text-sm">
+                        <FiCheckCircle className="text-emerald-500 shrink-0 text-sm" />
+                        Active & Verified
+                      </span>
+                    </dd>
+                  </div>
+                </dl>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -3,17 +3,23 @@ import {
   FiPlus,
   FiEdit2,
   FiTrash2,
+  FiEye,
   FiCalendar,
   FiClock,
   FiAward,
+  FiSend,
+  FiFilter,
 } from 'react-icons/fi';
 import { toast } from 'react-toastify';
-import DashboardHeader from '../../components/dashboard/DashboardHeader';
+import PageHeader from '../../components/common/PageHeader';
 import Button from '../../components/forms/Button';
 import Input from '../../components/forms/Input';
 import Select from '../../components/forms/Select';
 import Modal from '../../components/modals/Modal';
 import Loader from '../../components/common/Loader';
+import EmptyState from '../../components/common/EmptyState';
+import StatusBadge from '../../components/common/StatusBadge';
+import ConfirmDialog from '../../components/common/ConfirmDialog';
 import api from '../../utils/api';
 import { formatDate } from '../../utils/helpers';
 
@@ -25,7 +31,11 @@ const Exams = () => {
   const [formLoading, setFormLoading] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [editingExam, setEditingExam] = useState(null);
+  const [viewingExam, setViewingExam] = useState(null);
   const [selectedClass, setSelectedClass] = useState('');
+  const [deleteTargetId, setDeleteTargetId] = useState(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+
   const [formData, setFormData] = useState({
     name: '',
     code: '',
@@ -62,8 +72,8 @@ const Exams = () => {
       if (selectedClass) params.classId = selectedClass;
       const response = await api.get('/api/exams', { params });
       setExams(response.data.exams || []);
-    } catch (error) {
-      console.error('Error fetching exams:', error);
+    } catch (err) {
+      console.error('Error fetching exams:', err);
       toast.error('Failed to fetch exams');
     } finally {
       setLoading(false);
@@ -74,8 +84,8 @@ const Exams = () => {
     try {
       const response = await api.get('/api/classes');
       setClasses(response.data.classes || []);
-    } catch (error) {
-      console.error('Error fetching classes:', error);
+    } catch (err) {
+      console.error('Error fetching classes:', err);
     }
   };
 
@@ -83,8 +93,8 @@ const Exams = () => {
     try {
       const response = await api.get('/api/subjects');
       setSubjects(response.data.subjects || []);
-    } catch (error) {
-      console.error('Error fetching subjects:', error);
+    } catch (err) {
+      console.error('Error fetching subjects:', err);
     }
   };
 
@@ -156,14 +166,11 @@ const Exams = () => {
     if (!formData.name) newErrors.name = 'Exam name is required';
     if (!formData.code) newErrors.code = 'Exam code is required';
     if (!formData.class) newErrors.class = 'Class is required';
-    if (!formData.academicYear)
-      newErrors.academicYear = 'Academic year is required';
+    if (!formData.academicYear) newErrors.academicYear = 'Academic year is required';
     if (!formData.startDate) newErrors.startDate = 'Start date is required';
     if (!formData.endDate) newErrors.endDate = 'End date is required';
-    if (formData.subjects.length === 0)
-      newErrors.subjects = 'At least one subject is required';
+    if (formData.subjects.length === 0) newErrors.subjects = 'At least one subject is required';
 
-    // Date validation
     if (formData.startDate && formData.endDate) {
       const start = new Date(formData.startDate);
       const end = new Date(formData.endDate);
@@ -171,7 +178,6 @@ const Exams = () => {
         newErrors.endDate = 'End date must be after start date';
       }
     }
-
     return newErrors;
   };
 
@@ -187,67 +193,70 @@ const Exams = () => {
     try {
       if (editingExam) {
         await api.put(`/api/exams/${editingExam._id}`, formData);
-        toast.success('Exam updated successfully');
+        toast.success('Exam schedule updated successfully');
       } else {
         await api.post('/api/exams', formData);
         toast.success('Exam created successfully');
       }
       setShowModal(false);
       fetchExams();
-    } catch (error) {
-      console.error('Error saving exam:', error);
-      toast.error(error.response?.data?.message || 'Failed to save exam');
+    } catch (err) {
+      console.error('Error saving exam:', err);
+      toast.error(err.response?.data?.message || 'Failed to save exam');
     } finally {
       setFormLoading(false);
     }
   };
 
-  const handleDelete = async (id) => {
-    if (window.confirm('Are you sure you want to delete this exam?')) {
-      try {
-        await api.delete(`/api/exams/${id}`);
-        toast.success('Exam deleted successfully');
-        fetchExams();
-      } catch (error) {
-        console.error('Error deleting exam:', error);
-        toast.error('Failed to delete exam');
-      }
+  const handleDeleteConfirm = async () => {
+    if (!deleteTargetId) return;
+    setDeleteLoading(true);
+    try {
+      await api.delete(`/api/exams/${deleteTargetId}`);
+      toast.success('Exam schedule removed successfully');
+      setDeleteTargetId(null);
+      fetchExams();
+    } catch (err) {
+      console.error('Error deleting exam:', err);
+      toast.error('Failed to delete exam');
+    } finally {
+      setDeleteLoading(false);
     }
   };
 
   const handlePublish = async (id) => {
     try {
       await api.put(`/api/exams/${id}/publish`);
-      toast.success('Exam published successfully');
+      toast.success('Exam published to students and faculty');
       fetchExams();
-    } catch (error) {
-      console.error('Error publishing exam:', error);
+    } catch (err) {
+      console.error('Error publishing exam:', err);
       toast.error('Failed to publish exam');
     }
   };
 
-  const getStatusBadge = (status) => {
-    const colors = {
-      draft: 'badge-warning',
-      published: 'badge-success',
-      ongoing: 'badge-info',
-      completed: 'badge-secondary',
-      cancelled: 'badge-danger',
-    };
-    return (
-      <span className={`badge ${colors[status] || 'badge-warning'}`}>
-        {status}
-      </span>
-    );
+  const getStatusVariant = (status) => {
+    switch (status) {
+      case 'published': return 'success';
+      case 'ongoing': return 'info';
+      case 'draft': return 'warning';
+      case 'completed': return 'neutral';
+      case 'cancelled': return 'danger';
+      default: return 'neutral';
+    }
   };
 
   if (loading && exams.length === 0) return <Loader />;
 
   return (
-    <div>
-      <DashboardHeader
-        title="Exams Management"
-        subtitle="Create and manage exams"
+    <div className="space-y-6">
+      <PageHeader
+        title="Examinations Registry"
+        subtitle="Schedule and orchestrate institution-wide assessments and grading periods"
+        breadcrumbs={[
+          { label: 'Dashboard', path: '/admin/dashboard' },
+          { label: 'Exams' },
+        ]}
         actions={
           <Button variant="primary" icon={FiPlus} onClick={handleAddExam}>
             Create Exam
@@ -255,138 +264,153 @@ const Exams = () => {
         }
       />
 
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-card border border-gray-200 dark:border-gray-700 overflow-hidden">
-        <div className="p-4 border-b border-gray-200 dark:border-gray-700">
-          <Select
-            name="class"
-            value={selectedClass}
-            onChange={(e) => setSelectedClass(e.target.value)}
-            options={[
-              { value: '', label: 'All Classes' },
-              ...classes.map((c) => ({ value: c._id, label: c.name })),
-            ]}
-            className="w-48"
-            label="Filter by Class"
-          />
+      <div className="card overflow-hidden">
+        {/* Class Filter Bar */}
+        <div className="p-4 sm:p-5 border-b border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30 flex items-center gap-3">
+          <div className="w-56">
+            <select
+              value={selectedClass}
+              onChange={(e) => setSelectedClass(e.target.value)}
+              className="select-field text-xs py-2.5 w-full"
+            >
+              <option value="">All Academic Classes</option>
+              {classes.map((c) => (
+                <option key={c._id} value={c._id}>
+                  {c.name}
+                </option>
+              ))}
+            </select>
+          </div>
+          {selectedClass && (
+            <button
+              onClick={() => setSelectedClass('')}
+              className="text-xs text-indigo-600 dark:text-indigo-400 hover:underline font-medium"
+            >
+              Reset filter
+            </button>
+          )}
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-50 dark:bg-gray-700/50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
-                  Exam
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
-                  Class
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
-                  Schedule
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
-                  Status
-                </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-              {exams.length === 0 ? (
-                <tr>
-                  <td
-                    colSpan="5"
-                    className="px-6 py-12 text-center text-gray-500 dark:text-gray-400"
-                  >
-                    <FiAward className="text-4xl text-gray-300 mx-auto mb-3" />
-                    No exams found
-                  </td>
+        {/* Exams Table */}
+        {exams.length === 0 ? (
+          <div className="p-8">
+            <EmptyState
+              icon={FiAward}
+              title="No examinations scheduled"
+              description="No exams registered for the selected cohort or term."
+              actionLabel="Schedule First Exam"
+              onAction={handleAddExam}
+            />
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-800/50 text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
+                  <th className="px-5 py-3">Examination Name</th>
+                  <th className="px-4 py-3">Class Cohort</th>
+                  <th className="px-4 py-3">Schedule Window</th>
+                  <th className="px-4 py-3">Status</th>
+                  <th className="px-5 py-3 text-right">Actions</th>
                 </tr>
-              ) : (
-                exams.map((exam) => (
+              </thead>
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 text-xs">
+                {exams.map((exam) => (
                   <tr
                     key={exam._id}
-                    className="hover:bg-gray-50 dark:hover:bg-gray-700/50"
+                    className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors"
                   >
-                    <td className="px-6 py-4">
+                    <td className="px-5 py-3.5 whitespace-nowrap">
                       <div>
-                        <p className="font-medium text-gray-800 dark:text-white">
+                        <p className="font-bold text-slate-900 dark:text-white">
                           {exam.name}
                         </p>
-                        <p className="text-xs text-gray-500 dark:text-gray-400">
-                          {exam.code}
+                        <p className="text-[10px] font-mono text-slate-400 mt-0.5">
+                          {exam.code} • {exam.type?.toUpperCase()}
                         </p>
                       </div>
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-700 dark:text-gray-300">
-                      {exam.class?.name}
+                    <td className="px-4 py-3.5 whitespace-nowrap text-slate-700 dark:text-slate-300 font-medium">
+                      {exam.class?.name || 'All Classes'}
                     </td>
-                    <td className="px-6 py-4">
-                      <div className="text-sm text-gray-700 dark:text-gray-300">
-                        <div className="flex items-center gap-1">
-                          <FiCalendar className="text-gray-400 text-xs" />
-                          {formatDate(exam.startDate)}
-                        </div>
-                        <div className="flex items-center gap-1 text-xs text-gray-500">
-                          <FiClock className="text-gray-400" />
-                          {exam.duration} minutes
-                        </div>
+                    <td className="px-4 py-3.5 whitespace-nowrap text-slate-700 dark:text-slate-300">
+                      <div className="flex items-center gap-1.5 font-medium">
+                        <FiCalendar className="text-slate-400 text-xs" />
+                        {formatDate(exam.startDate)} – {formatDate(exam.endDate)}
+                      </div>
+                      <div className="flex items-center gap-1 text-[11px] text-slate-400 mt-0.5">
+                        <FiClock className="text-slate-400" />
+                        {exam.duration} minutes ({exam.totalMarks} marks)
                       </div>
                     </td>
-                    <td className="px-6 py-4">{getStatusBadge(exam.status)}</td>
-                    <td className="px-6 py-4 text-right">
-                      <div className="flex items-center justify-end gap-2">
+                    <td className="px-4 py-3.5 whitespace-nowrap">
+                      <StatusBadge
+                        status={exam.status}
+                        variant={getStatusVariant(exam.status)}
+                      >
+                        {exam.status?.toUpperCase()}
+                      </StatusBadge>
+                    </td>
+                    <td className="px-5 py-3.5 whitespace-nowrap text-right">
+                      <div className="flex items-center justify-end gap-1.5">
+                        <button
+                          onClick={() => setViewingExam(exam)}
+                          className="p-1.5 rounded-lg text-slate-500 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-slate-800 transition-colors"
+                          title="View Exam Details"
+                        >
+                          <FiEye className="text-sm" />
+                        </button>
                         {exam.status === 'draft' && (
                           <button
                             onClick={() => handlePublish(exam._id)}
-                            className="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors text-green-600"
-                            title="Publish"
+                            className="p-1.5 rounded-lg text-emerald-600 hover:bg-emerald-50 dark:hover:bg-slate-800 transition-colors"
+                            title="Publish Exam"
                           >
-                            <FiAward className="text-sm" />
+                            <FiSend className="text-sm" />
                           </button>
                         )}
                         <button
                           onClick={() => handleEditExam(exam)}
-                          className="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors text-yellow-600"
-                          title="Edit"
+                          className="p-1.5 rounded-lg text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-slate-800 transition-colors"
+                          title="Edit Exam"
                         >
                           <FiEdit2 className="text-sm" />
                         </button>
                         <button
-                          onClick={() => handleDelete(exam._id)}
-                          className="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors text-red-600"
-                          title="Delete"
+                          onClick={() => setDeleteTargetId(exam._id)}
+                          className="p-1.5 rounded-lg text-slate-500 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-slate-800 transition-colors"
+                          title="Delete Exam"
                         >
                           <FiTrash2 className="text-sm" />
                         </button>
                       </div>
                     </td>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
 
-      {/* Add/Edit Exam Modal */}
+      {/* Add / Edit Exam Modal */}
       <Modal
         isOpen={showModal}
         onClose={() => setShowModal(false)}
-        title={editingExam ? 'Edit Exam' : 'Create Exam'}
+        title={editingExam ? 'Update Examination Schedule' : 'Schedule New Examination'}
         size="lg"
       >
         <form
           onSubmit={handleSubmit}
-          className="space-y-4 max-h-[70vh] overflow-y-auto pr-2"
+          className="space-y-4 max-h-[70vh] overflow-y-auto pr-1"
         >
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Input
               label="Exam Name"
               name="name"
               value={formData.name}
               onChange={handleChange}
-              placeholder="Enter exam name"
+              placeholder="e.g. Midterm Examination 2026"
               required
               error={errors.name}
             />
@@ -395,48 +419,48 @@ const Exams = () => {
               name="code"
               value={formData.code}
               onChange={handleChange}
-              placeholder="Enter exam code"
+              placeholder="e.g. MID-2026"
               required
               error={errors.code}
             />
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Select
               label="Exam Type"
               name="type"
               value={formData.type}
               onChange={handleChange}
               options={[
-                { value: 'midterm', label: 'Midterm' },
-                { value: 'final', label: 'Final' },
-                { value: 'quiz', label: 'Quiz' },
-                { value: 'assignment', label: 'Assignment' },
-                { value: 'practical', label: 'Practical' },
-                { value: 'viva', label: 'Viva' },
+                { value: 'midterm', label: 'Midterm Examination' },
+                { value: 'final', label: 'Final Examination' },
+                { value: 'quiz', label: 'Assessment Quiz' },
+                { value: 'assignment', label: 'Term Project / Assignment' },
+                { value: 'practical', label: 'Practical Lab' },
+                { value: 'viva', label: 'Oral Examination / Viva' },
               ]}
             />
             <Select
-              label="Fee Period"
+              label="Term Period"
               name="semester"
               value={formData.semester}
               onChange={handleChange}
               options={[
-                { value: 'annual', label: 'Annual' },
-                { value: 'semester1', label: 'Semester 1' },
-                { value: 'semester2', label: 'Semester 2' },
+                { value: 'annual', label: 'Annual Term' },
+                { value: 'semester1', label: 'Fall Semester' },
+                { value: 'semester2', label: 'Spring Semester' },
               ]}
             />
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Select
-              label="Class"
+              label="Class Cohort"
               name="class"
               value={formData.class}
               onChange={handleChange}
               options={[
-                { value: '', label: 'Select Class' },
+                { value: '', label: 'Select Target Class' },
                 ...classes.map((c) => ({ value: c._id, label: c.name })),
               ]}
               required
@@ -447,15 +471,15 @@ const Exams = () => {
               name="academicYear"
               value={formData.academicYear}
               onChange={handleChange}
-              placeholder="e.g., 2026-2027"
+              placeholder="2026-2027"
               required
               error={errors.academicYear}
             />
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <Input
-              label="Total Marks"
+              label="Maximum Marks"
               name="totalMarks"
               type="number"
               value={formData.totalMarks}
@@ -463,7 +487,7 @@ const Exams = () => {
               placeholder="100"
             />
             <Input
-              label="Passing Marks"
+              label="Passing Threshold"
               name="passingMarks"
               type="number"
               value={formData.passingMarks}
@@ -471,7 +495,7 @@ const Exams = () => {
               placeholder="40"
             />
             <Input
-              label="Duration (minutes)"
+              label="Duration (Minutes)"
               name="duration"
               type="number"
               value={formData.duration}
@@ -480,7 +504,7 @@ const Exams = () => {
             />
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Input
               label="Start Date"
               name="startDate"
@@ -502,15 +526,15 @@ const Exams = () => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Select Subjects <span className="text-red-500">*</span>
+            <label className="label">
+              Covered Subjects <span className="text-rose-500">*</span>
             </label>
             <select
               name="subjects"
               multiple
               value={formData.subjects}
               onChange={handleMultiSelect}
-              className="input-field h-32"
+              className="select-field text-xs h-28 w-full"
               required
             >
               {subjects.map((subject) => (
@@ -519,39 +543,38 @@ const Exams = () => {
                 </option>
               ))}
             </select>
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-              Hold Ctrl/Cmd to select multiple subjects
+            <p className="text-[11px] text-slate-400 mt-1">
+              Hold Ctrl/Cmd to select multiple curriculum subjects
             </p>
             {errors.subjects && (
-              <p className="text-sm text-red-500 mt-1">{errors.subjects}</p>
+              <p className="text-xs text-rose-500 mt-1">{errors.subjects}</p>
             )}
           </div>
 
           <Input
-            label="Instructions"
+            label="Examination Guidelines & Instructions"
             name="instructions"
             value={formData.instructions}
             onChange={handleChange}
-            placeholder="Enter exam instructions"
+            placeholder="Special instructions for invigilators and students..."
           />
 
           <Select
-            label="Status"
+            label="Publication Status"
             name="status"
             value={formData.status}
             onChange={handleChange}
             options={[
-              { value: 'draft', label: 'Draft' },
-              { value: 'published', label: 'Published' },
+              { value: 'draft', label: 'Draft (Internal Review)' },
+              { value: 'published', label: 'Published (Visible to Students)' },
             ]}
           />
 
-          <div className="flex flex-col-reverse sm:flex-row justify-end gap-3 pt-6 border-t border-gray-200 dark:border-gray-700">
+          <div className="flex justify-end gap-2 pt-4 border-t border-slate-200 dark:border-slate-800">
             <Button
               type="button"
               variant="secondary"
               onClick={() => setShowModal(false)}
-              className="w-full sm:w-auto"
             >
               Cancel
             </Button>
@@ -559,13 +582,150 @@ const Exams = () => {
               type="submit"
               variant="primary"
               loading={formLoading}
-              className="w-full sm:w-auto"
             >
-              {editingExam ? 'Update Exam' : 'Create Exam'}
+              {editingExam ? 'Save Changes' : 'Schedule Exam'}
             </Button>
           </div>
         </form>
       </Modal>
+
+      {/* View Exam Details Modal */}
+      <Modal
+        isOpen={Boolean(viewingExam)}
+        onClose={() => setViewingExam(null)}
+        title="Examination Schedule Details"
+        size="lg"
+      >
+        {viewingExam && (
+          <div className="space-y-5">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/80 dark:border-slate-700/60">
+              <div className="flex items-center gap-3.5">
+                <div className="w-11 h-11 rounded-xl bg-indigo-600 text-white flex items-center justify-center text-lg shadow-sm shrink-0">
+                  <FiAward />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-slate-900 dark:text-white">
+                    {viewingExam.name}
+                  </h3>
+                  <p className="text-xs font-mono text-slate-500 dark:text-slate-400">
+                    {viewingExam.code || '—'} • {viewingExam.type?.toUpperCase() || 'EXAM'}
+                  </p>
+                </div>
+              </div>
+              <StatusBadge
+                status={viewingExam.status}
+                variant={getStatusVariant(viewingExam.status)}
+              >
+                {viewingExam.status?.toUpperCase()}
+              </StatusBadge>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+              <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 space-y-2.5">
+                <h4 className="font-bold text-slate-900 dark:text-white uppercase tracking-wider text-[11px] border-b border-slate-100 dark:border-slate-800 pb-2">
+                  Schedule & Cohort
+                </h4>
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Class Cohort</span>
+                  <span className="font-semibold text-slate-900 dark:text-slate-100">{viewingExam.class?.name || 'All Classes'}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Start Date</span>
+                  <span className="font-semibold text-slate-900 dark:text-slate-100">{formatDate(viewingExam.startDate)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-500">End Date</span>
+                  <span className="font-semibold text-slate-900 dark:text-slate-100">{formatDate(viewingExam.endDate)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Academic Year</span>
+                  <span className="font-semibold text-slate-900 dark:text-slate-100">{viewingExam.academicYear || '—'}</span>
+                </div>
+              </div>
+
+              <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 space-y-2.5">
+                <h4 className="font-bold text-slate-900 dark:text-white uppercase tracking-wider text-[11px] border-b border-slate-100 dark:border-slate-800 pb-2">
+                  Assessment Criteria
+                </h4>
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Total Marks</span>
+                  <span className="font-semibold text-slate-900 dark:text-slate-100">{viewingExam.totalMarks ?? '—'}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Passing Marks</span>
+                  <span className="font-semibold text-slate-900 dark:text-slate-100">{viewingExam.passingMarks ?? '—'}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Duration</span>
+                  <span className="font-semibold text-slate-900 dark:text-slate-100">{viewingExam.duration ? `${viewingExam.duration} mins` : '—'}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Semester / Term</span>
+                  <span className="font-semibold capitalize text-slate-900 dark:text-slate-100">{viewingExam.semester || '—'}</span>
+                </div>
+              </div>
+            </div>
+
+            {viewingExam.subjects?.length > 0 && (
+              <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 text-xs space-y-2">
+                <h4 className="font-bold text-slate-900 dark:text-white uppercase tracking-wider text-[11px]">
+                  Included Subjects ({viewingExam.subjects.length})
+                </h4>
+                <div className="flex flex-wrap gap-1.5">
+                  {viewingExam.subjects.map((sub, idx) => (
+                    <span
+                      key={sub._id || idx}
+                      className="px-2.5 py-1 rounded-full text-[11px] font-medium bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-900/50"
+                    >
+                      {sub.name || sub}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {viewingExam.instructions && (
+              <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 text-xs space-y-1.5">
+                <h4 className="font-bold text-slate-900 dark:text-white uppercase tracking-wider text-[11px]">
+                  Instructions
+                </h4>
+                <p className="text-slate-600 dark:text-slate-300 leading-relaxed whitespace-pre-line">
+                  {viewingExam.instructions}
+                </p>
+              </div>
+            )}
+
+            <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-200 dark:border-slate-800">
+              <Button variant="secondary" onClick={() => setViewingExam(null)}>
+                Close
+              </Button>
+              <Button
+                variant="primary"
+                icon={FiEdit2}
+                onClick={() => {
+                  const target = viewingExam;
+                  setViewingExam(null);
+                  handleEditExam(target);
+                }}
+              >
+                Edit Exam
+              </Button>
+            </div>
+          </div>
+        )}
+      </Modal>
+
+      {/* Confirm Deletion */}
+      <ConfirmDialog
+        isOpen={Boolean(deleteTargetId)}
+        onClose={() => setDeleteTargetId(null)}
+        onConfirm={handleDeleteConfirm}
+        title="Cancel & Delete Examination"
+        message="Are you sure you want to remove this examination? All published date sheets and scheduled time slots linked to this assessment will be revoked."
+        confirmText="Delete Exam"
+        confirmVariant="danger"
+        loading={deleteLoading}
+      />
     </div>
   );
 };

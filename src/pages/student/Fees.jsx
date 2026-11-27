@@ -3,18 +3,20 @@ import {
   FiDollarSign,
   FiEye,
   FiDownload,
+  FiFileText,
+  FiCheckCircle,
+  FiClock,
 } from 'react-icons/fi';
 import { toast } from 'react-toastify';
-import DashboardHeader from '../../components/dashboard/DashboardHeader';
+import PageHeader from '../../components/common/PageHeader';
+import StatsCard from '../../components/dashboard/StatsCard';
+import SectionCard from '../../components/common/SectionCard';
+import StatusBadge from '../../components/common/StatusBadge';
 import Loader from '../../components/common/Loader';
+import EmptyState from '../../components/common/EmptyState';
 import VoucherModal from '../../components/modals/VoucherModal';
 import api from '../../utils/api';
-import {
-  formatDate,
-  formatCurrency,
-  getStatusColor,
-  getStatusLabel,
-} from '../../utils/helpers';
+import { formatDate, formatCurrency } from '../../utils/helpers';
 
 const StudentFees = () => {
   const [fees, setFees] = useState([]);
@@ -22,6 +24,7 @@ const StudentFees = () => {
   const [loading, setLoading] = useState(true);
   const [showVoucherModal, setShowVoucherModal] = useState(false);
   const [selectedVoucherFee, setSelectedVoucherFee] = useState(null);
+  const [downloadingId, setDownloadingId] = useState(null);
 
   useEffect(() => {
     fetchFees();
@@ -31,11 +34,11 @@ const StudentFees = () => {
     setLoading(true);
     try {
       const response = await api.get('/api/fees/my-fees');
-      setFees(response.data.fees || []);
-      setSummary(response.data.summary || {});
+      setFees(response.data?.fees || []);
+      setSummary(response.data?.summary || {});
     } catch (error) {
       console.error('Error fetching fees:', error);
-      toast.error('Failed to fetch fees');
+      toast.error('Failed to load fee ledger');
     } finally {
       setLoading(false);
     }
@@ -48,6 +51,7 @@ const StudentFees = () => {
 
   const handleDownloadPDF = async (fee) => {
     try {
+      setDownloadingId(fee._id);
       const response = await api.get(`/api/fees/${fee._id}/download-pdf`, {
         responseType: 'blob',
       });
@@ -58,156 +62,144 @@ const StudentFees = () => {
       document.body.appendChild(link);
       link.click();
       link.remove();
-      toast.success('PDF downloaded successfully');
+      toast.success('Fee voucher PDF downloaded');
     } catch (error) {
-      console.error('Error downloading PDF:', error);
-      toast.error('Failed to download PDF');
+      console.error('Error downloading voucher PDF:', error);
+      toast.error('Failed to download fee voucher');
+    } finally {
+      setDownloadingId(null);
     }
-  };
-
-  const getStatusBadge = (status) => {
-    const color = getStatusColor(status);
-    const label = getStatusLabel(status);
-    return <span className={`badge badge-${color}`}>{label}</span>;
   };
 
   if (loading) return <Loader />;
 
   return (
-    <div>
-      <DashboardHeader
-        title="My Fees"
-        subtitle="View your fee status and history"
+    <div className="space-y-6">
+      <PageHeader
+        title="Tuition & Fee Records"
+        subtitle="Manage invoices, fee vouchers, and payment histories"
+        breadcrumbs={[
+          { label: 'Student', href: '/student/dashboard' },
+          { label: 'Fees' },
+        ]}
       />
 
-      {/* Summary */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-card p-4 border border-gray-200 dark:border-gray-700">
-          <p className="text-sm text-gray-500 dark:text-gray-400">Total Fees</p>
-          <p className="text-2xl font-bold text-gray-800 dark:text-white">
-            {formatCurrency(summary.totalAmount)}
-          </p>
-        </div>
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-card p-4 border border-gray-200 dark:border-gray-700">
-          <p className="text-sm text-gray-500 dark:text-gray-400">Paid</p>
-          <p className="text-2xl font-bold text-green-600 dark:text-green-400">
-            {formatCurrency(summary.paidAmount)}
-          </p>
-        </div>
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-card p-4 border border-gray-200 dark:border-gray-700">
-          <p className="text-sm text-gray-500 dark:text-gray-400">Pending</p>
-          <p className="text-2xl font-bold text-red-600 dark:text-red-400">
-            {formatCurrency(summary.pendingAmount)}
-          </p>
-        </div>
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-card p-4 border border-gray-200 dark:border-gray-700">
-          <p className="text-sm text-gray-500 dark:text-gray-400">Status</p>
-          <p className="text-2xl font-bold text-primary-600 dark:text-primary-400">
-            {summary.pendingFees > 0
-              ? `${summary.paidFees}/${summary.totalFees}`
-              : 'All Paid'}
-          </p>
-        </div>
+      {/* Summary KPI Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <StatsCard
+          title="Total Assessment"
+          value={formatCurrency(summary.totalAmount || 0)}
+          icon={FiDollarSign}
+          color="primary"
+          subtitle="Cumulative fees"
+        />
+        <StatsCard
+          title="Amount Paid"
+          value={formatCurrency(summary.paidAmount || 0)}
+          icon={FiCheckCircle}
+          color="success"
+          subtitle="Cleared balance"
+        />
+        <StatsCard
+          title="Pending Due"
+          value={formatCurrency(summary.pendingAmount || 0)}
+          icon={FiClock}
+          color="danger"
+          subtitle="Outstanding balance"
+        />
+        <StatsCard
+          title="Payment Status"
+          value={summary.pendingFees > 0 ? `${summary.paidFees || 0}/${summary.totalFees || 0} Paid` : 'All Cleared'}
+          icon={FiFileText}
+          color={summary.pendingFees > 0 ? 'warning' : 'success'}
+          subtitle="Settlement ratio"
+        />
       </div>
 
-      {/* Table */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-card border border-gray-200 dark:border-gray-700 overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-50 dark:bg-gray-700/50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
-                  Fee Type
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
-                  Amount
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
-                  Due Date
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
-                  Status
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
-                  Payment Date
-                </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-              {fees.length === 0 ? (
-                <tr>
-                  <td
-                    colSpan="6"
-                    className="px-6 py-12 text-center text-gray-500 dark:text-gray-400"
-                  >
-                    <FiDollarSign className="text-4xl text-gray-300 mx-auto mb-3" />
-                    No fee records found
-                  </td>
+      {/* Fees Table */}
+      <SectionCard title="Fee Invoices" subtitle="Detailed statement of dues and vouchers">
+        {fees.length === 0 ? (
+          <EmptyState
+            icon={FiDollarSign}
+            title="No fee records"
+            description="You do not have any pending or historical fee vouchers recorded in the ledger."
+          />
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-slate-200 dark:border-slate-800 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                  <th className="py-3 px-4">Fee Type</th>
+                  <th className="py-3 px-4">Total Amount</th>
+                  <th className="py-3 px-4">Due Date</th>
+                  <th className="py-3 px-4">Status</th>
+                  <th className="py-3 px-4">Payment Date</th>
+                  <th className="py-3 px-4 text-right">Actions</th>
                 </tr>
-              ) : (
-                fees.map((fee) => (
-                  <tr
-                    key={fee._id}
-                    className="hover:bg-gray-50 dark:hover:bg-gray-700/50"
-                  >
-                    <td className="px-6 py-4">
-                      <span className="capitalize text-gray-700 dark:text-gray-300">
-                        {fee.feeType}
-                      </span>
+              </thead>
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
+                {fees.map((fee) => (
+                  <tr key={fee._id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30">
+                    <td className="py-3 px-4 font-semibold text-slate-900 dark:text-slate-100 capitalize">
+                      {fee.feeType || 'Tuition'}
                     </td>
-                    <td className="px-6 py-4">
-                      <div className="text-gray-700 dark:text-gray-300">
+                    <td className="py-3 px-4">
+                      <div className="font-medium text-slate-900 dark:text-slate-100">
                         {formatCurrency(fee.amount)}
                       </div>
                       {fee.remainingAmount > 0 && (
-                        <div className="text-xs text-gray-500 dark:text-gray-400">
+                        <div className="text-xs text-rose-600 font-medium">
                           Remaining: {formatCurrency(fee.remainingAmount)}
                         </div>
                       )}
                     </td>
-                    <td className="px-6 py-4 text-gray-700 dark:text-gray-300">
+                    <td className="py-3 px-4 text-slate-600 dark:text-slate-400">
                       {formatDate(fee.dueDate)}
                     </td>
-                    <td className="px-6 py-4">{getStatusBadge(fee.status)}</td>
-                    <td className="px-6 py-4 text-gray-700 dark:text-gray-300">
-                      {fee.paymentDate ? formatDate(fee.paymentDate) : '-'}
+                    <td className="py-3 px-4">
+                      <StatusBadge status={fee.status || 'pending'} />
                     </td>
-                    <td className="px-6 py-4 text-right">
+                    <td className="py-3 px-4 text-slate-600 dark:text-slate-400">
+                      {fee.paymentDate ? formatDate(fee.paymentDate) : '—'}
+                    </td>
+                    <td className="py-3 px-4 text-right">
                       <div className="flex items-center justify-end gap-2">
                         <button
                           onClick={() => handleViewVoucher(fee)}
-                          className="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors text-blue-600"
+                          className="px-3 py-1.5 rounded-lg text-xs font-medium text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 inline-flex items-center gap-1.5 transition-colors"
                           title="View Voucher"
                         >
-                          <FiEye className="text-sm" />
+                          <FiEye />
+                          <span>View</span>
                         </button>
                         <button
                           onClick={() => handleDownloadPDF(fee)}
-                          className="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors text-indigo-600"
-                          title="Download PDF"
+                          disabled={downloadingId === fee._id}
+                          className="px-3 py-1.5 rounded-lg text-xs font-medium bg-primary-600 hover:bg-primary-500 text-white inline-flex items-center gap-1.5 transition-colors disabled:opacity-50"
+                          title="Download PDF Voucher"
                         >
-                          <FiDownload className="text-sm" />
+                          <FiDownload />
+                          <span>{downloadingId === fee._id ? 'Downloading...' : 'PDF'}</span>
                         </button>
                       </div>
                     </td>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </SectionCard>
 
       {/* Voucher Modal */}
-      <VoucherModal
-        isOpen={showVoucherModal}
-        onClose={() => setShowVoucherModal(false)}
-        fee={selectedVoucherFee}
-        onDownloadPDF={() => handleDownloadPDF(selectedVoucherFee)}
-      />
+      {showVoucherModal && (
+        <VoucherModal
+          isOpen={showVoucherModal}
+          onClose={() => setShowVoucherModal(false)}
+          fee={selectedVoucherFee}
+          onDownloadPDF={() => handleDownloadPDF(selectedVoucherFee)}
+        />
+      )}
     </div>
   );
 };

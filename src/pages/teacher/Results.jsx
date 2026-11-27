@@ -1,14 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import {
-  FiPlus,
-  FiEdit2,
-  FiTrash2,
   FiAward,
 } from 'react-icons/fi';
-import DashboardHeader from '../../components/dashboard/DashboardHeader';
-import Button from '../../components/forms/Button';
-import Select from '../../components/forms/Select';
+import PageHeader from '../../components/common/PageHeader';
 import Loader from '../../components/common/Loader';
+import EmptyState from '../../components/common/EmptyState';
+import StatusBadge from '../../components/common/StatusBadge';
 import api from '../../utils/api';
 
 const TeacherResults = () => {
@@ -29,148 +26,147 @@ const TeacherResults = () => {
         api.get('/api/teachers/classes'),
         api.get('/api/exams'),
       ]);
-      setResults(resultsRes.data.results);
-      setClasses(classesRes.data.classes);
-      setExams(examsRes.data.exams);
-    } catch (error) {
-      console.error('Error fetching data:', error);
+      setResults(resultsRes.data?.results || []);
+      setClasses(classesRes.data?.classes || []);
+      setExams(examsRes.data?.exams || []);
+    } catch (err) {
+      console.error('Error fetching teacher results data:', err);
+      setResults([]);
     } finally {
       setLoading(false);
     }
   };
 
-  const getGradeBadge = (grade) => {
-    const colors = {
-      'A+': 'badge-success',
-      A: 'badge-success',
-      'B+': 'badge-info',
-      B: 'badge-info',
-      'C+': 'badge-warning',
-      C: 'badge-warning',
-      D: 'badge-danger',
-      F: 'badge-danger',
-    };
-    return <span className={`badge ${colors[grade] || 'badge-info'}`}>{grade}</span>;
+  const getGradeVariant = (grade) => {
+    if (!grade) return 'neutral';
+    if (grade.startsWith('A')) return 'success';
+    if (grade.startsWith('B')) return 'info';
+    if (grade.startsWith('C')) return 'warning';
+    return 'danger';
   };
 
-  if (loading) return <Loader />;
+  if (loading && results.length === 0) return <Loader />;
 
   return (
-    <div>
-      <DashboardHeader
-        title="Results Management"
-        subtitle="Manage student results"
-        actions={
-          <Button variant="primary" icon={FiPlus}>
-            Add Result
-          </Button>
-        }
+    <div className="space-y-6">
+      <PageHeader
+        title="Class Results & Gradebook"
+        subtitle="Review assessment scores and performance records for students in your cohorts"
+        breadcrumbs={[
+          { label: 'Dashboard', path: '/teacher/dashboard' },
+          { label: 'Results' },
+        ]}
       />
 
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-card border border-gray-200 dark:border-gray-700 overflow-hidden">
-        <div className="p-4 border-b border-gray-200 dark:border-gray-700">
-          <div className="flex flex-wrap gap-4">
-            <Select
-              name="class"
+      <div className="card overflow-hidden">
+        {/* Filters */}
+        <div className="p-4 sm:p-5 border-b border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30 flex flex-wrap gap-3">
+          <div className="w-52">
+            <select
               value={filters.classId}
-              onChange={(e) =>
-                setFilters({ ...filters, classId: e.target.value })
-              }
-              options={[
-                { value: '', label: 'All Classes' },
-                ...classes.map((c) => ({ value: c._id, label: c.name })),
-              ]}
-              className="w-48"
-            />
-            <Select
-              name="exam"
-              value={filters.examId}
-              onChange={(e) =>
-                setFilters({ ...filters, examId: e.target.value })
-              }
-              options={[
-                { value: '', label: 'All Exams' },
-                ...exams.map((e) => ({ value: e._id, label: e.name })),
-              ]}
-              className="w-48"
-            />
+              onChange={(e) => setFilters({ ...filters, classId: e.target.value })}
+              className="select-field text-xs py-2 w-full"
+            >
+              <option value="">All Teaching Classes</option>
+              {classes.map((c) => (
+                <option key={c._id} value={c._id}>
+                  {c.name}
+                </option>
+              ))}
+            </select>
           </div>
+
+          <div className="w-56">
+            <select
+              value={filters.examId}
+              onChange={(e) => setFilters({ ...filters, examId: e.target.value })}
+              className="select-field text-xs py-2 w-full"
+            >
+              <option value="">All Examinations</option>
+              {exams.map((e) => (
+                <option key={e._id} value={e._id}>
+                  {e.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {(filters.classId || filters.examId) && (
+            <button
+              onClick={() => setFilters({ classId: '', examId: '' })}
+              className="text-xs text-indigo-600 dark:text-indigo-400 hover:underline self-center font-medium"
+            >
+              Clear filters
+            </button>
+          )}
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-50 dark:bg-gray-700/50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
-                  Student
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
-                  Exam
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
-                  Marks
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
-                  Grade
-                </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-              {results.length === 0 ? (
-                <tr>
-                  <td
-                    colSpan="5"
-                    className="px-6 py-12 text-center text-gray-500 dark:text-gray-400"
-                  >
-                    <FiAward className="text-4xl text-gray-300 mx-auto mb-3" />
-                    No results found
-                  </td>
+        {/* Results Table */}
+        {results.length === 0 ? (
+          <div className="p-8">
+            <EmptyState
+              icon={FiAward}
+              title="No grades on ledger"
+              description="No marks recorded matching the selected class and exam filters."
+            />
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-800/50 text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
+                  <th className="px-5 py-3">Student Name</th>
+                  <th className="px-4 py-3">Examination</th>
+                  <th className="px-4 py-3">Total Score</th>
+                  <th className="px-4 py-3 text-center">Calculated Grade</th>
                 </tr>
-              ) : (
-                results.map((result) => (
-                  <tr
-                    key={result._id}
-                    className="hover:bg-gray-50 dark:hover:bg-gray-700/50"
-                  >
-                    <td className="px-6 py-4">
-                      <p className="font-medium text-gray-800 dark:text-white">
-                        {result.student?.name}
-                      </p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">
-                        {result.student?.rollNumber}
-                      </p>
-                    </td>
-                    <td className="px-6 py-4 text-sm text-gray-700 dark:text-gray-300">
-                      {result.exam?.name}
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="text-sm text-gray-700 dark:text-gray-300">
-                        {result.obtainedMarks} / {result.totalMarks}
-                      </div>
-                      <div className="text-xs text-gray-500 dark:text-gray-400">
-                        {result.percentage}%
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">{getGradeBadge(result.grade)}</td>
-                    <td className="px-6 py-4 text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        <button className="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-yellow-600">
-                          <FiEdit2 className="text-sm" />
-                        </button>
-                        <button className="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-red-600">
-                          <FiTrash2 className="text-sm" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 text-xs">
+                {results.map((result) => {
+                  const initial = result.student?.name?.charAt(0) || 'S';
+                  return (
+                    <tr
+                      key={result._id}
+                      className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors"
+                    >
+                      <td className="px-5 py-3.5 whitespace-nowrap">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-full bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 border border-indigo-200/50 flex items-center justify-center font-bold text-xs shadow-sm">
+                            {initial}
+                          </div>
+                          <div>
+                            <p className="font-bold text-slate-900 dark:text-white">
+                              {result.student?.name || 'Unknown Student'}
+                            </p>
+                            <p className="text-[11px] text-slate-400">
+                              Roll: {result.student?.rollNumber || '—'}
+                            </p>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3.5 whitespace-nowrap text-slate-700 dark:text-slate-300 font-medium">
+                        {result.exam?.name || 'Term Exam'}
+                      </td>
+                      <td className="px-4 py-3.5 whitespace-nowrap font-mono text-slate-700 dark:text-slate-300">
+                        <div className="font-bold text-slate-900 dark:text-white">
+                          {result.obtainedMarks} / {result.totalMarks}
+                        </div>
+                        <div className="text-[11px] text-slate-400">
+                          {result.percentage != null ? `${result.percentage.toFixed(1)}%` : '—'}
+                        </div>
+                      </td>
+                      <td className="px-4 py-3.5 whitespace-nowrap text-center">
+                        <StatusBadge variant={getGradeVariant(result.grade)}>
+                          Grade {result.grade || '—'}
+                        </StatusBadge>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
     </div>
   );

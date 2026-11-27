@@ -3,64 +3,61 @@ import { Outlet, useLocation } from 'react-router-dom';
 import Sidebar from '../components/common/Sidebar';
 import Navbar from '../components/common/Navbar';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useAuth } from '../context/AuthContext';
 
 const MainLayout = () => {
-  const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [isMobile, setIsMobile] = useState(false);
-  const { user } = useAuth();
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(() => {
+    try {
+      return localStorage.getItem('sidebar-collapsed') === 'true';
+    } catch {
+      return false;
+    }
+  });
+
   const location = useLocation();
 
   useEffect(() => {
-    const handleResize = () => {
-      const mobile = window.innerWidth < 768;
-      setIsMobile(mobile);
-      if (mobile) {
-        setSidebarOpen(false);
-      } else {
-        setSidebarOpen(true);
+    const handleCollapseChange = (e) => {
+      if (e.detail && typeof e.detail.collapsed === 'boolean') {
+        setIsCollapsed(e.detail.collapsed);
       }
     };
-
-    handleResize();
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+    window.addEventListener('sidebar-collapse-change', handleCollapseChange);
+    return () => window.removeEventListener('sidebar-collapse-change', handleCollapseChange);
   }, []);
 
-  const toggleSidebar = () => {
-    setSidebarOpen(!sidebarOpen);
-  };
+  // Close mobile drawer on route navigation
+  useEffect(() => {
+    setMobileOpen(false);
+  }, [location.pathname]);
 
   return (
-    <div className="flex h-screen bg-gray-50 dark:bg-gray-900 overflow-hidden">
+    <div className="min-h-screen bg-slate-50 dark:bg-[#0B1120] text-slate-900 dark:text-slate-100 flex flex-col">
+      {/* Sidebar (Desktop fixed + Mobile drawer) */}
       <Sidebar
-        isOpen={sidebarOpen}
-        user={user}
-        isMobile={isMobile}
-        toggleSidebar={toggleSidebar}
+        mobileOpen={mobileOpen}
+        onMobileClose={() => setMobileOpen(false)}
       />
 
-      {/* Main content with dynamic margin */}
+      {/* Main Container adjusted for Desktop Sidebar */}
       <div
-        className={`flex-1 flex flex-col overflow-hidden transition-all duration-300 ${
-          isMobile ? 'ml-0' : sidebarOpen ? 'ml-[280px]' : 'ml-[80px]'
+        className={`flex-1 flex flex-col transition-[margin-left] duration-300 ease-in-out ${
+          isCollapsed ? 'md:ml-[72px]' : 'md:ml-60'
         }`}
       >
         <Navbar
-          toggleSidebar={toggleSidebar}
-          user={user}
-          isMobile={isMobile}
+          onMenuClick={() => setMobileOpen(true)}
+          mobileOpen={mobileOpen}
         />
 
-        <main className="flex-1 overflow-y-auto bg-gray-50 dark:bg-gray-900 p-4 md:p-6">
+        <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto">
           <AnimatePresence mode="wait">
             <motion.div
               key={location.pathname}
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              transition={{ duration: 0.3 }}
-              className="max-w-7xl mx-auto"
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.2 }}
             >
               <Outlet />
             </motion.div>

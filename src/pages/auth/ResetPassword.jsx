@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { motion } from 'framer-motion';
-import { FiLock } from 'react-icons/fi';
+import { motion, AnimatePresence } from 'framer-motion';
+import { FiLock, FiCheckCircle, FiArrowLeft, FiKey } from 'react-icons/fi';
 import Input from '../../components/forms/Input';
 import Button from '../../components/forms/Button';
 
@@ -45,93 +45,111 @@ const ResetPassword = () => {
     setLoading(false);
   };
 
-  if (submitted) {
-    return (
-      <div className="text-center">
-        <motion.div
-          initial={{ scale: 0 }}
-          animate={{ scale: 1 }}
-          transition={{ duration: 0.5 }}
-          className="w-16 h-16 bg-green-100 dark:bg-green-900/20 rounded-full flex items-center justify-center mx-auto mb-4"
-        >
-          <svg
-            className="w-8 h-8 text-green-600"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M5 13l4 4L19 7"
-            />
-          </svg>
-        </motion.div>
-        <h3 className="text-xl font-semibold text-gray-800 dark:text-white mb-2">
-          Password Reset Successful!
-        </h3>
-        <p className="text-gray-500 dark:text-gray-400 mb-6">
-          Your password has been reset successfully. You will be redirected to
-          login.
-        </p>
-        <Link
-          to="/login"
-          className="text-primary-600 hover:text-primary-700 dark:text-primary-400 font-medium"
-        >
-          Go to Login
-        </Link>
-      </div>
-    );
-  }
-
   return (
-    <div>
-      <div className="text-center mb-8">
-        <h2 className="text-2xl font-bold text-gray-800 dark:text-white">
-          Create New Password
-        </h2>
-        <p className="text-gray-500 dark:text-gray-400 mt-2">
-          Enter your new password below
-        </p>
-      </div>
-
-      <form onSubmit={handleSubmit} className="space-y-6">
-        <Input
-          label="New Password"
-          name="password"
-          type="password"
-          value={formData.password}
-          onChange={handleChange}
-          placeholder="Enter your new password"
-          required
-          icon={FiLock}
-          error={errors.password}
-        />
-
-        <Input
-          label="Confirm Password"
-          name="confirmPassword"
-          type="password"
-          value={formData.confirmPassword}
-          onChange={handleChange}
-          placeholder="Confirm your password"
-          required
-          icon={FiLock}
-          error={errors.confirmPassword}
-        />
-
-        <Button
-          type="submit"
-          variant="primary"
-          size="lg"
-          loading={loading}
-          fullWidth
+    <AnimatePresence mode="wait">
+      {submitted ? (
+        <motion.div
+          key="success"
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          exit={{ opacity: 0, scale: 0.95 }}
+          transition={{ duration: 0.35 }}
+          className="text-center py-4"
         >
-          Reset Password
-        </Button>
-      </form>
-    </div>
+          <motion.div
+            initial={{ scale: 0, rotate: -10 }}
+            animate={{ scale: 1, rotate: 0 }}
+            transition={{ type: 'spring', stiffness: 260, damping: 20, delay: 0.1 }}
+            className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-emerald-100 dark:bg-emerald-900/30 mb-6"
+          >
+            <FiCheckCircle className="text-4xl text-emerald-600 dark:text-emerald-400" />
+          </motion.div>
+
+          <h3 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">
+            Password reset successful!
+          </h3>
+          <p className="text-slate-500 dark:text-slate-400 mb-6">
+            Your password has been securely updated. Redirecting you to sign in...
+          </p>
+
+          <Link
+            to="/login"
+            className="inline-flex items-center gap-2 text-sm font-semibold text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300 transition-colors"
+          >
+            <FiArrowLeft className="text-base" />
+            Sign in immediately
+          </Link>
+        </motion.div>
+      ) : (
+        <motion.div
+          key="form"
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -16 }}
+          transition={{ duration: 0.35 }}
+          className="w-full"
+        >
+          <div className="mb-8">
+            <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-indigo-600 mb-4">
+              <FiKey className="text-white text-xl" />
+            </div>
+            <h2 className="text-2xl font-bold text-slate-900 dark:text-white">
+              Create new password
+            </h2>
+            <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+              Your new password must be at least 6 characters.
+            </p>
+          </div>
+
+          <form onSubmit={handleSubmit} className="space-y-5">
+            <Input
+              label="New Password"
+              name="password"
+              type="password"
+              value={formData.password}
+              onChange={handleChange}
+              placeholder="••••••••"
+              required
+              icon={FiLock}
+              error={errors.password}
+            />
+
+            <Input
+              label="Confirm New Password"
+              name="confirmPassword"
+              type="password"
+              value={formData.confirmPassword}
+              onChange={handleChange}
+              placeholder="••••••••"
+              required
+              icon={FiLock}
+              error={errors.confirmPassword}
+            />
+
+            <Button
+              type="submit"
+              variant="primary"
+              size="lg"
+              loading={loading}
+              fullWidth
+              className="mt-2"
+            >
+              {loading ? 'Updating password…' : 'Reset Password'}
+            </Button>
+          </form>
+
+          <div className="mt-6 text-center">
+            <Link
+              to="/login"
+              className="inline-flex items-center gap-2 text-sm font-medium text-slate-500 hover:text-indigo-600 dark:text-slate-400 dark:hover:text-indigo-400 transition-colors"
+            >
+              <FiArrowLeft className="text-base" />
+              Back to Sign In
+            </Link>
+          </div>
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 };
 

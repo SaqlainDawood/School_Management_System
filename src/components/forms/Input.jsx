@@ -10,12 +10,14 @@ const Input = ({
   onChange,
   onBlur,
   error,
+  helperText,
   placeholder,
   required,
   disabled,
   readOnly,
   className = '',
   icon: Icon,
+  rightElement,
   ...props
 }) => {
   const [showPassword, setShowPassword] = useState(false);
@@ -28,23 +30,23 @@ const Input = ({
       {label && (
         <label
           htmlFor={name}
-          className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+          className="block text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5"
         >
           {label}
-          {required && <span className="text-red-500 ml-1">*</span>}
+          {required && <span className="text-rose-500 ml-1" title="Required">*</span>}
         </label>
       )}
       <div className="relative">
         {Icon && (
-          <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
-            <Icon className="text-lg" />
+          <div className="absolute left-3.5 top-1/2 transform -translate-y-1/2 text-slate-400 pointer-events-none">
+            <Icon className="text-base" aria-hidden="true" />
           </div>
         )}
         <input
           id={name}
           name={name}
           type={inputType}
-          value={value}
+          value={value ?? ''}
           onChange={onChange}
           onBlur={(e) => {
             setIsFocused(false);
@@ -55,22 +57,24 @@ const Input = ({
           disabled={disabled}
           readOnly={readOnly}
           required={required}
-          className={`w-full px-4 py-2.5 border rounded-lg transition-all duration-200 outline-none
+          aria-invalid={!!error}
+          aria-describedby={error ? `${name}-error` : helperText ? `${name}-helper` : undefined}
+          className={`w-full px-3.5 py-2.5 rounded-lg border text-sm transition-all duration-150 outline-none
             ${Icon ? 'pl-10' : ''}
-            ${type === 'password' ? 'pr-10' : ''}
+            ${type === 'password' || rightElement ? 'pr-10' : ''}
             ${
               error
-                ? 'border-red-500 focus:ring-red-500'
+                ? 'border-rose-500 focus:border-rose-500 focus:ring-2 focus:ring-rose-500/20 text-rose-900 dark:text-rose-200'
                 : isFocused
-                ? 'border-primary-500 ring-2 ring-primary-500/20'
-                : 'border-gray-300 dark:border-gray-600'
+                ? 'border-indigo-600 ring-2 ring-indigo-600/20 text-slate-900 dark:text-slate-100'
+                : 'border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100'
             }
             ${
               disabled
-                ? 'bg-gray-100 dark:bg-gray-700 cursor-not-allowed opacity-60'
-                : 'bg-white dark:bg-gray-700'
+                ? 'bg-slate-100 dark:bg-slate-800 cursor-not-allowed opacity-60'
+                : 'bg-white dark:bg-[#111827]'
             }
-            text-gray-900 dark:text-white
+            placeholder:text-slate-400 dark:placeholder:text-slate-500
           `}
           {...props}
         />
@@ -78,24 +82,37 @@ const Input = ({
           <button
             type="button"
             onClick={() => setShowPassword(!showPassword)}
-            className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+            tabIndex={-1}
+            aria-label={showPassword ? 'Hide password' : 'Show password'}
+            className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors p-1"
           >
             {showPassword ? (
-              <FiEyeOff className="text-lg" />
+              <FiEyeOff className="text-base" />
             ) : (
-              <FiEye className="text-lg" />
+              <FiEye className="text-base" />
             )}
           </button>
+        )}
+        {rightElement && type !== 'password' && (
+          <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+            {rightElement}
+          </div>
         )}
       </div>
       {error && (
         <motion.p
-          initial={{ opacity: 0, y: -10 }}
+          id={`${name}-error`}
+          initial={{ opacity: 0, y: -4 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mt-1 text-sm text-red-500"
+          className="mt-1.5 text-xs font-medium text-rose-600 dark:text-rose-400 flex items-center gap-1"
         >
           {error}
         </motion.p>
+      )}
+      {!error && helperText && (
+        <p id={`${name}-helper`} className="mt-1.5 text-xs text-slate-500 dark:text-slate-400">
+          {helperText}
+        </p>
       )}
     </div>
   );

@@ -91,6 +91,10 @@ export const getStatusColor = (status) => {
  * Get status label
  */
 export const getStatusLabel = (status) => {
+  if (typeof status === 'boolean') {
+    return status ? 'Active' : 'Inactive';
+  }
+  const key = typeof status === 'string' ? status.trim().toLowerCase() : '';
   const labels = {
     active: 'Active',
     inactive: 'Inactive',
@@ -113,8 +117,28 @@ export const getStatusLabel = (status) => {
     ongoing: 'Ongoing',
     partial: 'Partial',
     waived: 'Waived',
+    archived: 'Archived',
   };
-  return labels[status] || status;
+  return labels[key] || status || 'Unknown';
+};
+
+/**
+ * Format structured or string address safely into readable text
+ */
+export const formatAddress = (addr) => {
+  if (!addr) return '';
+  if (typeof addr === 'string') return addr;
+  if (typeof addr === 'object') {
+    const parts = [
+      addr.street,
+      addr.city,
+      addr.state,
+      addr.zipCode || addr.zip || addr.postalCode,
+      addr.country,
+    ].filter(Boolean);
+    return parts.length > 0 ? parts.join(', ') : addr.street || addr.city || '';
+  }
+  return String(addr);
 };
 
 /**

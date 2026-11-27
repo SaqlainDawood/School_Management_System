@@ -5,6 +5,7 @@ import {
   FiPlus,
   FiEdit2,
   FiTrash2,
+  FiEye,
   FiBookOpen,
   FiUser,
   FiX,
@@ -33,6 +34,7 @@ const Subjects = () => {
   const [formLoading, setFormLoading] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [editingSubject, setEditingSubject] = useState(null);
+  const [viewingSubject, setViewingSubject] = useState(null);
   const [deleteTargetId, setDeleteTargetId] = useState(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
 
@@ -361,6 +363,13 @@ const Subjects = () => {
                   <td className="px-6 py-4 text-right">
                     <div className="inline-flex items-center justify-end gap-1">
                       <button
+                        onClick={() => setViewingSubject(subject)}
+                        className="p-1.5 rounded-lg text-slate-500 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-slate-800 transition-colors"
+                        title="View Subject Details"
+                      >
+                        <FiEye className="text-base" />
+                      </button>
+                      <button
                         onClick={() => handleEditSubject(subject)}
                         className="p-1.5 rounded-lg text-slate-500 hover:text-indigo-600 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
                         title="Edit Subject"
@@ -639,6 +648,104 @@ const Subjects = () => {
             </Button>
           </div>
         </form>
+      </Modal>
+
+      {/* View Subject Details Modal */}
+      <Modal
+        isOpen={Boolean(viewingSubject)}
+        onClose={() => setViewingSubject(null)}
+        title="Subject Curriculum Details"
+        size="lg"
+      >
+        {viewingSubject && (
+          <div className="space-y-5">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/80 dark:border-slate-700/60">
+              <div className="flex items-center gap-3.5">
+                <div className="w-11 h-11 rounded-xl bg-indigo-600 text-white flex items-center justify-center text-lg shadow-sm shrink-0">
+                  <FiBookOpen />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-slate-900 dark:text-white">
+                    {viewingSubject.name}
+                  </h3>
+                  <p className="text-xs font-mono text-slate-500 dark:text-slate-400">
+                    Code: {viewingSubject.code || '—'} • {viewingSubject.credits} Credits
+                  </p>
+                </div>
+              </div>
+              <StatusBadge variant={getTypeVariant(viewingSubject.type)}>
+                {viewingSubject.type}
+              </StatusBadge>
+            </div>
+
+            <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 text-xs space-y-1.5">
+              <h4 className="font-bold text-slate-900 dark:text-white uppercase tracking-wider text-[11px]">
+                Syllabus Description
+              </h4>
+              <p className="text-slate-600 dark:text-slate-300 leading-relaxed">
+                {viewingSubject.description || 'No syllabus description provided.'}
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+              <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 space-y-2">
+                <h4 className="font-bold text-slate-900 dark:text-white uppercase tracking-wider text-[11px] border-b border-slate-100 dark:border-slate-800 pb-2">
+                  Assigned Classes ({viewingSubject.classes?.length || 0})
+                </h4>
+                {viewingSubject.classes?.length > 0 ? (
+                  <div className="flex flex-wrap gap-1.5 pt-1">
+                    {viewingSubject.classes.map((cls, idx) => (
+                      <span
+                        key={cls._id || idx}
+                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-medium bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-900/50"
+                      >
+                        <FiLayers className="text-[10px]" />
+                        {cls.name || cls}
+                      </span>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-slate-400 italic">No classes assigned</p>
+                )}
+              </div>
+
+              <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 space-y-2">
+                <h4 className="font-bold text-slate-900 dark:text-white uppercase tracking-wider text-[11px] border-b border-slate-100 dark:border-slate-800 pb-2">
+                  Assigned Faculty ({viewingSubject.teachers?.length || 0})
+                </h4>
+                {viewingSubject.teachers?.length > 0 ? (
+                  <ul className="space-y-1.5 pt-1">
+                    {viewingSubject.teachers.map((t, idx) => (
+                      <li key={t._id || idx} className="flex items-center gap-2 text-slate-800 dark:text-slate-200 font-medium">
+                        <FiUser className="text-indigo-500 shrink-0" />
+                        <span>{t.user?.name || t.name || 'Faculty Member'}</span>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="text-slate-400 italic">No faculty assigned</p>
+                )}
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-200 dark:border-slate-800">
+              <Button variant="secondary" onClick={() => setViewingSubject(null)}>
+                Close
+              </Button>
+              <Button
+                variant="primary"
+                icon={FiEdit2}
+                onClick={() => {
+                  const target = viewingSubject;
+                  setViewingSubject(null);
+                  handleEditSubject(target);
+                }}
+              >
+                Edit Subject
+              </Button>
+            </div>
+          </div>
+        )}
       </Modal>
 
       {/* Confirm Deletion */}

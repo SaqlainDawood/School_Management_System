@@ -3,6 +3,7 @@ import {
   FiPlus,
   FiEdit2,
   FiTrash2,
+  FiEye,
   FiCalendar,
   FiClock,
   FiAward,
@@ -30,6 +31,7 @@ const Exams = () => {
   const [formLoading, setFormLoading] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [editingExam, setEditingExam] = useState(null);
+  const [viewingExam, setViewingExam] = useState(null);
   const [selectedClass, setSelectedClass] = useState('');
   const [deleteTargetId, setDeleteTargetId] = useState(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
@@ -351,6 +353,13 @@ const Exams = () => {
                     </td>
                     <td className="px-5 py-3.5 whitespace-nowrap text-right">
                       <div className="flex items-center justify-end gap-1.5">
+                        <button
+                          onClick={() => setViewingExam(exam)}
+                          className="p-1.5 rounded-lg text-slate-500 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-slate-800 transition-colors"
+                          title="View Exam Details"
+                        >
+                          <FiEye className="text-sm" />
+                        </button>
                         {exam.status === 'draft' && (
                           <button
                             onClick={() => handlePublish(exam._id)}
@@ -578,6 +587,132 @@ const Exams = () => {
             </Button>
           </div>
         </form>
+      </Modal>
+
+      {/* View Exam Details Modal */}
+      <Modal
+        isOpen={Boolean(viewingExam)}
+        onClose={() => setViewingExam(null)}
+        title="Examination Schedule Details"
+        size="lg"
+      >
+        {viewingExam && (
+          <div className="space-y-5">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/80 dark:border-slate-700/60">
+              <div className="flex items-center gap-3.5">
+                <div className="w-11 h-11 rounded-xl bg-indigo-600 text-white flex items-center justify-center text-lg shadow-sm shrink-0">
+                  <FiAward />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-slate-900 dark:text-white">
+                    {viewingExam.name}
+                  </h3>
+                  <p className="text-xs font-mono text-slate-500 dark:text-slate-400">
+                    {viewingExam.code || '—'} • {viewingExam.type?.toUpperCase() || 'EXAM'}
+                  </p>
+                </div>
+              </div>
+              <StatusBadge
+                status={viewingExam.status}
+                variant={getStatusVariant(viewingExam.status)}
+              >
+                {viewingExam.status?.toUpperCase()}
+              </StatusBadge>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+              <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 space-y-2.5">
+                <h4 className="font-bold text-slate-900 dark:text-white uppercase tracking-wider text-[11px] border-b border-slate-100 dark:border-slate-800 pb-2">
+                  Schedule & Cohort
+                </h4>
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Class Cohort</span>
+                  <span className="font-semibold text-slate-900 dark:text-slate-100">{viewingExam.class?.name || 'All Classes'}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Start Date</span>
+                  <span className="font-semibold text-slate-900 dark:text-slate-100">{formatDate(viewingExam.startDate)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-500">End Date</span>
+                  <span className="font-semibold text-slate-900 dark:text-slate-100">{formatDate(viewingExam.endDate)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Academic Year</span>
+                  <span className="font-semibold text-slate-900 dark:text-slate-100">{viewingExam.academicYear || '—'}</span>
+                </div>
+              </div>
+
+              <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 space-y-2.5">
+                <h4 className="font-bold text-slate-900 dark:text-white uppercase tracking-wider text-[11px] border-b border-slate-100 dark:border-slate-800 pb-2">
+                  Assessment Criteria
+                </h4>
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Total Marks</span>
+                  <span className="font-semibold text-slate-900 dark:text-slate-100">{viewingExam.totalMarks ?? '—'}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Passing Marks</span>
+                  <span className="font-semibold text-slate-900 dark:text-slate-100">{viewingExam.passingMarks ?? '—'}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Duration</span>
+                  <span className="font-semibold text-slate-900 dark:text-slate-100">{viewingExam.duration ? `${viewingExam.duration} mins` : '—'}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Semester / Term</span>
+                  <span className="font-semibold capitalize text-slate-900 dark:text-slate-100">{viewingExam.semester || '—'}</span>
+                </div>
+              </div>
+            </div>
+
+            {viewingExam.subjects?.length > 0 && (
+              <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 text-xs space-y-2">
+                <h4 className="font-bold text-slate-900 dark:text-white uppercase tracking-wider text-[11px]">
+                  Included Subjects ({viewingExam.subjects.length})
+                </h4>
+                <div className="flex flex-wrap gap-1.5">
+                  {viewingExam.subjects.map((sub, idx) => (
+                    <span
+                      key={sub._id || idx}
+                      className="px-2.5 py-1 rounded-full text-[11px] font-medium bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-900/50"
+                    >
+                      {sub.name || sub}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {viewingExam.instructions && (
+              <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 text-xs space-y-1.5">
+                <h4 className="font-bold text-slate-900 dark:text-white uppercase tracking-wider text-[11px]">
+                  Instructions
+                </h4>
+                <p className="text-slate-600 dark:text-slate-300 leading-relaxed whitespace-pre-line">
+                  {viewingExam.instructions}
+                </p>
+              </div>
+            )}
+
+            <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-200 dark:border-slate-800">
+              <Button variant="secondary" onClick={() => setViewingExam(null)}>
+                Close
+              </Button>
+              <Button
+                variant="primary"
+                icon={FiEdit2}
+                onClick={() => {
+                  const target = viewingExam;
+                  setViewingExam(null);
+                  handleEditExam(target);
+                }}
+              >
+                Edit Exam
+              </Button>
+            </div>
+          </div>
+        )}
       </Modal>
 
       {/* Confirm Deletion */}

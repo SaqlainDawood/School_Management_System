@@ -12,7 +12,7 @@ import StatusBadge from '../../components/common/StatusBadge';
 import Modal from '../../components/modals/Modal';
 import StudentForm from '../../components/forms/StudentForm';
 import api from '../../utils/api';
-import { getStatusLabel, formatAddress } from '../../utils/helpers';
+import { getStatusLabel, formatAddress, formatDate } from '../../utils/helpers';
 import { STUDENT_STATUS, GENDER_OPTIONS } from '../../utils/constants';
 
 const Students = () => {
@@ -30,6 +30,7 @@ const Students = () => {
   });
   const [showModal, setShowModal] = useState(false);
   const [editingStudent, setEditingStudent] = useState(null);
+  const [viewingStudent, setViewingStudent] = useState(null);
   const [deleteTargetId, setDeleteTargetId] = useState(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [formData, setFormData] = useState({
@@ -343,6 +344,13 @@ const Students = () => {
                       <td className="px-5 py-3.5 whitespace-nowrap text-right">
                         <div className="flex items-center justify-end gap-1.5">
                           <button
+                            onClick={() => setViewingStudent(student)}
+                            className="p-1.5 rounded-lg text-slate-500 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-slate-800 transition-colors"
+                            title="View Student Details"
+                          >
+                            <FiEye className="text-sm" />
+                          </button>
+                          <button
                             onClick={() => handleEditStudent(student)}
                             className="p-1.5 rounded-lg text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-slate-800 transition-colors"
                             title="Edit Student"
@@ -395,6 +403,119 @@ const Students = () => {
           loading={formLoading}
           classes={classes}
         />
+      </Modal>
+
+      {/* View Student Details Modal */}
+      <Modal
+        isOpen={Boolean(viewingStudent)}
+        onClose={() => setViewingStudent(null)}
+        title="Student Academic Profile"
+        size="lg"
+      >
+        {viewingStudent && (
+          <div className="space-y-5">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/80 dark:border-slate-700/60">
+              <div className="flex items-center gap-3.5">
+                <div className="w-12 h-12 rounded-full bg-indigo-600 text-white flex items-center justify-center font-bold text-lg shadow-sm shrink-0">
+                  {viewingStudent.user?.name?.charAt(0)?.toUpperCase() || 'S'}
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-slate-900 dark:text-white">
+                    {viewingStudent.user?.name || '—'}
+                  </h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                    {viewingStudent.user?.email || '—'}
+                  </p>
+                </div>
+              </div>
+              <StatusBadge
+                status={viewingStudent.status}
+                variant={mapStatusVariant(viewingStudent.status)}
+                dot
+              >
+                {getStatusLabel(viewingStudent.status)}
+              </StatusBadge>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+              <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 space-y-2.5">
+                <h4 className="font-bold text-slate-900 dark:text-white uppercase tracking-wider text-[11px] border-b border-slate-100 dark:border-slate-800 pb-2">
+                  Academic & Identity
+                </h4>
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Student ID</span>
+                  <span className="font-mono font-semibold text-slate-900 dark:text-slate-100">{viewingStudent.studentId || '—'}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Roll Number</span>
+                  <span className="font-semibold text-slate-900 dark:text-slate-100">{viewingStudent.rollNumber || '—'}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Class & Section</span>
+                  <span className="font-semibold text-slate-900 dark:text-slate-100">
+                    {viewingStudent.class?.name || 'Unassigned'}
+                    {viewingStudent.section ? ` (${viewingStudent.section})` : ''}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Gender</span>
+                  <span className="font-semibold capitalize text-slate-900 dark:text-slate-100">{viewingStudent.gender || '—'}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Date of Birth</span>
+                  <span className="font-semibold text-slate-900 dark:text-slate-100">
+                    {viewingStudent.dateOfBirth ? formatDate(viewingStudent.dateOfBirth) : '—'}
+                  </span>
+                </div>
+              </div>
+
+              <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 space-y-2.5">
+                <h4 className="font-bold text-slate-900 dark:text-white uppercase tracking-wider text-[11px] border-b border-slate-100 dark:border-slate-800 pb-2">
+                  Contact & Guardian
+                </h4>
+                <div className="flex justify-between gap-2">
+                  <span className="text-slate-500 shrink-0">Phone</span>
+                  <span className="font-semibold text-slate-900 dark:text-slate-100 text-right">{viewingStudent.phone || 'Not Configured'}</span>
+                </div>
+                <div className="flex justify-between gap-2">
+                  <span className="text-slate-500 shrink-0">Address</span>
+                  <span className="font-semibold text-slate-900 dark:text-slate-100 text-right">
+                    {formatAddress(viewingStudent.address || viewingStudent.user?.address) || 'Not Configured'}
+                  </span>
+                </div>
+                <div className="flex justify-between gap-2">
+                  <span className="text-slate-500 shrink-0">Father Name</span>
+                  <span className="font-semibold text-slate-900 dark:text-slate-100 text-right">{viewingStudent.fatherName || '—'}</span>
+                </div>
+                <div className="flex justify-between gap-2">
+                  <span className="text-slate-500 shrink-0">Father Phone</span>
+                  <span className="font-semibold text-slate-900 dark:text-slate-100 text-right">{viewingStudent.fatherPhone || '—'}</span>
+                </div>
+                <div className="flex justify-between gap-2">
+                  <span className="text-slate-500 shrink-0">Mother Name</span>
+                  <span className="font-semibold text-slate-900 dark:text-slate-100 text-right">{viewingStudent.motherName || '—'}</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-200 dark:border-slate-800">
+              <Button variant="secondary" onClick={() => setViewingStudent(null)}>
+                Close
+              </Button>
+              <Button
+                variant="primary"
+                icon={FiEdit2}
+                onClick={() => {
+                  const target = viewingStudent;
+                  setViewingStudent(null);
+                  handleEditStudent(target);
+                }}
+              >
+                Edit Student
+              </Button>
+            </div>
+          </div>
+        )}
       </Modal>
 
       {/* Confirm Deletion Dialog */}

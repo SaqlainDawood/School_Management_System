@@ -9,18 +9,22 @@ import {
   FiUsers,
   FiHash,
   FiCalendar,
+  FiEye,
 } from 'react-icons/fi';
 import PageHeader from '../../components/common/PageHeader';
 import SectionCard from '../../components/common/SectionCard';
 import StatusBadge from '../../components/common/StatusBadge';
 import Loader from '../../components/common/Loader';
 import EmptyState from '../../components/common/EmptyState';
+import Modal from '../../components/modals/Modal';
+import Button from '../../components/forms/Button';
 import api from '../../utils/api';
-import { formatDate } from '../../utils/helpers';
+import { formatDate, formatAddress } from '../../utils/helpers';
 
 const ParentChildren = () => {
   const [children, setChildren] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [viewingChild, setViewingChild] = useState(null);
 
   useEffect(() => {
     fetchChildren();
@@ -112,6 +116,14 @@ const ParentChildren = () => {
               </div>
 
               <div className="flex items-center gap-2 pt-5 mt-5 border-t border-slate-100 dark:border-slate-800">
+                <button
+                  type="button"
+                  onClick={() => setViewingChild(child)}
+                  className="inline-flex items-center justify-center gap-1.5 flex-1 py-2 text-center text-xs font-semibold rounded-lg bg-emerald-50 dark:bg-emerald-950/40 hover:bg-emerald-100 text-emerald-700 dark:text-emerald-300 transition-colors"
+                >
+                  <FiEye className="text-sm" />
+                  View
+                </button>
                 <Link
                   to="/parent/attendance"
                   className="flex-1 py-2 text-center text-xs font-semibold rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 transition-colors"
@@ -135,6 +147,47 @@ const ParentChildren = () => {
           ))}
         </div>
       )}
+
+      <Modal
+        isOpen={Boolean(viewingChild)}
+        onClose={() => setViewingChild(null)}
+        title="Student Profile Details"
+        size="lg"
+      >
+        {viewingChild && (
+          <div className="space-y-4 text-xs">
+            <div className="flex items-center justify-between p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/80 dark:border-slate-700/60">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-full bg-indigo-600 text-white flex items-center justify-center font-bold text-lg">
+                  {viewingChild.user?.name?.charAt(0)?.toUpperCase() || 'S'}
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-slate-900 dark:text-white">
+                    {viewingChild.user?.name || '—'}
+                  </h3>
+                  <p className="text-slate-500">{viewingChild.user?.email || '—'}</p>
+                </div>
+              </div>
+              <StatusBadge status={viewingChild.status || 'active'} />
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-4 rounded-xl border border-slate-200 dark:border-slate-800">
+              <div className="flex justify-between"><span className="text-slate-500">Class</span><span className="font-semibold text-slate-900 dark:text-white">{viewingChild.class?.name || '—'} {viewingChild.section ? `(${viewingChild.section})` : ''}</span></div>
+              <div className="flex justify-between"><span className="text-slate-500">Student ID</span><span className="font-mono font-semibold text-slate-900 dark:text-white">{viewingChild.studentId || '—'}</span></div>
+              <div className="flex justify-between"><span className="text-slate-500">Roll Number</span><span className="font-semibold text-slate-900 dark:text-white">{viewingChild.rollNumber || '—'}</span></div>
+              <div className="flex justify-between"><span className="text-slate-500">Gender</span><span className="font-semibold capitalize text-slate-900 dark:text-white">{viewingChild.gender || '—'}</span></div>
+              <div className="flex justify-between"><span className="text-slate-500">Phone</span><span className="font-semibold text-slate-900 dark:text-white">{viewingChild.phone || 'Not Configured'}</span></div>
+              <div className="flex justify-between"><span className="text-slate-500">Address</span><span className="font-semibold text-slate-900 dark:text-white">{formatAddress(viewingChild.address || viewingChild.user?.address) || 'Not Configured'}</span></div>
+            </div>
+
+            <div className="flex justify-end pt-2">
+              <Button variant="secondary" onClick={() => setViewingChild(null)}>
+                Close
+              </Button>
+            </div>
+          </div>
+        )}
+      </Modal>
     </div>
   );
 };

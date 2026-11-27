@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
   FiPlus,
-  FiEdit2,
-  FiTrash2,
+  FiEye,
   FiCalendar,
   FiClock,
   FiAward,
@@ -13,6 +12,7 @@ import SectionCard from '../../components/common/SectionCard';
 import StatusBadge from '../../components/common/StatusBadge';
 import Button from '../../components/forms/Button';
 import Select from '../../components/forms/Select';
+import Modal from '../../components/modals/Modal';
 import Loader from '../../components/common/Loader';
 import EmptyState from '../../components/common/EmptyState';
 import api from '../../utils/api';
@@ -23,6 +23,7 @@ const ExaminationExams = () => {
   const [classes, setClasses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState({ status: '', classId: '' });
+  const [viewingExam, setViewingExam] = useState(null);
 
   useEffect(() => {
     fetchData();
@@ -147,10 +148,12 @@ const ExaminationExams = () => {
                     </td>
                     <td className="py-3 px-4 text-right">
                       <button
-                        onClick={() => toast.info('Exam modification is handled in the Admin portal')}
-                        className="px-3 py-1.5 rounded-lg text-xs font-semibold text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 transition-colors"
+                        onClick={() => setViewingExam(exam)}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 transition-colors"
+                        title="View Exam Details"
                       >
-                        Inspect
+                        <FiEye className="text-sm" />
+                        View
                       </button>
                     </td>
                   </tr>
@@ -160,6 +163,86 @@ const ExaminationExams = () => {
           </div>
         )}
       </SectionCard>
+
+      <Modal
+        isOpen={Boolean(viewingExam)}
+        onClose={() => setViewingExam(null)}
+        title="Examination Details"
+        size="lg"
+      >
+        {viewingExam && (
+          <div className="space-y-5">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/80 dark:border-slate-700/60">
+              <div className="flex items-center gap-3.5">
+                <div className="w-11 h-11 rounded-xl bg-indigo-600 text-white flex items-center justify-center text-lg shadow-sm shrink-0">
+                  <FiAward />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-slate-900 dark:text-white">
+                    {viewingExam.name}
+                  </h3>
+                  <p className="text-xs font-mono text-slate-500 dark:text-slate-400">
+                    Code: {viewingExam.code || '—'} • {viewingExam.type?.toUpperCase() || 'EXAM'}
+                  </p>
+                </div>
+              </div>
+              <StatusBadge status={viewingExam.status || 'draft'} />
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+              <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 space-y-2.5">
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Class Cohort</span>
+                  <span className="font-semibold text-slate-900 dark:text-slate-100">{viewingExam.class?.name || 'All Classes'}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Start Date</span>
+                  <span className="font-semibold text-slate-900 dark:text-slate-100">{formatDate(viewingExam.startDate)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-500">End Date</span>
+                  <span className="font-semibold text-slate-900 dark:text-slate-100">{formatDate(viewingExam.endDate)}</span>
+                </div>
+              </div>
+              <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 space-y-2.5">
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Total Marks</span>
+                  <span className="font-semibold text-slate-900 dark:text-slate-100">{viewingExam.totalMarks ?? '—'}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Passing Marks</span>
+                  <span className="font-semibold text-slate-900 dark:text-slate-100">{viewingExam.passingMarks ?? '—'}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Duration</span>
+                  <span className="font-semibold text-slate-900 dark:text-slate-100">{viewingExam.duration ? `${viewingExam.duration} mins` : '—'}</span>
+                </div>
+              </div>
+            </div>
+
+            {viewingExam.subjects?.length > 0 && (
+              <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 text-xs space-y-2">
+                <h4 className="font-bold text-slate-900 dark:text-white uppercase tracking-wider text-[11px]">
+                  Subjects ({viewingExam.subjects.length})
+                </h4>
+                <div className="flex flex-wrap gap-1.5">
+                  {viewingExam.subjects.map((sub, idx) => (
+                    <span key={sub._id || idx} className="px-2.5 py-1 rounded-full text-[11px] font-medium bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400">
+                      {sub.name || sub}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div className="flex justify-end pt-3 border-t border-slate-200 dark:border-slate-800">
+              <Button variant="secondary" onClick={() => setViewingExam(null)}>
+                Close
+              </Button>
+            </div>
+          </div>
+        )}
+      </Modal>
     </div>
   );
 };

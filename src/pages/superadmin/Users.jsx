@@ -5,6 +5,7 @@ import {
   FiUserCheck,
   FiShield,
   FiFilter,
+  FiEye,
 } from 'react-icons/fi';
 import { toast } from 'react-toastify';
 import PageHeader from '../../components/common/PageHeader';
@@ -13,10 +14,12 @@ import StatusBadge from '../../components/common/StatusBadge';
 import Input from '../../components/forms/Input';
 import Select from '../../components/forms/Select';
 import Button from '../../components/forms/Button';
+import Modal from '../../components/modals/Modal';
 
 const Users = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState('');
+  const [viewingUser, setViewingUser] = useState(null);
 
   const sampleUsers = [
     {
@@ -100,6 +103,7 @@ const Users = () => {
                 <th className="py-3 px-4">Role</th>
                 <th className="py-3 px-4">Tenant Campus</th>
                 <th className="py-3 px-4">Account Status</th>
+                <th className="py-3 px-4 text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
@@ -120,12 +124,48 @@ const Users = () => {
                   <td className="py-3 px-4">
                     <StatusBadge status={user.status} />
                   </td>
+                  <td className="py-3 px-4 text-right">
+                    <button
+                      onClick={() => setViewingUser(user)}
+                      className="p-1.5 rounded-lg text-slate-500 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-slate-800 transition-colors"
+                      title="View User Details"
+                    >
+                      <FiEye className="text-sm" />
+                    </button>
+                  </td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
       </SectionCard>
+
+      <Modal
+        isOpen={Boolean(viewingUser)}
+        onClose={() => setViewingUser(null)}
+        title="User Account Details"
+        size="md"
+      >
+        {viewingUser && (
+          <div className="space-y-4 text-xs">
+            <div className="flex items-center justify-between p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/80 dark:border-slate-700/60">
+              <div>
+                <h3 className="text-base font-bold text-slate-900 dark:text-white">{viewingUser.name}</h3>
+                <p className="text-slate-500">{viewingUser.email}</p>
+              </div>
+              <StatusBadge status={viewingUser.status} />
+            </div>
+            <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 space-y-2.5">
+              <div className="flex justify-between"><span className="text-slate-500">User ID</span><span className="font-mono font-semibold text-slate-900 dark:text-white">{viewingUser.id}</span></div>
+              <div className="flex justify-between"><span className="text-slate-500">Role</span><span className="font-semibold uppercase text-slate-900 dark:text-white">{viewingUser.role}</span></div>
+              <div className="flex justify-between"><span className="text-slate-500">Campus</span><span className="font-semibold text-slate-900 dark:text-white">{viewingUser.school}</span></div>
+            </div>
+            <div className="flex justify-end pt-2">
+              <Button variant="secondary" onClick={() => setViewingUser(null)}>Close</Button>
+            </div>
+          </div>
+        )}
+      </Modal>
     </div>
   );
 };
